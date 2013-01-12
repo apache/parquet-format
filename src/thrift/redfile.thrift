@@ -20,11 +20,13 @@
  * File format description for the redfile file format
  */
 namespace cpp redfile
-namespace java com.apache.redfile
+namespace java redfile
 
 /**
  * Types supported by redfile.  These types are intended to be for the storage
  * format, and in particular how they interact with different encodings.
+ * For example INT16 is not included as a type since a good encoding of INT32
+ * would handle this.
  */
 enum Type {
   BOOLEAN = 0;
@@ -57,7 +59,7 @@ enum Encoding {
 /**
  * Supported compression algorithms.  
  */
-enum Compression {
+enum CompressionCodec {
   UNCOMPRESSED = 0;
   SNAPPY = 1;
   GZIP = 2;
@@ -75,6 +77,8 @@ struct DataPageHeader {
 
   /** Encoding used for this data page **/
   2: required Encoding encoding
+
+  /** TODO: should this contain min/max for this page? **/
 }
 
 struct IndexPageHeader {
@@ -90,7 +94,7 @@ struct PageHeader {
   /** Compressed page size in bytes **/
   3: required i32 compressed_page_size
 
-  /** 32bit crc for the data below. This allows for disabling checksumming in 
+  /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
    *  if only a few pages needs to be read 
    **/
   4: required i32 crc
@@ -121,7 +125,7 @@ struct ColumnMetaData {
   3: required list<string> path_in_schema
 
   /** Compression codec **/
-  4: required Compression codec
+  4: required CompressionCodec codec
 
   /** Number of values in this column **/
   5: required i64 num_values
@@ -131,16 +135,16 @@ struct ColumnMetaData {
   7: required i32 max_repetition_level
 
   /** Byte offset from beginning of file to first data page **/
-  8: optional i64 data_page_offset
+  8: required i64 data_page_offset
 
   /** Byte offset from beginning of file to root index page **/
   9: optional i64 index_page_offset
 
   /** Optional key/value metadata **/
-  10: list<KeyValue> key_value_metadata
+  10: optional list<KeyValue> key_value_metadata
 }
 
-struct ColumnStart {
+struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as 
     * metadata 
     **/
@@ -148,10 +152,16 @@ struct ColumnStart {
 
   /** Byte offset in file_path to the ColumnMetaData **/
   2: required i64 file_offset
+
+  /** Column metadata for this chunk. This is the same content as what is at
+   * file_path/file_offset.  Having it here has it replicated in the file
+   * metadata. 
+   **/
+  3: optional ColumnMetaData meta_data
 }
   
 struct RowGroup {
-  1: required list<ColumnStart> columns
+  1: required list<ColumnChunk> columns
   /** Total byte size of all the uncompressed column data in this row group **/
   2: required i64 total_byte_size
 }
@@ -170,10 +180,10 @@ struct FileMetaData {
   3: required i32 num_cols
 
   /** Row groups in this file **/
-  4: list<RowGroup> row_groups
+  4: required list<RowGroup> row_groups
 
   /** Optional key/value metadata **/
-  5: list<KeyValue> key_value_metadata
+  5: optional list<KeyValue> key_value_metadata
 
   /** 32bit crc for the file metadata **/
   6: optional i32 meta_data_crc

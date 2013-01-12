@@ -1,5 +1,6 @@
 redfile
 ======
+Redfile is a columnar storage format that supports nested data.  
 
 ## Glossary
   - Block (hdfs block): This means a block in hdfs and the meaning is 
@@ -50,26 +51,58 @@ This file and the thrift definition should be read together to understand the fo
     4-byte offset from end of file to start of file metadata
     4-byte magic number "RED1"
 
-In the above example, there are N columns in this table, split into M row groups.  The file metadata contains the locations of all the column metadata start locations.  More details on what is contained in the metdata can be found in the thrift files.
+In the above example, there are N columns in this table, split into M row 
+groups.  The file metadata contains the locations of all the column metadata 
+start locations.  More details on what is contained in the metdata can be found 
+in the thrift files.
 
 Metadata is written after the data to allow for single pass writing.
 
-Readers are expected to first read the file metadata to find all the column chunks they are interested in.  The columns chunks should then be read sequentially.
+Readers are expected to first read the file metadata to find all the column 
+chunks they are interested in.  The columns chunks should then be read sequentially.
+
+## Nested Encoding
+To encode nested columns, redfile uses the dremel encoding with definition and 
+repetition levels.
+    TODO
 
 ## Column chunks
-Column chunks are composed of pages written back to back.  The pages same a fixed header and readers can skip over page they are not interested in.  The data for the page follows the header and can be compressed and/or encoded.  The compression and encoding is specified in the metadata.
+Column chunks are composed of pages written back to back.  The pages same a fixed 
+header and readers can skip over page they are not interested in.  The data for the 
+page follows the header and can be compressed and/or encoded.  The compression and 
+encoding is specified in the metadata.
 
 ## Checksumming
-Data pages are individually checksummed.  This allows disabling of checksums at the HDFS file level, to better support single row lookups.
+Data pages can be individually checksummed.  This allows disabling of checksums at the 
+HDFS file level, to better support single row lookups.
 
 ## Error recovery
-If the file metadata is corrupt, the file is lost.  If the column metdata is corrupt, that column chunk is lost (but column chunks for this column in order row groups are okay).  If a page header is corrupt, the remaining pages in that chunk are lost.  If the data within a page is corrupt, that page is lost.  The file will be more resilient to corruption with smaller row groups.
+If the file metadata is corrupt, the file is lost.  If the column metdata is corrupt, 
+that column chunk is lost (but column chunks for this column in order row groups are 
+okay).  If a page header is corrupt, the remaining pages in that chunk are lost.  If 
+the data within a page is corrupt, that page is lost.  The file will be more 
+resilient to corruption with smaller row groups.
 
-Potential extension: With smaller row groups, the biggest issue is lowing the file metadata at the end.  If this happens in the write path, all the data written will be unreadable.  This can be fixed by writing the file metadata every Nth row group.  Each file metadata would be cumulative and include all the row groups written so far.  Combining this with the strategy used for rc or avro files using sync markers, a reader could recovery partially written files.  
+Potential extension: With smaller row groups, the biggest issue is lowing the file 
+metadata at the end.  If this happens in the write path, all the data written will 
+be unreadable.  This can be fixed by writing the file metadata every Nth row group.  
+Each file metadata would be cumulative and include all the row groups written so 
+far.  Combining this with the strategy used for rc or avro files using sync markers, 
+a reader could recovery partially written files.  
 
 ## Configurations
-- Row group size: Larger row groups allow for larger column chunks which makes it possible to do larger sequential IO.  Larger groups also require more buffering in the write path (or a two pass write).  We recommend large row groups (512GB - 1GB).  Since an entire row group might need to be read, we want it to completely fit on one HDFS block.  Therefore, HDFS block sizes should also be set to be larger.  An optimized read setup would be: 1GB row groups, 1GB HDFS block size, 1 HDFS block per HDFS file.
-- Data page size: Data pages should be considered indivisible so smaller data pages allow for more fine grained reading (e.g. single row lookup).  Larger page sizes incur less space overhead (less page headers) and potentially less parsing overhead (processing headers).  Note: for sequential scans, it is not expected to read a page at a time; this is not the IO chunk.  We recommend 8KB for page sizes.
+- Row group size: Larger row groups allow for larger column chunks which makes it 
+possible to do larger sequential IO.  Larger groups also require more buffering in 
+the write path (or a two pass write).  We recommend large row groups (512GB - 1GB).  
+Since an entire row group might need to be read, we want it to completely fit on 
+one HDFS block.  Therefore, HDFS block sizes should also be set to be larger.  An 
+optimized read setup would be: 1GB row groups, 1GB HDFS block size, 1 HDFS block 
+per HDFS file.
+- Data page size: Data pages should be considered indivisible so smaller data pages 
+allow for more fine grained reading (e.g. single row lookup).  Larger page sizes 
+incur less space overhead (less page headers) and potentially less parsing overhead 
+(processing headers).  Note: for sequential scans, it is not expected to read a page 
+at a time; this is not the IO chunk.  We recommend 8KB for page sizes.
 
 ## Extensibility
 There are many places in the format for compatible extensions:
