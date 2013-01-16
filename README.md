@@ -1,4 +1,4 @@
-redfile
+redfile [![Build Status](https://travis-ci.org/twitter/redfile.png?branch=master)](redfile)
 ======
 Redfile is a columnar storage format that supports nested data.  
 
@@ -109,3 +109,8 @@ There are many places in the format for compatible extensions:
 - File Version: The file metadata contains a version.
 - Encodings: Encodings are specified by enum and more can be added in the future.  
 - Page types: Additional page types can be added and safely skipped.
+
+## License
+Copyright 2013 Twitter, Inc and other contributors.
+
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0

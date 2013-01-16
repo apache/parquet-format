@@ -78,7 +78,8 @@ struct DataPageHeader {
   /** Encoding used for this data page **/
   2: required Encoding encoding
 
-  /** TODO: should this contain min/max for this page? **/
+  /** TODO: should this contain min/max for this page? It could also be stored in an index page **/
+
 }
 
 struct IndexPageHeader {
@@ -90,14 +91,14 @@ struct PageHeader {
 
   /** Uncompressed page size in bytes **/
   2: required i32 uncompressed_page_size
-  
+
   /** Compressed page size in bytes **/
   3: required i32 compressed_page_size
 
   /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
    *  if only a few pages needs to be read 
    **/
-  4: required i32 crc
+  4: optional i32 crc
 
   5: optional DataPageHeader data_page;
   6: optional IndexPageHeader index_page;
@@ -118,7 +119,7 @@ struct ColumnMetaData {
   /** Type of this column **/
   1: required Type type
 
-  /** Set of all encodings used for this column **/
+  /** Set of all encodings used for this column. The purpose is to validate whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
   /** Path in schema **/
@@ -130,9 +131,11 @@ struct ColumnMetaData {
   /** Number of values in this column **/
   5: required i64 num_values
 
-  /** Max defintion and repetition levels **/
-  6: required i32 max_definition_level
-  7: required i32 max_repetition_level
+  /** total of uncompressed pages size in bytes **/
+  6: required i64 total_uncompressed_size
+
+  /** total of compressed pages size in bytes **/
+  7: required i64 total_compressed_size
 
   /** Byte offset from beginning of file to first data page **/
   8: required i64 data_page_offset
@@ -164,6 +167,8 @@ struct RowGroup {
   1: required list<ColumnChunk> columns
   /** Total byte size of all the uncompressed column data in this row group **/
   2: required i64 total_byte_size
+  /** Number of rows in this row group **/
+  3: required i64 num_rows
 }
 
 /**
@@ -176,8 +181,8 @@ struct FileMetaData {
   /** Number of rows in this file **/
   2: required i64 num_rows
 
-  /** Number of cols in the schema for this file **/
-  3: required i32 num_cols
+  /** schema for this file **/
+  3: required string schema
 
   /** Row groups in this file **/
   4: required list<RowGroup> row_groups
@@ -185,6 +190,4 @@ struct FileMetaData {
   /** Optional key/value metadata **/
   5: optional list<KeyValue> key_value_metadata
 
-  /** 32bit crc for the file metadata **/
-  6: optional i32 meta_data_crc
 }
