@@ -111,6 +111,6 @@ There are many places in the format for compatible extensions:
 - Page types: Additional page types can be added and safely skipped.
 
 ## License
-Copyright 2013 Twitter, Inc and other contributors.
+Copyright 2013 Twitter, Cloudera and other contributors.
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
