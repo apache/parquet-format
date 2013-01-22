@@ -61,16 +61,66 @@ Metadata is written after the data to allow for single pass writing.
 Readers are expected to first read the file metadata to find all the column 
 chunks they are interested in.  The columns chunks should then be read sequentially.
 
+## Metadata
+There are three types of metadata: file metadata, column (chunk) metadata and page
+header metadata.  All thrift structures are serialized using the TCompactProtocol.
+
+## Types
+The types supported by the file format are intended to be as minimal as possible,
+with a focus on how the types effect on disk storage.  For example, 16-bit ints
+are not explicitly supported in the storage format since they are covered by
+32-bit ints with an efficient encoding.  This reduces the complexity of implementing
+readers and writers for the format.  The types are:
+  - BOOLEAN: 1 bit boolean
+  - INT32: 32 bit signed ints
+  - INT64: 64 bit signed ints
+  - INT96: 96 bit signed ints
+  - FLOAT: IEEE 32-bit floating point values
+  - DOUBLE: IEEE 64-bit floating point values
+  - BYTE_ARRAY: arbitrarily long byte arrays.
+
 ## Nested Encoding
 To encode nested columns, redfile uses the dremel encoding with definition and 
-repetition levels.
-    TODO
+repetition levels.  Definition levels specify how many optional fields in the 
+path for the column are defined.  Repetition levels specify at what repeated field
+in the path has the value repeated.  The max definition and repetition levels can
+be computed from the schema (i.e. how much nesting is there).  This defines the
+maximum number of bits required to store the levels (levels are defined for all
+values in the column).  
+
+For the definition levels, the values are encoded using run length encoding.
+The run length encoding is serialized as follows:
+ - let max be the maximum definition level (determined by the schema)
+ - let w be the width in bits required to encode a definition level value. w = ceil(log2(max + 1))
+ - If the value is repeated we store:
+  - 1 as one bit
+  - the value encoded in w bits
+  - the repetition count as an unsigned var int. (see ULEB128: http://en.wikipedia.org/wiki/Variable-length_quantity)
+ - If the value is not repeated (or not repeated enough so that the above scheme would be more compact)
+  - 0 as one bit
+  - the value encoded in w bits
+
+For repetition levels, the levels are bit packed as tightly as possible, 
+rounding up to the nearest byte.  For example, if the max repetition level was 3
+(2 bits) and the max definition level as 3 (2 bits), to encode 30 values, we would
+have 30 * 2 = 60 bits = 8 bytes.
+
+## Nulls
+Nullity is encoded in the definition levels (which is run-length encoded).  NULL values 
+are not encoded in the data.  For example, in a non-nested schema, a column with 1000 NULLs 
+would be encoded with run-length encoding (0, 1000 times) for the definition levels and
+nothing else.  
+
+## Data Pages
+For data pages, the 3 pieces of information are encoded back to back, after the page
+header.  We'll have the definition levels, followed by repetition levels, followed
+by the encoded values.  The size of specified in the header is for all 3 pieces combined.
 
 ## Column chunks
-Column chunks are composed of pages written back to back.  The pages same a fixed 
+Column chunks are composed of pages written back to back.  The pages share a common 
 header and readers can skip over page they are not interested in.  The data for the 
 page follows the header and can be compressed and/or encoded.  The compression and 
-encoding is specified in the metadata.
+encoding is specified in the page metadata.
 
 ## Checksumming
 Data pages can be individually checksummed.  This allows disabling of checksums at the 

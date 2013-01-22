@@ -39,6 +39,68 @@ enum Type {
 }
 
 /**
+ * To help with conversion in between various type systems
+ * list of common types which can be encoded in the simpler model we use internally
+ */
+enum ConvertedType {
+  /** a BYTE_ARRAY actually contains UTF8 encoded chars */
+  UTF8 = 0;
+  /** a map is converted as an optional field containing a repeated key/value pair */
+  MAP = 1;
+  /** a key/value pair is converted into a group of two fields */
+  MAP_KEY_VALUE = 2;
+  /** a list is converted into an optional field containing a repeated field for its values */
+  LIST = 3;
+}
+
+/** 
+ * Representation of Schemas
+ */
+enum FieldRepetitionType {
+  /** This field is required (can not be null) and each record
+   * has exactly 1 value 
+   */
+  REQUIRED = 0;
+
+  /** The field is optional (can be null) and each record has
+   * 0 or 1 values
+   **/
+  OPTIONAL = 1;
+
+  /** The field is repeated and can contain 0 or more values **/
+  REPEATED = 2;
+}
+
+/**
+ * Represents a element inside a schema definition.
+ * if it is a group (inner node) then type is undefined and children_indices is defined
+ * if it is a primitive type (leaf) then type is defined and children_indices is undefined
+ */
+struct SchemaElement {
+  /** Data type for this field. e.g. int32 **/
+  1: optional Type type;
+
+  /** repetition of the field. The root of the schema does not have a field_type.
+   * All other nodes must have one **/
+  2: optional FieldRepetitionType field_type;
+
+  /** Name of the field in the schema **/
+  3: required string name;
+
+  /** Nested fields.  Since thrift does not support nested fields,
+   * the nesting is flattened to a single list.  These indices
+   * are used to construct the nested relationship.
+   * each index refers to its position in the list.
+   **/
+  4: optional list<i32> children_indices;
+
+  /** When the schema is the result of a conversion from another model
+   * Used to record the original type to help with cross conversion
+   **/
+  5: optional ConvertedType converted_type;
+}
+
+/**
  * Encodings supported by redfile.  Not all encodings are valid for all types.
  */
 enum Encoding {
@@ -119,7 +181,8 @@ struct ColumnMetaData {
   /** Type of this column **/
   1: required Type type
 
-  /** Set of all encodings used for this column. The purpose is to validate whether we can decode those pages. **/
+  /** Set of all encodings used for this column. The purpose is to validate 
+   * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
   /** Path in schema **/
@@ -178,16 +241,15 @@ struct FileMetaData {
   /** Version of this file **/
   1: required i32 version
 
-  /** Number of rows in this file **/
-  2: required i64 num_rows
+  /** Schema for this file. **/
+  2: required list<SchemaElement> schema;
 
-  /** schema for this file **/
-  3: required string schema
+  /** Number of rows in this file **/
+  3: required i64 num_rows
 
   /** Row groups in this file **/
   4: required list<RowGroup> row_groups
 
   /** Optional key/value metadata **/
   5: optional list<KeyValue> key_value_metadata
-
 }
