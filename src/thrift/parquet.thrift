@@ -17,14 +17,14 @@
  */
 
 /**
- * File format description for the redfile file format
+ * File format description for the parquet file format
  */
-namespace cpp redfile
-namespace java redfile
+namespace cpp parquet
+namespace java parquet.format
 
 /**
- * Types supported by redfile.  These types are intended to be for the storage
- * format, and in particular how they interact with different encodings.
+ * Types supported by Parquet.  These types are intended to be used in combination
+ * with the encodings to control the on disk storage format.
  * For example INT16 is not included as a type since a good encoding of INT32
  * would handle this.
  */
@@ -45,11 +45,15 @@ enum Type {
 enum ConvertedType {
   /** a BYTE_ARRAY actually contains UTF8 encoded chars */
   UTF8 = 0;
+
   /** a map is converted as an optional field containing a repeated key/value pair */
   MAP = 1;
+
   /** a key/value pair is converted into a group of two fields */
   MAP_KEY_VALUE = 2;
-  /** a list is converted into an optional field containing a repeated field for its values */
+
+  /** a list is converted into an optional field containing a repeated field for its 
+   * values */
   LIST = 3;
 }
 
@@ -73,39 +77,41 @@ enum FieldRepetitionType {
 
 /**
  * Represents a element inside a schema definition.
- * if it is a group (inner node) then type is undefined and children_indices is defined
- * if it is a primitive type (leaf) then type is defined and children_indices is undefined
+ * if it is a group (inner node) then type is undefined and num_children is defined
+ * if it is a primitive type (leaf) then type is defined and num_children is undefined
+ * the nodes are listed in depth first traversal order.
  */
 struct SchemaElement {
-  /** Data type for this field. e.g. int32 **/
+  /** Data type for this field. e.g. int32
+   * not set if the current element is a group node **/
   1: optional Type type;
 
-  /** repetition of the field. The root of the schema does not have a field_type.
+  /** repetition of the field. The root of the schema does not have a repetition_type.
    * All other nodes must have one **/
-  2: optional FieldRepetitionType field_type;
+  2: optional FieldRepetitionType repetition_type;
 
   /** Name of the field in the schema **/
   3: required string name;
 
   /** Nested fields.  Since thrift does not support nested fields,
-   * the nesting is flattened to a single list.  These indices
-   * are used to construct the nested relationship.
-   * each index refers to its position in the list.
+   * the nesting is flattened to a single list by a depth frist traversal.
+   * The children count is used to construct the nested relationship.
+   * This field is not set when the element is a primitive type
    **/
-  4: optional list<i32> children_indices;
+  4: optional i32 num_children;
 
   /** When the schema is the result of a conversion from another model
-   * Used to record the original type to help with cross conversion
+   * Used to record the original type to help with cross conversion.
    **/
   5: optional ConvertedType converted_type;
 }
 
 /**
- * Encodings supported by redfile.  Not all encodings are valid for all types.
+ * Encodings supported by Parquet.  Not all encodings are valid for all types.
  */
 enum Encoding {
   /** Default encoding.
-   * BOOLEAN - 1 bit per value.
+   * BOOLEAN - 1 bit per value. 0 is false; 1 is true.
    * INT32 - 4 bytes per value.  Stored as little-endian.
    * INT64 - 8 bytes per value.  Stored as little-endian.
    * FLOAT - 4 bytes per value.  IEEE. Stored as little-endian.
@@ -139,9 +145,6 @@ struct DataPageHeader {
 
   /** Encoding used for this data page **/
   2: required Encoding encoding
-
-  /** TODO: should this contain min/max for this page? It could also be stored in an index page **/
-
 }
 
 struct IndexPageHeader {
@@ -194,10 +197,10 @@ struct ColumnMetaData {
   /** Number of values in this column **/
   5: required i64 num_values
 
-  /** total of uncompressed pages size in bytes **/
+  /** total byte size of all uncompressed pages in this column chunk **/
   6: required i64 total_uncompressed_size
 
-  /** total of compressed pages size in bytes **/
+  /** total byte size of all compressed pages in this column chunk **/
   7: required i64 total_compressed_size
 
   /** Byte offset from beginning of file to first data page **/
@@ -228,8 +231,10 @@ struct ColumnChunk {
   
 struct RowGroup {
   1: required list<ColumnChunk> columns
+
   /** Total byte size of all the uncompressed column data in this row group **/
   2: required i64 total_byte_size
+
   /** Number of rows in this row group **/
   3: required i64 num_rows
 }
@@ -241,7 +246,9 @@ struct FileMetaData {
   /** Version of this file **/
   1: required i32 version
 
-  /** Schema for this file. **/
+  /** Schema for this file.
+   * Nodes are listed in depth-first traversal order.
+   * The first element is the root **/
   2: required list<SchemaElement> schema;
 
   /** Number of rows in this file **/
