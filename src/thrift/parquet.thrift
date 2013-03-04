@@ -39,8 +39,9 @@ enum Type {
 }
 
 /**
- * To help with conversion in between various type systems
- * list of common types which can be encoded in the simpler model we use internally
+ * Common types used by frameworks(e.g. hive, pig) using parquet.  This helps map
+ * between types in those frameworks to the base types in parquet.  This is only
+ * metadata and not needed to read or write the data.
  */
 enum ConvertedType {
   /** a BYTE_ARRAY actually contains UTF8 encoded chars */
@@ -77,8 +78,8 @@ enum FieldRepetitionType {
 
 /**
  * Represents a element inside a schema definition.
- * if it is a group (inner node) then type is undefined and num_children is defined
- * if it is a primitive type (leaf) then type is defined and num_children is undefined
+ *  - if it is a group (inner node) then type is undefined and num_children is defined
+ *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
  * the nodes are listed in depth first traversal order.
  */
 struct SchemaElement {
@@ -94,7 +95,7 @@ struct SchemaElement {
   3: required string name;
 
   /** Nested fields.  Since thrift does not support nested fields,
-   * the nesting is flattened to a single list by a depth frist traversal.
+   * the nesting is flattened to a single list by a depth-first traversal.
    * The children count is used to construct the nested relationship.
    * This field is not set when the element is a primitive type
    **/
@@ -117,11 +118,24 @@ enum Encoding {
    * FLOAT - 4 bytes per value.  IEEE. Stored as little-endian.
    * DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian.
    * BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes.  
-   */
+   **/
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64. **/
   GROUP_VAR_INT = 1;
+
+  /** Dictionary encoding. The values in the dictionary are encoded in the 
+   * plain type. 
+   **/
+  PLAIN_DICTIONARY = 2;
+}
+
+/**
+ * Encoding to be used for definition/reptition levels.
+ */
+enum FieldLevelEncoding {
+  BIT_PACKED = 0;
+  RLE = 1;
 }
 
 /**
@@ -137,6 +151,7 @@ enum CompressionCodec {
 enum PageType {
   DATA_PAGE = 0;
   INDEX_PAGE = 1;
+  DICTIONARY_PAGE = 2;
 }
 
 /** Data page header **/
@@ -146,10 +161,21 @@ struct DataPageHeader {
 
   /** Encoding used for this data page **/
   2: required Encoding encoding
+
+  /** Encoding used for definition levels **/
+  3: required FieldLevelEncoding definition_level_encoding;
+
+  /** Encoding used for repetition levels **/
+  4: required FieldLevelEncoding repetition_level_encoding;
 }
 
 struct IndexPageHeader {
   /** TODO: **/
+}
+
+struct DictionaryPageHeader {
+  // Number of values in the dictionary
+  1: required i32 num_values;
 }
 
 struct PageHeader {
@@ -166,8 +192,10 @@ struct PageHeader {
    **/
   4: optional i32 crc
 
+  // Headers for page specific data.  One only will be set.
   5: optional DataPageHeader data_page_header;
   6: optional IndexPageHeader index_page_header;
+  7: optional DictionaryPageHeader dictionary_page_header;
 }
 
 /** 
@@ -176,7 +204,7 @@ struct PageHeader {
  struct KeyValue {
   1: required string key
   2: optional string value
- }
+}
 
 /**
  * Description for column metadata
@@ -204,19 +232,22 @@ struct ColumnMetaData {
   /** total byte size of all compressed pages in this column chunk **/
   7: required i64 total_compressed_size
 
+  /** Optional key/value metadata **/
+  8: optional list<KeyValue> key_value_metadata
+
   /** Byte offset from beginning of file to first data page **/
-  8: required i64 data_page_offset
+  9: required i64 data_page_offset
 
   /** Byte offset from beginning of file to root index page **/
-  9: optional i64 index_page_offset
+  10: optional i64 index_page_offset
 
-  /** Optional key/value metadata **/
-  10: optional list<KeyValue> key_value_metadata
+  /** Byte offset from the beginning of file to first (only) dictionary page **/
+  11: optional i64 dictionary_page_offset
 }
 
 struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as 
-    * metadata 
+    * metadata.  This path is relative to the current file.
     **/
   1: optional string file_path
 
@@ -247,8 +278,11 @@ struct FileMetaData {
   /** Version of this file **/
   1: required i32 version
 
-  /** Schema for this file.
-   * Nodes are listed in depth-first traversal order.
+  /** Parquet schema for this file.  This schema contains metadata for all the columns.
+   * The schema is represented as a tree with a single root.  The nodes of the tree
+   * are flattened to a list by doing a depth-first traversal.
+   * The column metadata contains the path in the schema for that column which can be
+   * used to map columns to nodes in the schema.
    * The first element is the root **/
   2: required list<SchemaElement> schema;
 
