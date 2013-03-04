@@ -93,7 +93,16 @@ be computed from the schema (i.e. how much nesting is there).  This defines the
 maximum number of bits required to store the levels (levels are defined for all
 values in the column).  
 
-For the definition levels, the values are encoded using run length encoding.
+Two encodings for the levels are supported in the initial version.  
+
+### Bit-packed 
+The first is a bit-packed encoding.  Each level is encoding in the minimum number of bits and simply
+encoded back to back.  This is no padding between values (except the last byte).
+For example, if the max repetition level was 3 (2 bits) and the max definition level as 3 
+(2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
+
+### RLE
+The second encoding is bit-packed run-length-encoding.
 The run length encoding is serialized as follows:
  - let max be the maximum definition level (determined by the schema)
  - let w be the width in bits required to encode a definition level value. w = ceil(log2(max + 1))
@@ -112,10 +121,7 @@ To sum up:
  - value is stored as w bits
  - count is stored as var int
 
-For repetition levels, the levels are bit packed as tightly as possible, 
-rounding up to the nearest byte.  For example, if the max repetition level was 3
-(2 bits) and the max definition level as 3 (2 bits), to encode 30 values, we would
-have 30 * 2 = 60 bits = 8 bytes.
+The size of all the RLE data comes before the encoded data.  The length is encoded in little endian.
 
 ## Nulls
 Nullity is encoded in the definition levels (which is run-length encoded).  NULL values 
@@ -125,8 +131,20 @@ nothing else.
 
 ## Data Pages
 For data pages, the 3 pieces of information are encoded back to back, after the page
-header.  We'll have the definition levels, followed by repetition levels, followed
-by the encoded values.  The size of specified in the header is for all 3 pieces combined.
+header.  We have the 
+ - definition levels data,  
+ - repetition levels data, 
+ - encoded values.
+The size of specified in the header is for all 3 pieces combined.
+
+The data for the data page is always required.  The definition and reptition levels
+are optional, based on the schema definition.  If the column is not nested (i.e.
+the path to the column has length 1), we do not encode the reptition levels (it would
+always have the value 1).  For data that is required, the definition levels are
+skipped (if encoded, it will always have the value of the max definition level). 
+
+For example, in the case where the column is non-nested and required, the data in the
+page is only the encoded values.
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
@@ -151,6 +169,11 @@ be unreadable.  This can be fixed by writing the file metadata every Nth row gro
 Each file metadata would be cumulative and include all the row groups written so 
 far.  Combining this with the strategy used for rc or avro files using sync markers, 
 a reader could recovery partially written files.  
+
+## Separating metadata and column data.
+The format is explicitly designed to separate the metadata from the data.  This
+allows splitting columns into multiple files as well as having a single metadata
+file reference multiple parquet files.  
 
 ## Configurations
 - Row group size: Larger row groups allow for larger column chunks which makes it 
