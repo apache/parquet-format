@@ -1,4 +1,4 @@
-Parquet [![Build Status](https://travis-ci.org/Parquet/parquet-format.png?branch=master)](parquet)
+Parquet [![Build Status](https://travis-ci.org/Parquet/parquet-format.png?branch=master)](http://travis-ci.org/Parquet/parquet-format)
 ======
 Parquet is a columnar storage format that supports nested data.
 
