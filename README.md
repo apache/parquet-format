@@ -4,13 +4,39 @@ Parquet is a columnar storage format that supports nested data.
 
 Parquet metadata is encoded using Apache Thrift.
 
-The Parquet-format project contains all Thrift definitions that are necessary to create readers
-and writers for Parquet files. 
+The `Parquet-format` project contains all Thrift definitions that are necessary to create readers
+and writers for Parquet files.
+
+## Motivation
+
+We created Parquet to make the advantages of compressed, efficient columnar data representation available to any project in the Hadoop ecosystem.
+
+Parquet is built from the ground up with complex nested data structures in mind, and uses the r[record shredding and assembly algorithm](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) described in the Dremel paper. We believe this approach is superior to simple flattening of nested name spaces.
+
+Parquet is built to support very efficient compression and encoding schemes. Multiple projects have demonstrated the performance impact of applying the right compression and encoding scheme to the data. Parquet allows compression schemes to be specified on a per-column level, and is future-proofed to allow adding more encodings as they are invented and implemented.
+
+Parquet is built to be used by anyone. The Hadoop ecosystem is rich with data processing frameworks, and we are not interested in playing favorites. We believe that an efficient, well-implemented columnar storage substrate should be useful to all frameworks without the cost of extensive and difficult to set up dependencies.
+
+## Modules
+
+The `parquet-format` project contains format specifications and Thrift definitions of metadata required to properly read Parquet files.
+
+The `parquet-mr` project contains multiple sub-modules, which implement the core components of reading and writing a nested, column-oriented data stream, map this core onto the parquet format, and provide Hadoop Input/Output Formats, Pig loaders, and other java-based utilities for interacting with Parquet.
+
+The `parquet-compatibility` project contains compatibility tests that can be used to verify that implementations in different languages can read and write each other's files.
+
+## Building
+
+Java resources can be build using `mvn package.` The current stable version should always be available from Maven Central.
+
+C++ thrift resources can be generated via make.
+
+Thrift can be also code-genned into any other thrift-supported language.
 
 ## Glossary
   - Block (hdfs block): This means a block in hdfs and the meaning is 
     unchanged for describing this file format.  The file format is 
-    designed to work well ontop of hdfs.
+    designed to work well on top of hdfs.
 
   - File: A hdfs file that must include the metadata for the file.
     It does not need to actually contain the data.
@@ -38,7 +64,7 @@ more pages.
 ## File format
 This file and the thrift definition should be read together to understand the format.
 
-    4-byte magic number "RED1"
+    4-byte magic number "PAR1"
     <Column 1 Chunk 1 + Column Metadata>
     <Column 2 Chunk 1 + Column Metadata>
     ...
@@ -85,7 +111,7 @@ readers and writers for the format.  The types are:
   - BYTE_ARRAY: arbitrarily long byte arrays.
 
 ## Nested Encoding
-To encode nested columns, Parquet uses the dremel encoding with definition and 
+To encode nested columns, Parquet uses the Dremel encoding with definition and 
 repetition levels.  Definition levels specify how many optional fields in the 
 path for the column are defined.  Repetition levels specify at what repeated field
 in the path has the value repeated.  The max definition and repetition levels can
