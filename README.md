@@ -79,8 +79,8 @@ This file and the thrift definition should be read together to understand the fo
     ...
     <Column N Chunk M + Column Metadata>
     File Metadata
-    4-byte offset from end of file to start of file metadata
-    4-byte magic number "RED1"
+    4-byte length in bytes of file metadata
+    4-byte magic number "PAR1"
 
 In the above example, there are N columns in this table, split into M row 
 groups.  The file metadata contains the locations of all the column metadata 
@@ -91,6 +91,8 @@ Metadata is written after the data to allow for single pass writing.
 
 Readers are expected to first read the file metadata to find all the column 
 chunks they are interested in.  The columns chunks should then be read sequentially.
+
+ ![File Layout](https://raw.github.com/Parquet/parquet-format/master/doc/images/FileLayout.gif)
 
 ## Metadata
 There are three types of metadata: file metadata, column (chunk) metadata and page
