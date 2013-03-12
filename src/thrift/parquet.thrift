@@ -36,6 +36,7 @@ enum Type {
   FLOAT = 4;
   DOUBLE = 5;
   BYTE_ARRAY = 6;
+  FIXED_LEN_BYTE_ARRAY = 7;
 }
 
 /**
@@ -62,17 +63,13 @@ enum ConvertedType {
  * Representation of Schemas
  */
 enum FieldRepetitionType {
-  /** This field is required (can not be null) and each record
-   * has exactly 1 value 
-   */
+  /** This field is required (can not be null) and each record has exactly 1 value. */
   REQUIRED = 0;
 
-  /** The field is optional (can be null) and each record has
-   * 0 or 1 values
-   **/
+  /** The field is optional (can be null) and each record has 0 or 1 values. */
   OPTIONAL = 1;
 
-  /** The field is repeated and can contain 0 or more values **/
+  /** The field is repeated and can contain 0 or more values */
   REPEATED = 2;
 }
 
@@ -83,32 +80,40 @@ enum FieldRepetitionType {
  * the nodes are listed in depth first traversal order.
  */
 struct SchemaElement {
-  /** Data type for this field. e.g. int32
-   * not set if the current element is a group node **/
+  /** Data type for this field. Not set if the current element is a non-leaf node */
   1: optional Type type;
 
-  /** repetition of the field. The root of the schema does not have a repetition_type.
-   * All other nodes must have one **/
-  2: optional FieldRepetitionType repetition_type;
+  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the vales.
+   * Otherwise, if specified, this is the maximum bit length to store any of the values.
+   * (e.g. a low cardinality INT col could have this set to 3).  Note that this is
+   * in the schema, and therefore fixed for the entire file.
+   */
+  2: optional i32 type_length;
 
-  /** Name of the field in the schema **/
-  3: required string name;
+  /** repetition of the field. The root of the schema does not have a repetition_type.
+   * All other nodes must have one */
+  3: optional FieldRepetitionType repetition_type;
+
+  /** Name of the field in the schema */
+  4: required string name;
 
   /** Nested fields.  Since thrift does not support nested fields,
    * the nesting is flattened to a single list by a depth-first traversal.
    * The children count is used to construct the nested relationship.
    * This field is not set when the element is a primitive type
-   **/
-  4: optional i32 num_children;
+   */
+  5: optional i32 num_children;
 
   /** When the schema is the result of a conversion from another model
    * Used to record the original type to help with cross conversion.
-   **/
-  5: optional ConvertedType converted_type;
+   */
+  6: optional ConvertedType converted_type;
 }
 
 /**
- * Encodings supported by Parquet.  Not all encodings are valid for all types.
+ * Encodings supported by Parquet.  Not all encodings are valid for all types.  These
+ * enums are also used to specify the encoding of definition and repetition levels.
+ * See the accompanying doc for the details of the more complicated encodings.
  */
 enum Encoding {
   /** Default encoding.
@@ -118,24 +123,25 @@ enum Encoding {
    * FLOAT - 4 bytes per value.  IEEE. Stored as little-endian.
    * DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian.
    * BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes.  
-   **/
+   * FIXED_LEN_BYTE_ARRAY - Just the bytes.
+   */
   PLAIN = 0;
 
-  /** Group VarInt encoding for INT32/INT64. **/
+  /** Group VarInt encoding for INT32/INT64. */
   GROUP_VAR_INT = 1;
 
   /** Dictionary encoding. The values in the dictionary are encoded in the 
    * plain type. 
-   **/
+   */
   PLAIN_DICTIONARY = 2;
-}
 
-/**
- * Encoding to be used for definition/reptition levels.
- */
-enum FieldLevelEncoding {
-  BIT_PACKED = 0;
-  RLE = 1;
+  /** Group packed run length encoding. Usable for definition/reptition levels
+   * encoding */
+  RLE = 3;
+
+  /** Bit packed encoding.  This can only be used if the data has a known max
+   * width.  Usable for definition/repetition levels encoding.  **/
+  BIT_PACKED = 4;
 }
 
 /**
@@ -154,7 +160,7 @@ enum PageType {
   DICTIONARY_PAGE = 2;
 }
 
-/** Data page header **/
+/** Data page header */
 struct DataPageHeader {
   // Number of values, including NULLs, in this data page.
   1: required i32 num_values
@@ -163,10 +169,10 @@ struct DataPageHeader {
   2: required Encoding encoding
 
   /** Encoding used for definition levels **/
-  3: required FieldLevelEncoding definition_level_encoding;
+  3: required Encoding definition_level_encoding;
 
   /** Encoding used for repetition levels **/
-  4: required FieldLevelEncoding repetition_level_encoding;
+  4: required Encoding repetition_level_encoding;
 }
 
 struct IndexPageHeader {
@@ -295,3 +301,4 @@ struct FileMetaData {
   /** Optional key/value metadata **/
   5: optional list<KeyValue> key_value_metadata
 }
+
