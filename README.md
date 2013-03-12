@@ -79,7 +79,7 @@ This file and the thrift definition should be read together to understand the fo
     ...
     <Column N Chunk M + Column Metadata>
     File Metadata
-    4-byte offset from end of file to start of file metadata
+    4-byte length in bytes of file metadata
     4-byte magic number "PAR1"
 
 In the above example, there are N columns in this table, split into M row 
