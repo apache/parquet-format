@@ -162,7 +162,7 @@ enum PageType {
 
 /** Data page header */
 struct DataPageHeader {
-  // Number of values, including NULLs, in this data page.
+  /** Number of values, including NULLs, in this data page. **/
   1: required i32 num_values
 
   /** Encoding used for this data page **/
@@ -180,11 +180,15 @@ struct IndexPageHeader {
 }
 
 struct DictionaryPageHeader {
-  // Number of values in the dictionary
+  /** Number of values in the dictionary **/
   1: required i32 num_values;
+
+  /** Encoding using this dictionary page **/
+  2: required Encoding encoding
 }
 
 struct PageHeader {
+  /** the type of the page: indicates which of the *_header fields is set **/
   1: required PageType type
 
   /** Uncompressed page size in bytes **/
