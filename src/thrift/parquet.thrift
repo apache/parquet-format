@@ -304,5 +304,11 @@ struct FileMetaData {
 
   /** Optional key/value metadata **/
   5: optional list<KeyValue> key_value_metadata
+
+  /** String for application that wrote this file.  This should be in the format
+   * <Application> version <App Version> (build <App Build Hash>).  
+   * e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55)
+   **/
+  6: optional string created_by
 }
 
