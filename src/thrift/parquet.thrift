@@ -191,10 +191,10 @@ struct PageHeader {
   /** the type of the page: indicates which of the *_header fields is set **/
   1: required PageType type
 
-  /** Uncompressed page size in bytes **/
+  /** Uncompressed page size in bytes (not including this header) **/
   2: required i32 uncompressed_page_size
 
-  /** Compressed page size in bytes **/
+  /** Compressed page size in bytes (not including this header) **/
   3: required i32 compressed_page_size
 
   /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
@@ -236,10 +236,10 @@ struct ColumnMetaData {
   /** Number of values in this column **/
   5: required i64 num_values
 
-  /** total byte size of all uncompressed pages in this column chunk **/
+  /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed pages in this column chunk **/
+  /** total byte size of all compressed pages in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
   /** Optional key/value metadata **/
