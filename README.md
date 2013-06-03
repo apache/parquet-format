@@ -235,8 +235,7 @@ using the RLE/Bit-Packing Hybrid encoding described above. If the dictionary gro
 or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
 written first, before the data pages of the column chunk.
 
-Dictionary page format: the number of entries in the dictionary as 2 bytes little endian
-followed by the entries in the dictionary using the plain encoding described above.
+Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding described above.
 
 Data page format: the maximum dictionary entry id at the time of writing the page as 2 bytes little
 endian, followed by the values encoded using RLE/Bit packed described above. The bit width is 
