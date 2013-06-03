@@ -229,13 +229,14 @@ stores the data in the following format:
  - FIXED_LEN_BYTE_ARRAY: the bytes contained in the array
 
 ### Dictionary Encoding (PLAIN_DICTIONARY = 2)
-The dictionary encoding builds a dictionary of values encountered in a given columns. The 
-dictionary will be stored in a dictionary page per row group. The values are stored as integers
-using the RLE/Bit packing encoding described above. If the dictionary grows too big, whether in size
-or number of distinct values, the encoding will fall back to the plain encoding.
+The dictionary encoding builds a dictionary of values encountered in a given column. The 
+dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
+using the RLE/Bit-Packing Hybrid encoding described above. If the dictionary grows too big, whether in size
+or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
+written first, before the data pages of the column chunk.
 
 Dictionary page format: the number of entries in the dictionary as 2 bytes little endian
-followed by the entries in the dictionary as in the plain encoding.
+followed by the entries in the dictionary using the plain encoding described above.
 
 Data page format: the maximum dictionary id at the time of writing the page as 2 bytes little
 endian, followed by the values encoded using RLE/Bit packed described above. The bit width is 
