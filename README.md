@@ -205,7 +205,7 @@ header.  We have the
  - encoded values.
 The size of specified in the header is for all 3 pieces combined.
 
-The data for the data page is always required.  The definition and reptition levels
+The data for the data page is always required.  The definition and repetition levels
 are optional, based on the schema definition.  If the column is not nested (i.e.
 the path to the column has length 1), we do not encode the repetition levels (it would
 always have the value 1).  For data that is required, the definition levels are
