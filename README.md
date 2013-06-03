@@ -238,12 +238,12 @@ written first, before the data pages of the column chunk.
 Dictionary page format: the number of entries in the dictionary as 2 bytes little endian
 followed by the entries in the dictionary using the plain encoding described above.
 
-Data page format: the maximum dictionary id at the time of writing the page as 2 bytes little
+Data page format: the maximum dictionary entry id at the time of writing the page as 2 bytes little
 endian, followed by the values encoded using RLE/Bit packed described above. The bit width is 
-derived from the maximum dictionary id.
+derived from the maximum dictionary entry id.
 
  - The dictionary has a maximum of 2^16 - 1 entries
- - the bit width for the rle encoded value is derived from the max dictionary id: 2^(width-1) <= max dictionary id < 2^width
+ - the bit width for the rle encoded value is derived from the max dictionary entry id: 2^(width-1) <= max dictionary entry id < 2^width
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
