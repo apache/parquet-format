@@ -125,7 +125,7 @@ values in the column).
 
 Two encodings for the levels are supported in the initial version.  
 
-### Bit-packed (Deprecated)
+### Bit-packed (Deprecated) (BIT_PACKED = 4)
 The first is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
 Each value is encoded back to back using a fixed width.
 There is no padding between values (except for the last byte) which is padded with 0s.
@@ -148,7 +148,7 @@ bit value: 00000101 00111001 01110111
 bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 ```
 
-### Run Length Encoding / Bit-Packing Hybrid
+### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 The second encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
 The grammar for this ecoding looks like this, given a fixed bit-width known in advance:
@@ -205,14 +205,40 @@ header.  We have the
  - encoded values.
 The size of specified in the header is for all 3 pieces combined.
 
-The data for the data page is always required.  The definition and reptition levels
+The data for the data page is always required.  The definition and repetition levels
 are optional, based on the schema definition.  If the column is not nested (i.e.
-the path to the column has length 1), we do not encode the reptition levels (it would
+the path to the column has length 1), we do not encode the repetition levels (it would
 always have the value 1).  For data that is required, the definition levels are
 skipped (if encoded, it will always have the value of the max definition level). 
 
 For example, in the case where the column is non-nested and required, the data in the
 page is only the encoded values.
+
+The following encodings are supported:
+
+### Plain encoding (PLAIN = 0)
+The plain encoding is used whenever a more efficient encoding can not be used. It 
+stores the data in the following format:
+ - BOOLEAN: Bit Packed (see above), LSB first
+ - INT32: 4 bytes little endian
+ - INT64: 8 bytes little endian
+ - INT96: 12 bytes little endian
+ - FLOAT: 4 bytes IEEE little endian
+ - DOUBLE: 8 bytes IEEE little endian
+ - BYTE_ARRAY: length in 4 bytes little endian followed by the bytes contained in the array
+ - FIXED_LEN_BYTE_ARRAY: the bytes contained in the array
+
+### Dictionary Encoding (PLAIN_DICTIONARY = 2)
+The dictionary encoding builds a dictionary of values encountered in a given column. The 
+dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
+using the RLE/Bit-Packing Hybrid encoding described above. If the dictionary grows too big, whether in size
+or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
+written first, before the data pages of the column chunk.
+
+Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding described above.
+
+Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
+followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
