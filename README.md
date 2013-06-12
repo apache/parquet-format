@@ -272,7 +272,7 @@ file reference multiple parquet files.
 ## Configurations
 - Row group size: Larger row groups allow for larger column chunks which makes it 
 possible to do larger sequential IO.  Larger groups also require more buffering in 
-the write path (or a two pass write).  We recommend large row groups (512GB - 1GB).  
+the write path (or a two pass write).  We recommend large row groups (512MB - 1GB). 
 Since an entire row group might need to be read, we want it to completely fit on 
 one HDFS block.  Therefore, HDFS block sizes should also be set to be larger.  An 
 optimized read setup would be: 1GB row groups, 1GB HDFS block size, 1 HDFS block 
