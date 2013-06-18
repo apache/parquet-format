@@ -153,8 +153,9 @@ The second encoding uses a combination of bit-packing and run length encoding to
 
 The grammar for this ecoding looks like this, given a fixed bit-width known in advance:
 ```
-rle-bit-packed-hybrid: <length> <run>*
-length := length of this column in bytes, stored as 4 bytes little endian
+rle-bit-packed-hybrid: <length> <encoded-data>
+length := length of the <encoded-data> in bytes stored as 4 bytes little endian
+encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>  
 bit-packed-run := <bit-packed-header> <bit-packed-values>  
 bit-packed-header := varint-encode(<bit-pack-count> << 1 | 1)  
