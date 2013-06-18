@@ -151,7 +151,7 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 ### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 The second encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
-The grammar for this ecoding looks like this, given a fixed bit-width known in advance:
+The grammar for this encoding looks like this, given a fixed bit-width known in advance:
 ```
 rle-bit-packed-hybrid: <length> <encoded-data>
 length := length of the <encoded-data> in bytes stored as 4 bytes little endian
