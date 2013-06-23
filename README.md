@@ -84,7 +84,7 @@ This file and the thrift definition should be read together to understand the fo
 
 In the above example, there are N columns in this table, split into M row 
 groups.  The file metadata contains the locations of all the column metadata 
-start locations.  More details on what is contained in the metdata can be found 
+start locations.  More details on what is contained in the metadata can be found 
 in the thrift files.
 
 Metadata is written after the data to allow for single pass writing.
