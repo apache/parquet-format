@@ -1,4 +1,3 @@
-
 Parquet encoding definitions
 ====
 
@@ -55,3 +54,62 @@ a complete group should still be output with 0's filling in for the remainder.
 For example, if the input was (1,2,3,4,5): the resulting encoding should
 behave as if the input was (1,2,3,4,5,0,0,0) and the two groups should be
 encoded back to back.
+
+### Delta Encoding
+Supported Types: INT32, INT64
+
+Delta encoding consists of blocks of delta encoded values. Each block contains the
+<num values in block> <first value> <min delta> <rle encoded deltas>
+
+The number of values in the block is encoded as a VLQ int.
+
+Having multiple blocks allows us to escape values and restart from a new base value.
+
+To encode each delta block, we will:
+
+1. Compute the deltas
+
+2. Compute the frame of reference(minimum of the deltas) for the deltas. This guarantees
+all deltas are positive.
+
+3. Encode the first value as PLAIN encoded, the frame of reference delta as PLAIN
+followed by the delta values as RLE encoded.
+
+Steps 2 and 3 are skipped if the number of values in the block is 1.
+
+#### Example 1
+1, 2, 3, 4, 5
+
+After step 1), we compute the deltas as:
+
+1, 1, 1, 1
+
+The minimum delta is 1 and after step 2, the deltas become
+
+0, 0, 0, 0
+
+The final encoded data is:
+
+5, 1, 1, < 4 0's > (The first '1' is the first value of the dataset).
+
+#### Example 2
+7, 5, 3, 1, 2, 3, 4, 5, the deltas would be
+
+-2, -2, -2, 1, 1, 1, 1
+
+The minimum is -2, so the relative deltas are:
+
+0, 0, 0, 3, 3, 3, 3
+
+The encoded data is
+
+8, 7, -2, < 3 0's >, < 4 3's >
+
+#### Example 3
+1, 1, 1, 1, 100, 1, 1, 1
+
+Would be encoded as three blocks of 4 values, 1 value and 3 values.
+
+The encoded data is
+
+4, 1, 0, 3 0's, 1, 100, 3, 1, 0, 2'0s

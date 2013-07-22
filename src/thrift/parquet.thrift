@@ -142,6 +142,9 @@ enum Encoding {
   /** Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.  **/
   BIT_PACKED = 4;
+
+  /** Delta encoding for integer types. The deltas are encoded using RLE. **/
+  DELTA_RLE = 5;
 }
 
 /**
