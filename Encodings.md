@@ -113,3 +113,24 @@ Would be encoded as three blocks of 4 values, 1 value and 3 values.
 The encoded data is
 
 4, 1, 0, 3 0's, 1, 100, 3, 1, 0, 2'0s
+
+### Delta-length byte array:
+
+Supported Types: BYTE_ARRAY
+
+This encoding is always preferred over PLAIN for byte array columns.
+
+For this encoding, we will take all the byte array lengths and encode them using delta
+encoding. The byte array data follows all of the length data just concatenated back to 
+back. The expected savings is from the cost of encoding the lengths and possibly 
+better compression in the data (it is no longer interleaved with the lengths).
+
+The data stream looks like:
+
+<Delta Encoded Lengths> <Byte Array Data>
+
+For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
+
+The encoded data would be
+DeltaEncoding(4, 4, 5, 5) "HellowWorldFoobarABCDEF"
+
