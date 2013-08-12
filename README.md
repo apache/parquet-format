@@ -248,6 +248,12 @@ header and readers can skip over page they are not interested in.  The data for 
 page follows the header and can be compressed and/or encoded.  The compression and 
 encoding is specified in the page metadata.
 
+## Schema Resolution
+Schemas should be resolved by name. Columns from two different schemas are considered
+equal if the full path is the same (ignoring case). The type of the columns and field 
+repetition type must be identical. If a reader schema contains a column that is not
+in file schema, NULLs should be returned for that column.
+
 ## Checksumming
 Data pages can be individually checksummed.  This allows disabling of checksums at the 
 HDFS file level, to better support single row lookups.
