@@ -254,6 +254,8 @@ equal if the full path is the same (ignoring case). The type of the columns and 
 repetition type must be identical. If a reader schema contains a column that is not
 in file schema, NULLs should be returned for that column.
 
+The name of the root schema object is arbitrary and does not need to be compared.
+
 ## Checksumming
 Data pages can be individually checksummed.  This allows disabling of checksums at the 
 HDFS file level, to better support single row lookups.
