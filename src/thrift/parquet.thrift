@@ -220,10 +220,10 @@ struct PageHeader {
  * Wrapper struct to specify sort order
  */
 struct SortingColumn {
-  /** The column index (in this row group)
+  /** The column index (in this row group) **/
   1: required i32 column_idx
 
-  /** If true, indicates this column is sorted in descending order.
+  /** If true, indicates this column is sorted in descending order. **/
   2: required bool descending
 
   /** If true, nulls will come before non-null values, otherwise,
