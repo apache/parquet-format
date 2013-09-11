@@ -171,7 +171,7 @@ enum Encoding {
    * on sorted data
    */
   DELTA_BINARY_PACKED = 5;
-  
+
   /** Encoding for byte arrays to separate the length values and the data. The lengths
    * are encoded using DELTA_BINARY_PACKED
    */
@@ -220,7 +220,17 @@ struct DataPageHeader {
 }
 
 struct IndexPageHeader {
-  /** TODO: **/
+  /** The number of entries in this index page **/
+  1: required i32 num_entries
+
+  2: required bool is_ordinal_index
+
+  /** The number of bytes to use for the key and the key must be encoded as a
+    * byte comparable byte sequence.*/
+  3: required int key_byte_length
+
+  /** Encoding used for values. Only used if it is not an ordinal index **/
+  3: optional Encoding encoding
 }
 
 struct DictionaryPageHeader {
