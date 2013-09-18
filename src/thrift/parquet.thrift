@@ -94,7 +94,7 @@ struct Statistics {
    /** count of null value in the column */
    3: optional i64 null_count;
    /** all the dictinct values occuring */
-   4: optional List<ValueStats> distinct_values;
+   4: optional list<ValueStats> distinct_values;
 }
 
 /**
@@ -199,11 +199,8 @@ struct DataPageHeader {
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
 
-  /** Optional key/value metadata */
-  5: optional list<KeyValue> key_value_metadata;
-
   /** optional statistics for this page */
-  6: optional Statistics statistics;
+  5: optional Statistics statistics;
 }
 
 struct IndexPageHeader {
@@ -238,14 +235,11 @@ struct LevelsApartDataPageHeader {
   /** length of the definition levels */
   5: required i32 repetition_levels_byte_length;
 
-  /** wether the values are compressed at all */
-  6: optional is_compressed = true;
-
-  /** Optional key/value metadata */
-  7: optional list<KeyValue> key_value_metadata;
+  /** wether the values are compressed at all. if missing it is considered compressed */
+  6: optional bool is_compressed;
 
   /** optional statistics for this column chunk */
-  8: optional Statistics statistics;
+  7: optional Statistics statistics;
 }
 
 struct PageHeader {
