@@ -55,3 +55,16 @@ a complete group should still be output with 0's filling in for the remainder.
 For example, if the input was (1,2,3,4,5): the resulting encoding should
 behave as if the input was (1,2,3,4,5,0,0,0) and the two groups should be
 encoded back to back.
+
+### Delta Strings:
+
+Supported Types: BYTE_ARRAY
+
+This is also known as incremental encoding or front compression: for each element in a
+sorted sequence of strings, store the prefix length of the previous entry plus the
+suffix.
+
+For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
+
+This is stored as a sequence of delta-encoded prefix lengths (DELTA_RLE), followed by
+the suffixes encoded as RLE-length strings (RLE_LENGTH_STRINGS). 
