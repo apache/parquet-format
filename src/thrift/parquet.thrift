@@ -93,8 +93,8 @@ struct Statistics {
    2: optional binary min;
    /** count of null value in the column */
    3: optional i64 null_count;
-   /** all the dictinct values occuring */
-   4: optional list<ValueStats> distinct_values;
+   /** count of dictinct values occuring */
+   4: optional i64 distinct_count;
 }
 
 /**
