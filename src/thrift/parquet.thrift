@@ -58,7 +58,7 @@ enum ConvertedType {
    * values */
   LIST = 3;
 
-  /** enum */
+  /** an enum is converted into a binary field */
   ENUM = 4;
 }
 
