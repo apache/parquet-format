@@ -57,6 +57,9 @@ enum ConvertedType {
   /** a list is converted into an optional field containing a repeated field for its 
    * values */
   LIST = 3;
+
+  /** an enum is converted into a binary field */
+  ENUM = 4;
 }
 
 /** 
