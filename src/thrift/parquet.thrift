@@ -145,6 +145,10 @@ enum Encoding {
   /** Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.  **/
   BIT_PACKED = 4;
+
+  /** Delta encoding for integers. This can be used for int columns and works best 
+   * on sorted data */
+  DELTA_BINARY_PACKED = 5;
 }
 
 /**
