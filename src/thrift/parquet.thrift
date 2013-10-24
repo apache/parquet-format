@@ -57,6 +57,9 @@ enum ConvertedType {
   /** a list is converted into an optional field containing a repeated field for its 
    * values */
   LIST = 3;
+
+  /** an enum is converted into a binary field */
+  ENUM = 4;
 }
 
 /** 
@@ -217,6 +220,21 @@ struct PageHeader {
 }
 
 /**
+ * Wrapper struct to specify sort order
+ */
+struct SortingColumn {
+  /** The column index (in this row group) **/
+  1: required i32 column_idx
+
+  /** If true, indicates this column is sorted in descending order. **/
+  2: required bool descending
+
+  /** If true, nulls will come before non-null values, otherwise,
+   * nulls go at the end. */
+  3: required bool nulls_first
+}
+
+/**
  * Description for column metadata
  */
 struct ColumnMetaData {
@@ -279,6 +297,11 @@ struct RowGroup {
 
   /** Number of rows in this row group **/
   3: required i64 num_rows
+
+  /** If set, specifies a sort ordering of the rows in this RowGroup.
+   * The sorting columns can be a subset of all the columns.
+   */
+  4: optional list<SortingColumn> sorting_columns
 }
 
 /**
