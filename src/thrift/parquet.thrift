@@ -143,9 +143,6 @@ enum Encoding {
    * width.  Usable for definition/repetition levels encoding.  **/
   BIT_PACKED = 4;
 
-  /** Delta encoding for integer types. The deltas are encoded using RLE. **/
-  DELTA_RLE = 5;
-
   /** Encoding for byte arrays to separate the length values and the data. The lengths
    * are encoded using DELTA_RLE **/
   DELTA_LENGTH_BYTE_ARRAY = 6;
