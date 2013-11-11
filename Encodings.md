@@ -1,4 +1,3 @@
-
 Parquet encoding definitions
 ====
 
@@ -55,3 +54,24 @@ a complete group should still be output with 0's filling in for the remainder.
 For example, if the input was (1,2,3,4,5): the resulting encoding should
 behave as if the input was (1,2,3,4,5,0,0,0) and the two groups should be
 encoded back to back.
+
+### Delta-length byte array:
+
+Supported Types: BYTE_ARRAY
+
+This encoding is always preferred over PLAIN for byte array columns.
+
+For this encoding, we will take all the byte array lengths and encode them using delta
+encoding. The byte array data follows all of the length data just concatenated back to 
+back. The expected savings is from the cost of encoding the lengths and possibly 
+better compression in the data (it is no longer interleaved with the lengths).
+
+The data stream looks like:
+
+<Delta Encoded Lengths> <Byte Array Data>
+
+For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
+
+The encoded data would be
+DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
+
