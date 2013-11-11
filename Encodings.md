@@ -73,5 +73,5 @@ The data stream looks like:
 For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
 
 The encoded data would be
-DeltaEncoding(4, 4, 5, 5) "HellowWorldFoobarABCDEF"
+DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
 
