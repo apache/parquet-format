@@ -1,4 +1,3 @@
-
 Parquet encoding definitions
 ====
 
@@ -66,5 +65,5 @@ suffix.
 
 For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
 
-This is stored as a sequence of delta-encoded prefix lengths (DELTA_RLE), followed by
-the suffixes encoded as RLE-length strings (RLE_LENGTH_STRINGS). 
+This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKING), followed by
+the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY). 
