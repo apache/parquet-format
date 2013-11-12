@@ -130,7 +130,8 @@ enum Encoding {
    */
   PLAIN = 0;
 
-  /** Group VarInt encoding for INT32/INT64. */
+  /** Group VarInt encoding for INT32/INT64.
+   */
   GROUP_VAR_INT = 1;
 
   /** Dictionary encoding. The values in the dictionary are encoded in the
@@ -139,22 +140,27 @@ enum Encoding {
   PLAIN_DICTIONARY = 2;
 
   /** Group packed run length encoding. Usable for definition/reptition levels
-   * encoding */
+   * encoding
+   */
   RLE = 3;
 
   /** Bit packed encoding.  This can only be used if the data has a known max
-   * width.  Usable for definition/repetition levels encoding.  **/
+   * width.  Usable for definition/repetition levels encoding.
+   */
   BIT_PACKED = 4;
 
   /** Delta encoding for integers. This can be used for int columns and works best 
-   * on sorted data */
+   * on sorted data
+   */
   DELTA_BINARY_PACKED = 5;
   
   /** Encoding for byte arrays to separate the length values and the data. The lengths
-   * are encoded using DELTA_RLE **/
+   * are encoded using DELTA_BINARY_PACKED
+   */
   DELTA_LENGTH_BYTE_ARRAY = 6;
 
-  /** Delta-encoded sorted strings.
+  /** Incremental-encoded strings. Prefix lengths are encoded using DELTA_BINARY_PACKED.
+   * Suffixes are stored as delta length byte arrays.
    */
   DELTA_STRINGS = 7;
 }

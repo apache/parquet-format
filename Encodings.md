@@ -136,9 +136,9 @@ Supported Types: BYTE_ARRAY
 This encoding is always preferred over PLAIN for byte array columns.
 
 For this encoding, we will take all the byte array lengths and encode them using delta
-encoding. The byte array data follows all of the length data just concatenated back to 
-back. The expected savings is from the cost of encoding the lengths and possibly 
-better compression in the data (it is no longer interleaved with the lengths).
+encoding (DELTA_BINARY_PACKED). The byte array data follows all of the length data just
+concatenated back to back. The expected savings is from the cost of encoding the lengths
+and possibly better compression in the data (it is no longer interleaved with the lengths).
 
 The data stream looks like:
 
@@ -153,8 +153,7 @@ The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
 Supported Types: BYTE_ARRAY
 
 This is also known as incremental encoding or front compression: for each element in a
-sorted sequence of strings, store the prefix length of the previous entry plus the
-suffix.
+sequence of strings, store the prefix length of the previous entry plus the suffix.
 
 For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
 
