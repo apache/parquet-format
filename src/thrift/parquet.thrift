@@ -235,7 +235,11 @@ struct LevelsApartDataPageHeader {
   /** length of the definition levels */
   5: required i32 repetition_levels_byte_length;
 
-  /** wether the values are compressed at all. if missing it is considered compressed */
+  /**  whether the values are compressed. 
+  Which means the section of the page between 
+  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  is compressed with the compression_codec.
+  If missing it is considered compressed */
   6: optional bool is_compressed;
 
   /** optional statistics for this column chunk */
