@@ -140,7 +140,7 @@ enum Encoding {
   PLAIN_DICTIONARY = 2;
 
   /** Group packed run length encoding. Usable for definition/reptition levels
-   * encoding
+   * encoding and Booleans (on one bit: 0 is false; 1 is true.)
    */
   RLE = 3;
 
@@ -163,6 +163,7 @@ enum Encoding {
    * Suffixes are stored as delta length byte arrays.
    */
   DELTA_STRINGS = 7;
+
 }
 
 /**
