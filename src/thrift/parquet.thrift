@@ -211,9 +211,6 @@ struct DataPageHeader {
 
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
-
-  /** optional statistics for this page */
-  5: optional Statistics statistics;
 }
 
 struct IndexPageHeader {
@@ -251,12 +248,12 @@ struct DataPageHeaderV2 {
   /** length of the definition levels */
   6: required i32 repetition_levels_byte_length;
 
-  /**  whether the values are compressed. 
-  Which means the section of the page between 
+  /**  whether the values are compressed.
+  Which means the section of the page between
   definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
-  7: optional bool is_compressed;
+  7: optional bool is_compressed = 1;
 
   /** optional statistics for this column chunk */
   8: optional Statistics statistics;
