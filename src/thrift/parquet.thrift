@@ -134,8 +134,11 @@ enum Encoding {
    */
   GROUP_VAR_INT = 1;
 
-  /** Dictionary encoding. The values in the dictionary are encoded in the
+  /**
+   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
+   * in a data page use DICTIONARY_RLE instead.
+   * in a Dictionary page use PLAIN instead
    */
   PLAIN_DICTIONARY = 2;
 
@@ -149,7 +152,7 @@ enum Encoding {
    */
   BIT_PACKED = 4;
 
-  /** Delta encoding for integers. This can be used for int columns and works best 
+  /** Delta encoding for integers. This can be used for int columns and works best
    * on sorted data
    */
   DELTA_BINARY_PACKED = 5;
@@ -163,6 +166,15 @@ enum Encoding {
    * Suffixes are stored as delta length byte arrays.
    */
   DELTA_STRINGS = 7;
+
+  /** Dictionary encoding: the ids are encoded using the RLE encoding
+   */
+  DICTIONARY_RLE = 8;
+
+  /** Sorts the strings before applying the DELTA_STRINGS encoding and appends a permutation
+   * to keep the original order. those indices are stored using DELTA_BINARY_PACKED
+   */
+  DELTA_SORTED_STRINGS = 9;
 }
 
 /**
