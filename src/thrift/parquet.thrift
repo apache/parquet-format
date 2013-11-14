@@ -132,7 +132,8 @@ enum Encoding {
 
   /** Group VarInt encoding for INT32/INT64.
    */
-  GROUP_VAR_INT = 1;
+//  GROUP_VAR_INT = 1;
+// This encoding is deprecated. It was never used
 
   /** Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
