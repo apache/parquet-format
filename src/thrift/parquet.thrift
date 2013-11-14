@@ -146,7 +146,8 @@ enum Encoding {
 
   /** Group VarInt encoding for INT32/INT64.
    */
-  GROUP_VAR_INT = 1;
+//  GROUP_VAR_INT = 1;
+// This encoding is deprecated. It was never used
 
   /** Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
@@ -154,7 +155,7 @@ enum Encoding {
   PLAIN_DICTIONARY = 2;
 
   /** Group packed run length encoding. Usable for definition/reptition levels
-   * encoding
+   * encoding and Booleans (on one bit: 0 is false; 1 is true.)
    */
   RLE = 3;
 
@@ -177,6 +178,7 @@ enum Encoding {
    * Suffixes are stored as delta length byte arrays.
    */
   DELTA_STRINGS = 7;
+
 }
 
 /**
