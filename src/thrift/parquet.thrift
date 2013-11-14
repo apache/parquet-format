@@ -162,19 +162,14 @@ enum Encoding {
    */
   DELTA_LENGTH_BYTE_ARRAY = 6;
 
-  /** Incremental-encoded strings. Prefix lengths are encoded using DELTA_BINARY_PACKED.
+  /** Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED.
    * Suffixes are stored as delta length byte arrays.
    */
-  DELTA_STRINGS = 7;
+  DELTA_BYTE_ARRAY = 7;
 
   /** Dictionary encoding: the ids are encoded using the RLE encoding
    */
   DICTIONARY_RLE = 8;
-
-  /** Sorts the strings before applying the DELTA_STRINGS encoding and appends a permutation
-   * to keep the original order. those indices are stored using DELTA_BINARY_PACKED
-   */
-  DELTA_SORTED_STRINGS = 9;
 }
 
 /**
