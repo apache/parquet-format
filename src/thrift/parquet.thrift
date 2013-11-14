@@ -137,7 +137,7 @@ enum Encoding {
   /**
    * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
-   * in a data page use DICTIONARY_RLE instead.
+   * in a data page use RLE_DICTIONARY instead.
    * in a Dictionary page use PLAIN instead
    */
   PLAIN_DICTIONARY = 2;
@@ -169,7 +169,7 @@ enum Encoding {
 
   /** Dictionary encoding: the ids are encoded using the RLE encoding
    */
-  DICTIONARY_RLE = 8;
+  RLE_DICTIONARY = 8;
 }
 
 /**
