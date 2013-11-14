@@ -65,18 +65,18 @@ The header contains:
 ```
 <block size in values> <number of miniblocks in a block> <total value count> <first value>
 ```
-the block size is a multiple of 128 stored as VLQ int
-the miniblock count per block is a diviser of the block size stored as VLQ int the number of values in the miniblock is a multiple of 32.
-the total value count is stored as a VLQ int
-the first value is stored as a zigzag VLQ int
+ * the block size is a multiple of 128 stored as VLQ int
+ * the miniblock count per block is a diviser of the block size stored as VLQ int the number of values in the miniblock is a multiple of 32.
+ * the total value count is stored as a VLQ int
+ * the first value is stored as a zigzag VLQ int
 
 Each block contains 
 ```
 <min delta> <list of bitwidths of miniblocks> <miniblocks>
 ```
-the min delta is a VLQ int (we compute a minimum as we need positive integers for bit packing)
-the bitwidth of each block is stored as a byte
-each miniblock is a list of bit packed ints according to the bit width stored at the begining of the block
+ * the min delta is a VLQ int (we compute a minimum as we need positive integers for bit packing)
+ * the bitwidth of each block is stored as a byte
+ * each miniblock is a list of bit packed ints according to the bit width stored at the begining of the block
 
 Having multiple blocks allows us to escape values and restart from a new base value.
 
