@@ -77,6 +77,20 @@ enum FieldRepetitionType {
 }
 
 /**
+ * Statistics per row group and per page
+ * All fields are optional.
+ */
+struct Statistics {
+   /** min and max value of the column, encoded in PLAIN encoding */
+   1: optional binary max;
+   2: optional binary min;
+   /** count of null value in the column */
+   3: optional i64 null_count;
+   /** count of dictinct values occuring */
+   4: optional i64 distinct_count;
+}
+
+/**
  * Represents a element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
@@ -181,6 +195,7 @@ enum PageType {
   DATA_PAGE = 0;
   INDEX_PAGE = 1;
   DICTIONARY_PAGE = 2;
+  DATA_PAGE_V2 = 3;
 }
 
 /** Data page header */
@@ -210,6 +225,40 @@ struct DictionaryPageHeader {
   2: required Encoding encoding
 }
 
+/**
+ * New page format alowing reading levels without decompressing the data
+ * Repetition and definition levels are uncompressed
+ * The remaining section containing the data is compressed if is_compressed is true
+ **/
+struct DataPageHeaderV2 {
+  /** Number of values, including NULLs, in this data page. **/
+  1: required i32 num_values
+  /** Number of NULL values, in this data page.
+      Number of non-null = num_values - num_nulls which is also the number of values in the data section **/
+  2: required i32 num_nulls
+  /** Number of rows in this data page. which means pages change on record boundaries (r = 0) **/
+  3: required i32 num_rows
+  /** Encoding used for data in this page **/
+  4: required Encoding encoding
+
+  // repetition levels and definition levels are always using RLE (without size in it)
+
+  /** length of the repetition levels */
+  5: required i32 definition_levels_byte_length;
+  /** length of the definition levels */
+  6: required i32 repetition_levels_byte_length;
+
+  /**  whether the values are compressed.
+  Which means the section of the page between
+  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  is compressed with the compression_codec.
+  If missing it is considered compressed */
+  7: optional bool is_compressed = 1;
+
+  /** optional statistics for this column chunk */
+  8: optional Statistics statistics;
+}
+
 struct PageHeader {
   /** the type of the page: indicates which of the *_header fields is set **/
   1: required PageType type
@@ -229,6 +278,7 @@ struct PageHeader {
   5: optional DataPageHeader data_page_header;
   6: optional IndexPageHeader index_page_header;
   7: optional DictionaryPageHeader dictionary_page_header;
+  8: optional DataPageHeaderV2 data_page_header_v2;
 }
 
 /**
@@ -291,6 +341,9 @@ struct ColumnMetaData {
 
   /** Byte offset from the beginning of file to first (only) dictionary page **/
   11: optional i64 dictionary_page_offset
+
+  /** optional statistics for this column chunk */
+  12: optional Statistics statistics;
 }
 
 struct ColumnChunk {
