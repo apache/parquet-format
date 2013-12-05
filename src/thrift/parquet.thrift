@@ -149,8 +149,11 @@ enum Encoding {
 //  GROUP_VAR_INT = 1;
 // This encoding is deprecated. It was never used
 
-  /** Dictionary encoding. The values in the dictionary are encoded in the
+  /**
+   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
+   * in a data page use RLE_DICTIONARY instead.
+   * in a Dictionary page use PLAIN instead
    */
   PLAIN_DICTIONARY = 2;
 
@@ -164,7 +167,7 @@ enum Encoding {
    */
   BIT_PACKED = 4;
 
-  /** Delta encoding for integers. This can be used for int columns and works best 
+  /** Delta encoding for integers. This can be used for int columns and works best
    * on sorted data
    */
   DELTA_BINARY_PACKED = 5;
@@ -174,11 +177,14 @@ enum Encoding {
    */
   DELTA_LENGTH_BYTE_ARRAY = 6;
 
-  /** Incremental-encoded strings. Prefix lengths are encoded using DELTA_BINARY_PACKED.
+  /** Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED.
    * Suffixes are stored as delta length byte arrays.
    */
-  DELTA_STRINGS = 7;
+  DELTA_BYTE_ARRAY = 7;
 
+  /** Dictionary encoding: the ids are encoded using the RLE encoding
+   */
+  RLE_DICTIONARY = 8;
 }
 
 /**
