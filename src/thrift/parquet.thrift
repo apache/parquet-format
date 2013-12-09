@@ -171,7 +171,7 @@ enum Encoding {
    * on sorted data
    */
   DELTA_BINARY_PACKED = 5;
-  
+
   /** Encoding for byte arrays to separate the length values and the data. The lengths
    * are encoded using DELTA_BINARY_PACKED
    */
@@ -229,6 +229,9 @@ struct DictionaryPageHeader {
 
   /** Encoding using this dictionary page **/
   2: required Encoding encoding
+
+  /** If true, the entries in the dictionary are sorted in ascending order **/
+  3: optional bool is_sorted;
 }
 
 /**
