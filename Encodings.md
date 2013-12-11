@@ -181,8 +181,8 @@ The encoded data is
  block
 0 (minimum delta), 2 (bitwidth), 000000111111b (0,0,0,3,3,3 packed on 2 bits)
 
-#### Caracteristics
-This encoding is similar to the RLE encoding. However the RLE encoding (described here) is specifically used when the range of ints is small over the entire page. As is true of repetition and definition levels. It uses a single bit width for the whole page.
+#### Characteristics
+This encoding is similar to the RLE encoding. However the RLE encoding (described here) is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
 The binary packing algorithm described above stores a bit width per mini block and is less sensitive to variations in the size of encoded integers. It is also somewhat doing RLE encoding as a block containing all the same values will be bit packed to a zero bit width thus being only a header.
 
 ### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
