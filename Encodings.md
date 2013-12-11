@@ -3,7 +3,7 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-### Plain:
+### Plain: (PLAIN = 0)
 
 Supported Types: all
 
@@ -16,7 +16,7 @@ For native types, this outputs the data as little endian. Floating
 For the byte array type, it encodes the length as a 4 byte little
 endian, followed by the bytes.
 
-### Delta Encoding
+### Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov
@@ -90,7 +90,7 @@ The encoded data is
  block
 0 (minimum delta), 2 (bitwidth), 000000111111b (0,0,0,3,3,3 packed on 2 bits)
 
-### Delta-length byte array:
+### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
 
 Supported Types: BYTE_ARRAY
 
@@ -109,7 +109,7 @@ For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
 
 The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
 
-### Delta Strings:
+### Delta Strings: (DELTA_BYTE_ARRAY = 7)
 
 Supported Types: BYTE_ARRAY
 
