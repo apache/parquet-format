@@ -3,6 +3,42 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
+### Plain: (PLAIN = 0)
+
+Supported Types: all
+
+This is the plain encoding that must be supported for types.  It is
+intended to be the simplest encoding.  Values are encoded back to back. 
+
+The plain encoding is used whenever a more efficient encoding can not be used. It 
+stores the data in the following format:
+ - BOOLEAN: Bit Packed (see above), LSB first
+ - INT32: 4 bytes little endian
+ - INT64: 8 bytes little endian
+ - INT96: 12 bytes little endian
+ - FLOAT: 4 bytes IEEE little endian
+ - DOUBLE: 8 bytes IEEE little endian
+ - BYTE_ARRAY: length in 4 bytes little endian followed by the bytes contained in the array
+ - FIXED_LEN_BYTE_ARRAY: the bytes contained in the array
+
+For native types, this outputs the data as little endian. Floating
+    point types are encoded in IEEE.  
+
+For the byte array type, it encodes the length as a 4 byte little
+endian, followed by the bytes.
+
+### Dictionary Encoding (PLAIN_DICTIONARY = 2)
+The dictionary encoding builds a dictionary of values encountered in a given column. The 
+dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
+using the RLE/Bit-Packing Hybrid encoding described above. If the dictionary grows too big, whether in size
+or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
+written first, before the data pages of the column chunk.
+
+Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding described above.
+
+Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
+followed by the values encoded using RLE/Bit packed described above (with the given bit width).
+
 ### Bit-packed (Deprecated) (BIT_PACKED = 4)
 This is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
 Each value is encoded back to back using a fixed width.
@@ -70,19 +106,6 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    you would have to use the ordering used in the deprecated bit-packing encoding)
 
 2. varint-encode() is ULEB-128 encoding, see http://en.wikipedia.org/wiki/Variable-length_quantity
-
-### Plain: (PLAIN = 0)
-
-Supported Types: all
-
-This is the plain encoding that must be supported for types.  It is
-intended to be the simplest encoding.  Values are encoded back to back. 
-
-For native types, this outputs the data as little endian. Floating
-    point types are encoded in IEEE.  
-
-For the byte array type, it encodes the length as a 4 byte little
-endian, followed by the bytes.
 
 ### Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
