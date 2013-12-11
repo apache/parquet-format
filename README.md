@@ -148,7 +148,7 @@ skipped (if encoded, it will always have the value of the max definition level).
 For example, in the case where the column is non-nested and required, the data in the
 page is only the encoded values.
 
-The supported encodings are described in Encodings.md
+The supported encodings are described in [Encodings.md](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
