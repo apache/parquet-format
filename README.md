@@ -123,75 +123,7 @@ be computed from the schema (i.e. how much nesting there is).  This defines the
 maximum number of bits required to store the levels (levels are defined for all
 values in the column).  
 
-Two encodings for the levels are supported in the initial version.  
-
-### Bit-packed (Deprecated) (BIT_PACKED = 4)
-The first is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
-Each value is encoded back to back using a fixed width.
-There is no padding between values (except for the last byte) which is padded with 0s.
-For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
-(2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
-
-This implementation is deprecated because the RLE / bit-packing hybrid below is a superset of this implementation.
-For compatibility reasons, this implementation packs values from the most significant bit to the least significant bit,
-which is not the same as the RLE / bit-packing hybrid below.
-
-For example, the numbers 1 through 7 using bit width 3:  
-```
-dec value: 0   1   2   3   4   5   6   7
-bit value: 000 001 010 011 100 101 110 111
-bit label: ABC DEF GHI JKL MNO PQR STU VWX
-```
-would be encoded like this where spaces mark byte boundaries (3 bytes):  
-```
-bit value: 00000101 00111001 01110111
-bit label: ABCDEFGH IJKLMNOP QRSTUVWX
-```
-
-### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
-The second encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
-
-The grammar for this encoding looks like this, given a fixed bit-width known in advance:
-```
-rle-bit-packed-hybrid: <length> <encoded-data>
-length := length of the <encoded-data> in bytes stored as 4 bytes little endian
-encoded-data := <run>*
-run := <bit-packed-run> | <rle-run>  
-bit-packed-run := <bit-packed-header> <bit-packed-values>  
-bit-packed-header := varint-encode(<bit-pack-count> << 1 | 1)  
-// we always bit-pack a multiple of 8 values at a time, so we only store the number of values / 8  
-bit-pack-count := (number of values in this run) / 8  
-bit-packed-values := *see 1 below*  
-rle-run := <rle-header> <repeated-value>  
-rle-header := varint-encode( (number of times repeated) << 1)  
-repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
-```
-
-1. The bit-packing here is done in a different order than the one in the deprecated encoding above.
-   The values are packed from the least significant bit of each byte to the most significant bit,
-   though the order of the bits in each value remains in the usual order of most significant to least
-   significant. For example, to pack the same values as the example in the deprecated encoding above:
-
-   The numbers 1 through 7 using bit width 3:  
-   ```
-   dec value: 0   1   2   3   4   5   6   7
-   bit value: 000 001 010 011 100 101 110 111
-   bit label: ABC DEF GHI JKL MNO PQR STU VWX
-   ```
-   
-   would be encoded like this where spaces mark byte boundaries (3 bytes):  
-   ```
-   bit value: 10001000 11000110 11111010
-   bit label: HIDEFABC RMNOJKLG VWXSTUPQ
-   ```
-
-   The reason for this packing order is to have fewer word-boundaries on little-endian hardware
-   when deserializing more than one byte at at time. This is because 4 bytes can be read into a
-   32 bit register (or 8 bytes into a 64 bit register) and values can be unpacked just by
-   shifting and ORing with a mask. (to make this optimization work on a big-endian machine,
-   you would have to use the ordering used in the deprecated bit-packing encoding)
-
-2. varint-encode() is ULEB-128 encoding, see http://en.wikipedia.org/wiki/Variable-length_quantity
+Two encodings for the levels are supported BIT_PACKED and RLE. Only RLE is now used as it supersedes BIT_PACKED.
 
 ## Nulls
 Nullity is encoded in the definition levels (which is run-length encoded).  NULL values 
