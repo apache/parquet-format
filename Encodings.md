@@ -39,29 +39,6 @@ Dictionary page format: the entries in the dictionary - in dictionary order - us
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
-### Bit-packed (Deprecated) (BIT_PACKED = 4)
-This is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
-Each value is encoded back to back using a fixed width.
-There is no padding between values (except for the last byte) which is padded with 0s.
-For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
-(2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
-
-This implementation is deprecated because the RLE / bit-packing hybrid below is a superset of this implementation.
-For compatibility reasons, this implementation packs values from the most significant bit to the least significant bit,
-which is not the same as the RLE / bit-packing hybrid below.
-
-For example, the numbers 1 through 7 using bit width 3:  
-```
-dec value: 0   1   2   3   4   5   6   7
-bit value: 000 001 010 011 100 101 110 111
-bit label: ABC DEF GHI JKL MNO PQR STU VWX
-```
-would be encoded like this where spaces mark byte boundaries (3 bytes):  
-```
-bit value: 00000101 00111001 01110111
-bit label: ABCDEFGH IJKLMNOP QRSTUVWX
-```
-
 ### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
@@ -106,6 +83,29 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    you would have to use the ordering used in the deprecated bit-packing encoding)
 
 2. varint-encode() is ULEB-128 encoding, see http://en.wikipedia.org/wiki/Variable-length_quantity
+
+### Bit-packed (Deprecated) (BIT_PACKED = 4)
+This is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
+Each value is encoded back to back using a fixed width.
+There is no padding between values (except for the last byte) which is padded with 0s.
+For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
+(2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
+
+This implementation is deprecated because the RLE / bit-packing hybrid below is a superset of this implementation.
+For compatibility reasons, this implementation packs values from the most significant bit to the least significant bit,
+which is not the same as the RLE / bit-packing hybrid below.
+
+For example, the numbers 1 through 7 using bit width 3:  
+```
+dec value: 0   1   2   3   4   5   6   7
+bit value: 000 001 010 011 100 101 110 111
+bit label: ABC DEF GHI JKL MNO PQR STU VWX
+```
+would be encoded like this where spaces mark byte boundaries (3 bytes):  
+```
+bit value: 00000101 00111001 01110111
+bit label: ABCDEFGH IJKLMNOP QRSTUVWX
+```
 
 ### Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
