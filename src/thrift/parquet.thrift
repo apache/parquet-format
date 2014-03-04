@@ -125,6 +125,11 @@ struct SchemaElement {
    * Used to record the original type to help with cross conversion.
    */
   6: optional ConvertedType converted_type;
+  
+  /** When the original schema supports field ids, this will save the 
+   * original field id in the parquet schema
+   */
+  7: optional i32 field_id;
 }
 
 /**
