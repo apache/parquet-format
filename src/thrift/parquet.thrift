@@ -217,6 +217,9 @@ struct DataPageHeader {
 
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
+
+  /** Optional statistics for the data in this page**/
+  5: optional Statistics statistics;
 }
 
 struct IndexPageHeader {
