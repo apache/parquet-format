@@ -114,6 +114,18 @@ readers and writers for the format.  The types are:
   - DOUBLE: IEEE 64-bit floating point values
   - BYTE_ARRAY: arbitrarily long byte arrays.
 
+### Logical Types
+Logical types are used to extend the types that parquet can be used to store,
+by specifying how the primitive types should be interpreted. This keeps the set
+of primitive types to a minimum and reuses parquet's efficient encodings. For
+example, strings are stored as byte arrays (binary) with a UTF8 annotation.
+These annotations define how to further decode and interpret the data.
+Annotations are stored as a `ConvertedType` in the file metadata and are
+documented in
+[LogicalTypes.md][logical-types].
+
+[logical-types]: https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md
+
 ## Nested Encoding
 To encode nested columns, Parquet uses the Dremel encoding with definition and 
 repetition levels.  Definition levels specify how many optional fields in the 
