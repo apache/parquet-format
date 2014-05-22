@@ -52,7 +52,7 @@ Thrift can be also code-genned into any other thrift-supported language.
     an indivisible unit (in terms of compression and encoding).  There can
     be multiple page types which is interleaved in a column chunk.
 
-Hierarchically, a file consists of one or more rows groups.  A row group
+Hierarchically, a file consists of one or more row groups.  A row group
 contains exactly one column chunk per column.  Column chunks contain one or
 more pages. 
 
