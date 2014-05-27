@@ -147,6 +147,12 @@ struct SchemaElement {
    */
   7: optional i32 scale
   8: optional i32 precision
+
+  /** When the original schema supports field ids, this will save the
+   * original field id in the parquet schema
+   */
+  9: optional i32 field_id;
+
 }
 
 /**
