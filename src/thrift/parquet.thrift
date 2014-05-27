@@ -60,6 +60,22 @@ enum ConvertedType {
 
   /** an enum is converted into a binary field */
   ENUM = 4;
+
+  /**
+   * A decimal value.
+   *
+   * This may be used to annotate binary or fixed primitive types. The
+   * underlying byte array stores the unscaled value encoded as two's
+   * complement using big-endian byte order (the most significant byte is the
+   * zeroth element). The value of the decimal is the value * 10^{-scale}.
+   *
+   * This must be accompanied by a (maximum) precision and a scale in the
+   * SchemaElement. The precision specifies the number of digits in the decimal
+   * and the scale stores the location of the decimal point. For example 1.23
+   * would have precision 3 (3 total digits) and scale 2 (the decimal point is
+   * 2 digits over).
+   */
+  DECIMAL = 5;
 }
 
 /**
@@ -86,7 +102,7 @@ struct Statistics {
    2: optional binary min;
    /** count of null value in the column */
    3: optional i64 null_count;
-   /** count of dictinct values occuring */
+   /** count of distinct values occurring */
    4: optional i64 distinct_count;
 }
 
@@ -125,11 +141,18 @@ struct SchemaElement {
    * Used to record the original type to help with cross conversion.
    */
   6: optional ConvertedType converted_type;
-  
-  /** When the original schema supports field ids, this will save the 
+
+  /** Used when this column contains decimal data.
+   * See the DECIMAL converted type for more details.
+   */
+  7: optional i32 scale
+  8: optional i32 precision
+
+  /** When the original schema supports field ids, this will save the
    * original field id in the parquet schema
    */
-  7: optional i32 field_id;
+  8: optional i32 field_id;
+
 }
 
 /**
@@ -150,9 +173,9 @@ enum Encoding {
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64.
+   * This encoding is deprecated. It was never used
    */
-//  GROUP_VAR_INT = 1;
-// This encoding is deprecated. It was never used
+  //  GROUP_VAR_INT = 1;
 
   /**
    * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
@@ -222,6 +245,9 @@ struct DataPageHeader {
 
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
+
+  /** Optional statistics for the data in this page**/
+  5: optional Statistics statistics;
 }
 
 struct IndexPageHeader {
