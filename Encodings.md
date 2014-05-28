@@ -198,15 +198,15 @@ and possibly better compression in the data (it is no longer interleaved with th
 
 The data stream looks like:
 
-<Delta Encoded Lengths> <Byte Array Data>
+<32-bit little endian int for byte size of Delta Encoded Lengths> <Delta Encoded Lengths> <Byte Array Data>
 
 For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
 
-The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
+The encoded data would be <size of DeltaEncoding(5, 5, 6, 6)> <DeltaEncoding(5, 5, 6, 6)><"HelloWorldFoobarABCDEF">
 
 ### Delta Strings: (DELTA_BYTE_ARRAY = 7)
 
-Supported Types: BYTE_ARRAY
+Supported Types: BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY
 
 This is also known as incremental encoding or front compression: for each element in a
 sequence of strings, store the prefix length of the previous entry plus the suffix.
@@ -215,3 +215,8 @@ For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
 
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY). 
+
+The data stream looks like:
+
+<32-bit little endian int for byte size of Delta Encoded Lengths> <Delta Encoded Lengths> <Delta Length Byte Array Data>
+
