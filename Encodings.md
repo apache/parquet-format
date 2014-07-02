@@ -3,7 +3,7 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-### Plain: (PLAIN = 0)
+### <a name="PLAIN"></a>Plain: (PLAIN = 0)
 
 Supported Types: all
 
@@ -12,7 +12,7 @@ intended to be the simplest encoding.  Values are encoded back to back.
 
 The plain encoding is used whenever a more efficient encoding can not be used. It 
 stores the data in the following format:
- - BOOLEAN: Bit Packed (see above), LSB first
+ - BOOLEAN: [Bit Packed](#RLE), LSB first
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
  - INT96: 12 bytes little endian
@@ -30,16 +30,16 @@ endian, followed by the bytes.
 ### Dictionary Encoding (PLAIN_DICTIONARY = 2)
 The dictionary encoding builds a dictionary of values encountered in a given column. The 
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
-using the RLE/Bit-Packing Hybrid encoding described above. If the dictionary grows too big, whether in size
+using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
 or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
 written first, before the data pages of the column chunk.
 
-Dictionary page format: the entries in the dictionary - in dictionary order - using the plain encoding described above.
+Dictionary page format: the entries in the dictionary - in dictionary order - using the [plain](#PLAIN) enncoding.
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
-### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
+### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
@@ -58,7 +58,7 @@ rle-header := varint-encode( (number of times repeated) << 1)
 repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
 ```
 
-1. The bit-packing here is done in a different order than the one in the deprecated encoding above.
+1. The bit-packing here is done in a different order than the one in the [deprecated bit-packing](#BITPACKED) encoding.
    The values are packed from the least significant bit of each byte to the most significant bit,
    though the order of the bits in each value remains in the usual order of most significant to least
    significant. For example, to pack the same values as the example in the deprecated encoding above:
@@ -80,20 +80,20 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    when deserializing more than one byte at at time. This is because 4 bytes can be read into a
    32 bit register (or 8 bytes into a 64 bit register) and values can be unpacked just by
    shifting and ORing with a mask. (to make this optimization work on a big-endian machine,
-   you would have to use the ordering used in the deprecated bit-packing encoding)
+   you would have to use the ordering used in the [deprecated bit-packing](#BITPACKED) encoding)
 
 2. varint-encode() is ULEB-128 encoding, see http://en.wikipedia.org/wiki/Variable-length_quantity
 
-### Bit-packed (Deprecated) (BIT_PACKED = 4)
-This is a bit-packed only encoding, which is deprecated and will be replaced by the run length ecoding / bit backing hybrid in the next section.
+### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
+This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
 There is no padding between values (except for the last byte) which is padded with 0s.
 For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
 (2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
 
-This implementation is deprecated because the RLE / bit-packing hybrid below is a superset of this implementation.
+This implementation is deprecated because the [RLE/bit-packing](#RLE) hybrid is a superset of this implementation.
 For compatibility reasons, this implementation packs values from the most significant bit to the least significant bit,
-which is not the same as the RLE / bit-packing hybrid below.
+which is not the same as the [RLE/bit-packing](#RLE) hybrid.
 
 For example, the numbers 1 through 7 using bit width 3:  
 ```
