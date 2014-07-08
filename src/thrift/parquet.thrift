@@ -76,6 +76,93 @@ enum ConvertedType {
    * 2 digits over).
    */
   DECIMAL = 5;
+
+  /**
+   * A Date
+   *
+   * Stored as days since Unix epoch, encoded as the INT32 physical type.
+   *
+   */
+  DATE = 6; 
+
+  /** 
+   * A time 
+   *
+   * The total number of units of time since midnight.  The value can either
+   * be recorded as the number of milliseconds since midnight using 
+   * TIME_MILLIS and the INT32 physical type or the number of microseconds 
+   * since midnight by using TIME_MICROS and the INT64 physical type.
+   *
+   */
+  TIME_MILLIS = 7;
+  TIME_MICROS = 8;
+
+  /**
+   * A date/time combination
+   * 
+   * Date and time recorded as units since the Unix epoch.  Always recorded as
+   * a physical type of INT64, the data can be stored as either milliseconds
+   * since epoch (TIMESTAMP_MILLIS) or microseconds since epoch (TIMESTAMP_MICROS).
+   */
+  TIMESTAMP_MILLIS = 9; 
+  TIMESTAMP_MICROS = 10;
+
+  /** 
+   * An unsigned integer value.  
+   * 
+   * The number describes the maximum number of meainful data bits in 
+   * the stored value. 8, 16 and 32 bit values are stored using the 
+   * INT32 physical type.  64 bit values are stored using the INT64
+   * physical type.
+   *
+   */
+  UINT_8 = 11;
+  UINT_16 = 12;
+  UINT_32 = 13;
+  UINT_64 = 14;
+
+  /**
+   * A signed integer value.
+   *
+   * The number describes the maximum number of meainful data bits in
+   * the stored value. 8, 16 and 32 bit values are stored using the
+   * INT32 physical type.  64 bit values are stored using the INT64
+   * physical type.
+   *
+   */
+  INT_8 = 15;
+  INT_16 = 16;
+  INT_32 = 17;
+  INT_64 = 18;
+
+  /** 
+   * An embedded JSON document
+   * 
+   * A JSON document embedded within a single UTF8 column.
+   */
+  JSON = 19;
+
+  /** 
+   * An embedded BSON document
+   * 
+   * A BSON document embedded within a single BINARY column. 
+   */
+  BSON = 20;
+
+  /**
+   * An interval of time
+   * 
+   * This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
+   * This data is composed of three separate little endian unsigned
+   * integers.  Each stores a component of a duration of time.  The first
+   * integer identifies the number of months associated with the duration,
+   * the second identifies the number of days associated with the duration
+   * and the third identifies the number of milliseconds associated with 
+   * the provided duration.  This duration of time is independent of any
+   * particular timezone or date.
+   */
+  INTERVAL = 21;
+  
 }
 
 /**
