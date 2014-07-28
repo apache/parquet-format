@@ -88,24 +88,21 @@ enum ConvertedType {
   /** 
    * A time 
    *
-   * The total number of units of time since midnight.  The value can either
-   * be recorded as the number of milliseconds since midnight using 
-   * TIME_MILLIS and the INT32 physical type or the number of microseconds 
-   * since midnight by using TIME_MICROS and the INT64 physical type.
-   *
+   * The total number of milliseconds since midnight.  The value is stored 
+   * as an INT32 physical type.
    */
   TIME_MILLIS = 7;
-  TIME_MICROS = 8;
+  // RESERVED = 8; 
 
   /**
    * A date/time combination
    * 
-   * Date and time recorded as units since the Unix epoch.  Always recorded as
-   * a physical type of INT64, the data can be stored as either milliseconds
-   * since epoch (TIMESTAMP_MILLIS) or microseconds since epoch (TIMESTAMP_MICROS).
+   * Date and time recorded as milliseconds since the Unix epoch.  Recorded as
+   * a physical type of INT64.
    */
   TIMESTAMP_MILLIS = 9; 
-  TIMESTAMP_MICROS = 10;
+  // RESERVED = 10;
+
 
   /** 
    * An unsigned integer value.  
