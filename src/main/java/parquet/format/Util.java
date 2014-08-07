@@ -3,11 +3,11 @@ package parquet.format;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
+import org.apache.thrift.transport.TTransport;
 
 /**
  * Utility to read/write metadata
@@ -35,11 +35,31 @@ public class Util {
   }
 
   private static TCompactProtocol protocol(OutputStream to) {
-    return new TCompactProtocol(new TIOStreamTransport(to));
+    return new TCompactInterningProtocol(new TIOStreamTransport(to));
   }
 
   private static TCompactProtocol protocol(InputStream from) {
-    return new TCompactProtocol(new TIOStreamTransport(from));
+    return new TCompactInterningProtocol(new TIOStreamTransport(from));
+  }
+
+  /**
+   * Interns all strings it reads. This is a pretty blunt hammer,
+   * which we use only on Parquet footer metadata, which we know
+   * will have the schema repeated many times.
+   *
+   */
+  private static class TCompactInterningProtocol extends TCompactProtocol {
+    public TCompactInterningProtocol(TTransport transport) {
+      super(transport);
+    }
+
+    @Override
+    public String readString() throws TException {
+      return super.readString().intern();
+    }
+
+
+
   }
 
   private static <T extends TBase<?,?>> T read(InputStream from, T tbase) throws IOException {
