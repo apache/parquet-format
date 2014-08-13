@@ -200,7 +200,6 @@
             <exclude>*/jdiff/*.xml</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>licenses/**</exclude>
-            <exclude>NOTICE</exclude>
             <exclude>thrift-0.7.0/**</exclude>
             <exclude>thrift-0.7.0.tar.gz</exclude>
           </excludes>
