@@ -1,9 +1,5 @@
 package parquet.format;
 
-import static org.apache.thrift.protocol.TType.I32;
-import static org.apache.thrift.protocol.TType.I64;
-import static org.apache.thrift.protocol.TType.LIST;
-import static org.apache.thrift.protocol.TType.STRING;
 import static parquet.format.FileMetaData._Fields.CREATED_BY;
 import static parquet.format.FileMetaData._Fields.KEY_VALUE_METADATA;
 import static parquet.format.FileMetaData._Fields.NUM_ROWS;
@@ -20,14 +16,15 @@ import java.util.List;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TField;
 import org.apache.thrift.protocol.TList;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.protocol.TProtocolUtil;
-import org.apache.thrift.protocol.TType;
 import org.apache.thrift.transport.TIOStreamTransport;
 
-import parquet.format.EventBasedThriftReader.*;
+import parquet.format.EventBasedThriftReader.DelegatingFieldConsumer;
+import parquet.format.EventBasedThriftReader.I32Consumer;
+import parquet.format.EventBasedThriftReader.I64Consumer;
+import parquet.format.EventBasedThriftReader.ListConsumer;
+import parquet.format.EventBasedThriftReader.StringConsumer;
 
 /**
  * Utility to read/write metadata
@@ -70,15 +67,21 @@ public class Util {
 
   }
 
-  public static void readFileMetaData(InputStream from, final FileMetaDataObserver observer) throws IOException {
+  public static void readFileMetaData(InputStream from, FileMetaDataObserver observer) throws IOException {
+    readFileMetaData(from, observer, false);
+  }
+
+  private static final EventBasedThriftReader eventBasedThriftReader = new EventBasedThriftReader();
+
+  public static void readFileMetaData(InputStream from, final FileMetaDataObserver observer, boolean skipRowGroups) throws IOException {
     try {
-      new EventBasedThriftReader().readStruct(protocol(from), new DelegatingFieldEventConsumer()
-      .addContext(new I32EventConsumer(VERSION) {
+      DelegatingFieldConsumer eventConsumer = new DelegatingFieldConsumer()
+      .onField(new I32Consumer(VERSION) {
         @Override
         public void addI32(int value) {
           observer.setVersion(value);
         }
-      }).addContext(new ListEventConsumer(SCHEMA) {
+      }).onField(new ListConsumer(SCHEMA) {
         private List<SchemaElement> schema;
         @Override
         public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
@@ -94,12 +97,12 @@ public class Util {
           e.read(protocol);
           schema.add(e);
         }
-      }).addContext(new I64EventConsumer(NUM_ROWS) {
+      }).onField(new I64Consumer(NUM_ROWS) {
         @Override
         public void addI64(long value) {
           observer.setNumRows(value);
         }
-      }).addContext(new ListEventConsumer(KEY_VALUE_METADATA) {
+      }).onField(new ListConsumer(KEY_VALUE_METADATA) {
         @Override
         public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
           reader.readListContent(protocol, this, tList);
@@ -111,23 +114,27 @@ public class Util {
           kv.read(protocol);
           observer.addKeyValueMetaData(kv);
         }
-      }).addContext(new StringEventConsumer(CREATED_BY) {
+      }).onField(new StringConsumer(CREATED_BY) {
         @Override
         public void addString(String value) {
           observer.setCreatedBy(value);
         }
-      }).addContext(new ListEventConsumer(ROW_GROUPS) {
-        @Override
-        public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
-          reader.readListContent(protocol, this, tList);
-        }
-        @Override
-        public void addListElement(TProtocol protocol, EventBasedThriftReader reader, byte elemType) throws TException {
-          RowGroup e = new RowGroup();
-          e.read(protocol);
-          observer.addRowGroup(e);
-        }
-      }));
+      });
+      if (!skipRowGroups) {
+        eventConsumer = eventConsumer.onField(new ListConsumer(ROW_GROUPS) {
+          @Override
+          public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
+            reader.readListContent(protocol, this, tList);
+          }
+          @Override
+          public void addListElement(TProtocol protocol, EventBasedThriftReader reader, byte elemType) throws TException {
+            RowGroup e = new RowGroup();
+            e.read(protocol);
+            observer.addRowGroup(e);
+          }
+        });
+      }
+      eventBasedThriftReader.readStruct(protocol(from), eventConsumer );
 
     } catch (TException e) {
       throw new IOException("can not read FileMetaData: " + e.getMessage(), e);
