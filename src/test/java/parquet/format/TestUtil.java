@@ -47,7 +47,6 @@ public class TestUtil {
     @Override
     public void addKeyValueMetaData(KeyValue kv) {
       md.addToKey_value_metadata(kv);
-
     }
   }
 
