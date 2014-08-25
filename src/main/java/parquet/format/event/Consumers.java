@@ -15,8 +15,24 @@ import org.apache.thrift.protocol.TList;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolUtil;
 
+import parquet.format.event.TypedConsumer.BoolConsumer;
+import parquet.format.event.TypedConsumer.ByteConsumer;
+import parquet.format.event.TypedConsumer.DoubleConsumer;
+import parquet.format.event.TypedConsumer.I16Consumer;
+import parquet.format.event.TypedConsumer.I32Consumer;
+import parquet.format.event.TypedConsumer.I64Consumer;
 import parquet.format.event.TypedConsumer.ListConsumer;
+import parquet.format.event.TypedConsumer.MapConsumer;
+import parquet.format.event.TypedConsumer.SetConsumer;
+import parquet.format.event.TypedConsumer.StringConsumer;
+import parquet.format.event.TypedConsumer.StructConsumer;
 
+/**
+ * Entry point for reading thrift in a streaming fashion
+ *
+ * @author Julien Le Dem
+ *
+ */
 public class Consumers {
 
   public static interface Consumer<T> {
@@ -64,90 +80,90 @@ public class Consumers {
       this(defaultFieldEventConsumer, Collections.<Short, DelegateContext>emptyMap());
     }
 
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.DoubleConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final DoubleConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.DoubleConsumer getDoubleConsumer(short id) {
+        public DoubleConsumer getDoubleConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.ByteConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final ByteConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.ByteConsumer getByteConsumer(short id) {
+        public ByteConsumer getByteConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.BoolConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final BoolConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.BoolConsumer getBoolConsumer(short id) {
+        public BoolConsumer getBoolConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.StructConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final StructConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.StructConsumer getStructConsumer(short id) {
+        public StructConsumer getStructConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.I16Consumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final I16Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.I16Consumer getI16Consumer(short id) {
+        public I16Consumer getI16Consumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.I32Consumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final I32Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.I32Consumer getI32Consumer(short id) {
+        public I32Consumer getI32Consumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.I64Consumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final I64Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.I64Consumer getI64Consumer(short id) {
+        public I64Consumer getI64Consumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.StringConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final StringConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.StringConsumer getStringConsumer(short id) {
+        public StringConsumer getStringConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.ListConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final ListConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.ListConsumer getListConsumer(short id) {
+        public ListConsumer getListConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.SetConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final SetConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.SetConsumer getSetConsumer(short id) {
+        public SetConsumer getSetConsumer(short id) {
           return consumer;
         }
       });
     }
-    public DelegatingFieldConsumer onField(TFieldIdEnum e, final TypedConsumer.MapConsumer consumer) {
+    public DelegatingFieldConsumer onField(TFieldIdEnum e, final MapConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public TypedConsumer.MapConsumer getMapConsumer(short id) {
+        public MapConsumer getMapConsumer(short id) {
           return consumer;
         }
       });
@@ -176,7 +192,6 @@ public class Consumers {
         defaultFieldEventConsumer.addField(protocol, reader, id, type);
       }
     }
-
   }
 
   public static DelegatingFieldConsumer fieldConsumer() {
@@ -225,7 +240,7 @@ abstract class DelegatingListConsumer<T extends TBase<T,? extends TFieldIdEnum>>
 
 }
 
-abstract class DelegatingStructConsumer extends TypedConsumer.StructConsumer {
+abstract class DelegatingStructConsumer extends StructConsumer {
   private FieldConsumer c;
   protected DelegatingStructConsumer(FieldConsumer c) {
     this.c = c;
@@ -260,10 +275,9 @@ abstract class DelegatingListElementsConsumer<T extends TBase<T,? extends TField
   public void addListElement(TProtocol protocol, EventBasedThriftReader reader, byte elemType) throws TException {
     elementConsumer.addStruct(protocol, reader);
   }
-
 }
 
-abstract class TBaseStructConsumer<T extends TBase<T, ? extends TFieldIdEnum>> extends TypedConsumer.StructConsumer {
+abstract class TBaseStructConsumer<T extends TBase<T, ? extends TFieldIdEnum>> extends StructConsumer {
 
   private final Class<T> c;
 

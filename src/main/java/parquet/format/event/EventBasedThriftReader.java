@@ -18,7 +18,7 @@ import parquet.format.event.TypedConsumer.SetConsumer;
  * @author Julien Le Dem
  *
  */
-public class EventBasedThriftReader {
+public final class EventBasedThriftReader {
 
   public void readField(TProtocol protocol, TypedConsumerProvider p, short id, byte type) throws TException {
     switch (type) {
