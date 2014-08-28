@@ -52,6 +52,13 @@ public class Util {
     return read(from, new FileMetaData());
   }
 
+  /**
+   * reads the meta data from the stream
+   * @param from the stream to read the metadata from
+   * @param skipRowGroups whether row groups should be skipped
+   * @return the resulting metadata
+   * @throws IOException
+   */
   public static FileMetaData readFileMetaData(InputStream from, boolean skipRowGroups) throws IOException {
     FileMetaData md = new FileMetaData();
     if (skipRowGroups) {
@@ -125,8 +132,6 @@ public class Util {
     readFileMetaData(from, consumer, false);
   }
 
-  private static final EventBasedThriftReader eventBasedThriftReader = new EventBasedThriftReader();
-
   public static void readFileMetaData(InputStream from, final FileMetaDataConsumer consumer, boolean skipRowGroups) throws IOException {
     try {
       DelegatingFieldConsumer eventConsumer = fieldConsumer()
@@ -164,7 +169,7 @@ public class Util {
           }
         }));
       }
-      eventBasedThriftReader.readStruct(protocol(from), eventConsumer);
+      new EventBasedThriftReader(protocol(from)).readStruct(eventConsumer);
 
     } catch (TException e) {
       throw new IOException("can not read FileMetaData: " + e.getMessage(), e);

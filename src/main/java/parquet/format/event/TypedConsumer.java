@@ -55,20 +55,41 @@ abstract public class TypedConsumer {
   }
   abstract public static class StructConsumer extends TypedConsumer {
     protected StructConsumer() { super(STRUCT); }
+    /**
+     * can either delegate to the reader or read the struct from the protocol
+     * reader.readStruct(fieldConsumer);
+     * @param protocol the underlying protocol
+     * @param reader the reader to delegate to
+     * @throws TException
+     */
     abstract public void addStruct(TProtocol protocol, EventBasedThriftReader reader) throws TException;
   }
   abstract public static class ListConsumer extends TypedConsumer {
     protected ListConsumer() { super(LIST); }
     public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
-      reader.readListContent(protocol, this, tList);
+      reader.readListContent(this, tList);
     }
+    /**
+     * can either delegate to the reader or read the list from the protocol
+     * reader.readElement(typedConsumerProvider, elemType);
+     * @param protocol the underlying protocol
+     * @param reader the reader to delegate to
+     * @throws TException
+     */
     abstract public void addListElement(TProtocol protocol, EventBasedThriftReader reader, byte elemType) throws TException;
   }
   abstract public static class SetConsumer extends TypedConsumer {
     protected SetConsumer() { super(SET); }
     public void addSet(TProtocol protocol, EventBasedThriftReader reader, TSet tSet) throws TException {
-      reader.readSetContent(protocol, this, tSet);
+      reader.readSetContent(this, tSet);
     }
+    /**
+     * can either delegate to the reader or read the set from the protocol
+     * reader.readElement(typedConsumerProvider, elemType);
+     * @param protocol the underlying protocol
+     * @param reader the reader to delegate to
+     * @throws TException
+     */
     abstract public void addSetElement(
         TProtocol protocol, EventBasedThriftReader reader,
         byte elemType) throws TException;
@@ -76,8 +97,16 @@ abstract public class TypedConsumer {
   abstract public static class MapConsumer extends TypedConsumer {
     protected MapConsumer() { super(MAP); }
     public void addMap(TProtocol protocol, EventBasedThriftReader reader, TMap tMap) throws TException {
-      reader.readMapContent(protocol, this, tMap);
+      reader.readMapContent(this, tMap);
     }
+    /**
+     * can either delegate to the reader or read the map from the protocol
+     * reader.readElement(keyTypedConsumerProvider, keyType);
+     * reader.readElement(valueTypedConsumerProvider, valueType);
+     * @param protocol the underlying protocol
+     * @param reader the reader to delegate to
+     * @throws TException
+     */
     abstract public void addMapEntry(
         TProtocol protocol, EventBasedThriftReader reader,
         byte keyType, byte valueType) throws TException;

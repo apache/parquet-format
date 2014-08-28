@@ -35,10 +35,22 @@ import parquet.format.event.TypedConsumer.StructConsumer;
  */
 public class Consumers {
 
+  /**
+   * To consume objects coming from a DelegatingFieldConsumer
+   * @author Julien Le Dem
+   *
+   * @param <T> the type of consumed objects
+   */
   public static interface Consumer<T> {
     void add(T t);
   }
 
+  /**
+   * Delegates reading the field to consumers.
+   * @see Consumers#fieldConsumer()
+   * @author Julien Le Dem
+   *
+   */
   public static class DelegatingFieldConsumer implements FieldConsumer {
     private static class DelegateContext {
 
@@ -83,7 +95,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final DoubleConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public DoubleConsumer getDoubleConsumer(short id) {
+        public DoubleConsumer getDoubleConsumer() {
           return consumer;
         }
       });
@@ -91,7 +103,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final ByteConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public ByteConsumer getByteConsumer(short id) {
+        public ByteConsumer getByteConsumer() {
           return consumer;
         }
       });
@@ -99,7 +111,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final BoolConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public BoolConsumer getBoolConsumer(short id) {
+        public BoolConsumer getBoolConsumer() {
           return consumer;
         }
       });
@@ -107,7 +119,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final StructConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public StructConsumer getStructConsumer(short id) {
+        public StructConsumer getStructConsumer() {
           return consumer;
         }
       });
@@ -115,7 +127,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final I16Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public I16Consumer getI16Consumer(short id) {
+        public I16Consumer getI16Consumer() {
           return consumer;
         }
       });
@@ -123,7 +135,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final I32Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public I32Consumer getI32Consumer(short id) {
+        public I32Consumer getI32Consumer() {
           return consumer;
         }
       });
@@ -131,7 +143,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final I64Consumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public I64Consumer getI64Consumer(short id) {
+        public I64Consumer getI64Consumer() {
           return consumer;
         }
       });
@@ -139,7 +151,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final StringConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public StringConsumer getStringConsumer(short id) {
+        public StringConsumer getStringConsumer() {
           return consumer;
         }
       });
@@ -147,7 +159,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final ListConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public ListConsumer getListConsumer(short id) {
+        public ListConsumer getListConsumer() {
           return consumer;
         }
       });
@@ -155,7 +167,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final SetConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public SetConsumer getSetConsumer(short id) {
+        public SetConsumer getSetConsumer() {
           return consumer;
         }
       });
@@ -163,7 +175,7 @@ public class Consumers {
     public DelegatingFieldConsumer onField(TFieldIdEnum e, final MapConsumer consumer) {
       return this.addContext(e, consumer, new TypedConsumerProvider() {
         @Override
-        public MapConsumer getMapConsumer(short id) {
+        public MapConsumer getMapConsumer() {
           return consumer;
         }
       });
@@ -187,17 +199,27 @@ public class Consumers {
       DelegateContext delegate = getDelegate(id);
       if (delegate != null) {
         delegate.validate(type);
-        reader.readField(protocol, delegate.provider, id, type);
+        reader.readElement(delegate.provider, type);
       } else {
         defaultFieldEventConsumer.addField(protocol, reader, id, type);
       }
     }
   }
 
+  /**
+   * call onField on the resulting DelegatingFieldConsumer to handle individual fields
+   * @return a new DelegatingFieldConsumer
+   */
   public static DelegatingFieldConsumer fieldConsumer() {
     return new DelegatingFieldConsumer();
   }
 
+  /**
+   * To consume a list of elements
+   * @param c the type of the list content
+   * @param consumer the consumer that will receive the list
+   * @return a ListConsumer that can be passed to the DelegatingListConsumer
+   */
   public static <T extends TBase<T,? extends TFieldIdEnum>> ListConsumer listOf(Class<T> c, final Consumer<List<T>> consumer) {
     return new DelegatingListConsumer<T>(c) {
       @Override
@@ -207,6 +229,12 @@ public class Consumers {
     };
   }
 
+  /**
+   * To consume list elements one by one
+   * @param c the type of the list content
+   * @param consumer the consumer that will receive the elements
+   * @return a ListConsumer that can be passed to the DelegatingListConsumer
+   */
   public static <T extends TBase<T,? extends TFieldIdEnum>> ListConsumer listElementsOf(Class<T> c, final Consumer<T> consumer) {
     return new DelegatingListElementsConsumer<T>(c) {
       @Override
@@ -247,7 +275,7 @@ abstract class DelegatingStructConsumer extends StructConsumer {
   }
   @Override
   public void addStruct(TProtocol protocol, EventBasedThriftReader reader) throws TException {
-    reader.readStruct(protocol, c);
+    reader.readStruct(c);
   }
 }
 

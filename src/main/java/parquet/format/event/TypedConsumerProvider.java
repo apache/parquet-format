@@ -19,18 +19,18 @@ import parquet.format.event.TypedConsumer.StructConsumer;
  *
  */
 abstract public class TypedConsumerProvider {
-  private RuntimeException error(short id, String type) {
-    return new IllegalArgumentException("id " + id + " was not expected for type " + type);
+  private RuntimeException error(String type) {
+    return new IllegalArgumentException("type " + type + " was not expected");
   }
-  public BoolConsumer getBoolConsumer(short id)     { throw error(id, "BOOL");   }
-  public ByteConsumer getByteConsumer(short id)     { throw error(id, "BYTE");   }
-  public DoubleConsumer getDoubleConsumer(short id) { throw error(id, "DOUBLE"); }
-  public I16Consumer getI16Consumer(short id)       { throw error(id, "I16");    }
-  public I32Consumer getI32Consumer(short id)       { throw error(id, "I32");    }
-  public ListConsumer getListConsumer(short id)     { throw error(id, "LIST");   }
-  public I64Consumer getI64Consumer(short id)       { throw error(id, "I64");    }
-  public MapConsumer getMapConsumer(short id)       { throw error(id, "MAP");    }
-  public SetConsumer getSetConsumer(short id)       { throw error(id, "SET");    }
-  public StringConsumer getStringConsumer(short id) { throw error(id, "STRING"); }
-  public StructConsumer getStructConsumer(short id) { throw error(id, "STRUCT"); }
+  public BoolConsumer getBoolConsumer()     { throw error("BOOL");   }
+  public ByteConsumer getByteConsumer()     { throw error("BYTE");   }
+  public DoubleConsumer getDoubleConsumer() { throw error("DOUBLE"); }
+  public I16Consumer getI16Consumer()       { throw error("I16");    }
+  public I32Consumer getI32Consumer()       { throw error("I32");    }
+  public ListConsumer getListConsumer()     { throw error("LIST");   }
+  public I64Consumer getI64Consumer()       { throw error("I64");    }
+  public MapConsumer getMapConsumer()       { throw error("MAP");    }
+  public SetConsumer getSetConsumer()       { throw error("SET");    }
+  public StringConsumer getStringConsumer() { throw error("STRING"); }
+  public StructConsumer getStructConsumer() { throw error("STRUCT"); }
 }
