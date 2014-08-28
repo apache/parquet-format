@@ -173,7 +173,7 @@ Data pages can be individually checksummed.  This allows disabling of checksums 
 HDFS file level, to better support single row lookups.
 
 ## Error recovery
-If the file metadata is corrupt, the file is lost.  If the column metdata is corrupt, 
+If the file metadata is corrupt, the file is lost.  If the column metadata is corrupt, 
 that column chunk is lost (but column chunks for this column in other row groups are 
 okay).  If a page header is corrupt, the remaining pages in that chunk are lost.  If 
 the data within a page is corrupt, that page is lost.  The file will be more 
