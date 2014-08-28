@@ -18,6 +18,7 @@ import java.util.List;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
 
 import parquet.format.event.Consumers.Consumer;
@@ -51,7 +52,6 @@ public class Util {
   public static FileMetaData readFileMetaData(InputStream from) throws IOException {
     return read(from, new FileMetaData());
   }
-
   /**
    * reads the meta data from the stream
    * @param from the stream to read the metadata from
@@ -176,12 +176,16 @@ public class Util {
     }
   }
 
-  private static TCompactProtocol protocol(OutputStream to) {
-    return new TCompactProtocol(new TIOStreamTransport(to));
+  private static TProtocol protocol(OutputStream to) {
+    return protocol(new TIOStreamTransport(to));
   }
 
-  private static TCompactProtocol protocol(InputStream from) {
-    return new TCompactProtocol(new TIOStreamTransport(from));
+  private static TProtocol protocol(InputStream from) {
+    return protocol(new TIOStreamTransport(from));
+  }
+
+  private static InterningProtocol protocol(TIOStreamTransport t) {
+    return new InterningProtocol(new TCompactProtocol(t));
   }
 
   private static <T extends TBase<?,?>> T read(InputStream from, T tbase) throws IOException {
