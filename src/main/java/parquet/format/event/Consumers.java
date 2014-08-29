@@ -46,32 +46,11 @@ public class Consumers {
    *
    */
   public static class DelegatingFieldConsumer implements FieldConsumer {
-    private static class DelegateContext {
 
-      private final TFieldIdEnum id;
-      private final TypedConsumer typedConsumer;
-
-      DelegateContext(TFieldIdEnum id, TypedConsumer typedConsumer) {
-        super();
-        this.id = id;
-        this.typedConsumer = typedConsumer;
-      }
-
-      void validate(byte type) throws TException {
-        if (typedConsumer.type != type) {
-          throw new TException(
-              "Incorrect type in stream for field " + id.getFieldName() + ". "
-                  + "Expected " + typedConsumer.type
-                  + " but got " + type);
-        }
-      }
-
-    }
-
-    private final Map<Short, DelegateContext> contexts;
+    private final Map<Short, TypedConsumer> contexts;
     private final FieldConsumer defaultFieldEventConsumer;
 
-    private DelegatingFieldConsumer(FieldConsumer defaultFieldEventConsumer, Map<Short, DelegateContext> contexts) {
+    private DelegatingFieldConsumer(FieldConsumer defaultFieldEventConsumer, Map<Short, TypedConsumer> contexts) {
       this.defaultFieldEventConsumer = defaultFieldEventConsumer;
       this.contexts = unmodifiableMap(contexts);
     }
@@ -81,28 +60,26 @@ public class Consumers {
     }
 
     private DelegatingFieldConsumer(FieldConsumer defaultFieldEventConsumer) {
-      this(defaultFieldEventConsumer, Collections.<Short, DelegateContext>emptyMap());
+      this(defaultFieldEventConsumer, Collections.<Short, TypedConsumer>emptyMap());
     }
 
     public DelegatingFieldConsumer onField(TFieldIdEnum e, TypedConsumer typedConsumer) {
-      Map<Short, DelegateContext> newContexts = new HashMap<Short, DelegateContext>(contexts);
-      newContexts.put(e.getThriftFieldId(), new DelegateContext(e, typedConsumer));
+      Map<Short, TypedConsumer> newContexts = new HashMap<Short, TypedConsumer>(contexts);
+      newContexts.put(e.getThriftFieldId(), typedConsumer);
       return new DelegatingFieldConsumer(defaultFieldEventConsumer, newContexts);
     }
 
-    private DelegateContext getDelegate(short id) {
+    private TypedConsumer getDelegate(short id) {
       return contexts.get(id);
     }
 
     @Override
     public void addField(
-        TProtocol protocol,
-        EventBasedThriftReader reader,
+        TProtocol protocol, EventBasedThriftReader reader,
         short id, byte type) throws TException {
-      DelegateContext delegate = getDelegate(id);
+      TypedConsumer delegate = getDelegate(id);
       if (delegate != null) {
-        delegate.validate(type);
-        reader.readElement(delegate.typedConsumer, type);
+        delegate.read(protocol, reader, type);
       } else {
         defaultFieldEventConsumer.addField(protocol, reader, id, type);
       }

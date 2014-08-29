@@ -30,17 +30,6 @@ public final class EventBasedThriftReader {
   }
 
   /**
-   * Reads the content of a field from the underlying protocol.
-   * gets the TypedConsumer corresponding to the provided type and passes the value.
-   * @param p the Typed Consumer Provider to pass the value to
-   * @param type the type of the field
-   * @throws TException
-   */
-  public void readElement(TypedConsumer c, byte type) throws TException {
-    c.read(protocol, this);
-  }
-
-  /**
    * reads a Struct from the underlying protocol and passes the field events to the FieldConsumer
    * @param c the field consumer
    * @throws TException
@@ -91,6 +80,20 @@ public final class EventBasedThriftReader {
     for (int i = 0; i < tMap.size; i++) {
       eventConsumer.addMapEntry(protocol, this, tMap.keyType, tMap.valueType);
     }
+  }
+
+  /**
+   * reads a key-value pair
+   * @param keyType the type of the key
+   * @param keyConsumer the consumer for the key
+   * @param valueType the type of the value
+   * @param valueConsumer the consumer for the value
+   * @throws TException
+   */
+  public void readMapEntry(byte keyType, TypedConsumer keyConsumer, byte valueType, TypedConsumer valueConsumer)
+      throws TException {
+    keyConsumer.read(protocol, this, keyType);
+    valueConsumer.read(protocol, this, valueType);
   }
 
   /**
