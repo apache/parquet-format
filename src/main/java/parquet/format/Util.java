@@ -137,34 +137,34 @@ public class Util {
       DelegatingFieldConsumer eventConsumer = fieldConsumer()
       .onField(VERSION, new I32Consumer() {
         @Override
-        public void addI32(int value) {
+        public void consume(int value) {
           consumer.setVersion(value);
         }
       }).onField(SCHEMA, listOf(SchemaElement.class, new Consumer<List<SchemaElement>>() {
         @Override
-        public void add(List<SchemaElement> schema) {
+        public void consume(List<SchemaElement> schema) {
           consumer.setSchema(schema);
         }
       })).onField(NUM_ROWS, new I64Consumer() {
         @Override
-        public void addI64(long value) {
+        public void consume(long value) {
           consumer.setNumRows(value);
         }
       }).onField(KEY_VALUE_METADATA, listElementsOf(KeyValue.class, new Consumer<KeyValue>() {
         @Override
-        public void add(KeyValue kv) {
+        public void consume(KeyValue kv) {
           consumer.addKeyValueMetaData(kv);
         }
       })).onField(CREATED_BY, new StringConsumer() {
         @Override
-        public void addString(String value) {
+        public void consume(String value) {
           consumer.setCreatedBy(value);
         }
       });
       if (!skipRowGroups) {
         eventConsumer = eventConsumer.onField(ROW_GROUPS, listElementsOf(RowGroup.class, new Consumer<RowGroup>() {
           @Override
-          public void add(RowGroup rowGroup) {
+          public void consume(RowGroup rowGroup) {
             consumer.addRowGroup(rowGroup);
           }
         }));

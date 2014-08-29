@@ -52,7 +52,7 @@ public final class EventBasedThriftReader {
       if (field.type == TType.STOP) {
         break;
       }
-      c.addField(protocol, this, field.id, field.type);
+      c.consumeField(protocol, this, field.id, field.type);
     }
   }
 
@@ -65,7 +65,7 @@ public final class EventBasedThriftReader {
   public void readSetContent(SetConsumer eventConsumer, TSet tSet)
       throws TException {
     for (int i = 0; i < tSet.size; i++) {
-      eventConsumer.addSetElement(protocol, this, tSet.elemType);
+      eventConsumer.consumeElement(protocol, this, tSet.elemType);
     }
   }
 
@@ -78,7 +78,7 @@ public final class EventBasedThriftReader {
   public void readMapContent(MapConsumer eventConsumer, TMap tMap)
       throws TException {
     for (int i = 0; i < tMap.size; i++) {
-      eventConsumer.addMapEntry(protocol, this, tMap.keyType, tMap.valueType);
+      eventConsumer.consumeEntry(protocol, this, tMap.keyType, tMap.valueType);
     }
   }
 
@@ -105,7 +105,7 @@ public final class EventBasedThriftReader {
   public void readListContent(ListConsumer eventConsumer, TList tList)
       throws TException {
     for (int i = 0; i < tList.size; i++) {
-      eventConsumer.addListElement(protocol, this, tList.elemType);
+      eventConsumer.consumeElement(protocol, this, tList.elemType);
     }
   }
 }

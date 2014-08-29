@@ -20,6 +20,6 @@ public interface FieldConsumer {
    * @return the typed consumer to pass the value to
    * @throws TException
    */
-  public void addField(TProtocol protocol, EventBasedThriftReader eventBasedThriftReader, short id, byte type) throws TException;
+  public void consumeField(TProtocol protocol, EventBasedThriftReader eventBasedThriftReader, short id, byte type) throws TException;
 
 }
