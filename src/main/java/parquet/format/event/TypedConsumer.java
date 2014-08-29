@@ -27,34 +27,65 @@ import org.apache.thrift.protocol.TSet;
 abstract public class TypedConsumer {
   abstract public static class DoubleConsumer extends TypedConsumer {
     protected DoubleConsumer() { super(DOUBLE); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addDouble(protocol.readDouble());
+    }
     abstract public void addDouble(double value);
   }
   abstract public static class ByteConsumer extends TypedConsumer {
     protected ByteConsumer() { super(BYTE); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addByte(protocol.readByte());
+    }
     abstract public void addByte(byte value);
   }
   abstract public static class BoolConsumer extends TypedConsumer {
     protected BoolConsumer() { super(BOOL); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addBool(protocol.readBool());
+    }
     abstract public void addBool(boolean value);
   }
   abstract public static class I32Consumer extends TypedConsumer {
     protected I32Consumer() { super(I32); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addI32(protocol.readI32());
+    }
     abstract public void addI32(int value);
   }
   abstract public static class I64Consumer extends TypedConsumer {
     protected I64Consumer() { super(I64); }
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addI64(protocol.readI64());
+    }
     abstract public void addI64(long value);
   }
   abstract public static class I16Consumer extends TypedConsumer {
     protected I16Consumer() { super(I16); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addI16(protocol.readI16());
+    }
     abstract public void addI16(short value);
   }
   abstract public static class StringConsumer extends TypedConsumer {
     protected StringConsumer() { super(STRING); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addString(protocol.readString());
+    }
     abstract public void addString(String value);
   }
   abstract public static class StructConsumer extends TypedConsumer {
     protected StructConsumer() { super(STRUCT); }
+    @Override
+    final public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addStruct(protocol, reader);
+    }
     /**
      * can either delegate to the reader or read the struct from the protocol
      * reader.readStruct(fieldConsumer);
@@ -66,6 +97,11 @@ abstract public class TypedConsumer {
   }
   abstract public static class ListConsumer extends TypedConsumer {
     protected ListConsumer() { super(LIST); }
+    @Override
+    public final void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addList(protocol, reader, protocol.readListBegin());
+      protocol.readListEnd();
+    }
     public void addList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
       reader.readListContent(this, tList);
     }
@@ -80,6 +116,11 @@ abstract public class TypedConsumer {
   }
   abstract public static class SetConsumer extends TypedConsumer {
     protected SetConsumer() { super(SET); }
+    @Override
+    public final void read(TProtocol protocol, EventBasedThriftReader reader) throws TException {
+      this.addSet(protocol, reader, protocol.readSetBegin());
+      protocol.readSetEnd();
+    }
     public void addSet(TProtocol protocol, EventBasedThriftReader reader, TSet tSet) throws TException {
       reader.readSetContent(this, tSet);
     }
@@ -96,6 +137,12 @@ abstract public class TypedConsumer {
   }
   abstract public static class MapConsumer extends TypedConsumer {
     protected MapConsumer() { super(MAP); }
+    @Override
+    public final void read(TProtocol protocol, EventBasedThriftReader reader)
+        throws TException {
+      this.addMap(protocol, reader , protocol.readMapBegin());
+      protocol.readMapEnd();
+    }
     public void addMap(TProtocol protocol, EventBasedThriftReader reader, TMap tMap) throws TException {
       reader.readMapContent(this, tMap);
     }
@@ -116,4 +163,6 @@ abstract public class TypedConsumer {
   private TypedConsumer(byte type) {
     this.type = type;
   }
+
+  abstract public void read(TProtocol protocol, EventBasedThriftReader reader) throws TException;
 }

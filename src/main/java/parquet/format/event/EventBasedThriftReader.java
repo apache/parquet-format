@@ -36,49 +36,8 @@ public final class EventBasedThriftReader {
    * @param type the type of the field
    * @throws TException
    */
-  public void readElement(TypedConsumerProvider p, byte type) throws TException {
-    switch (type) {
-    case TType.BOOL:
-      p.getBoolConsumer().addBool(protocol.readBool());
-      break;
-    case TType.BYTE:
-      p.getByteConsumer().addByte(protocol.readByte());
-      break;
-    case TType.DOUBLE:
-      p.getDoubleConsumer().addDouble(protocol.readDouble());
-      break;
-    case TType.ENUM:
-      throw new UnsupportedOperationException("ENUM?"); // just int
-//      addEnum(field.id, protocol.readEnum());
-    case TType.I16:
-      p.getI16Consumer().addI16(protocol.readI16());
-      break;
-    case TType.I32:
-      p.getI32Consumer().addI32(protocol.readI32());
-      break;
-    case TType.I64:
-      p.getI64Consumer().addI64(protocol.readI64());
-      break;
-    case TType.LIST:
-      readList(p.getListConsumer());
-      break;
-    case TType.MAP:
-      readMap(p.getMapConsumer());
-      break;
-    case TType.SET:
-      readSet(p.getSetConsumer());
-      break;
-    case TType.STOP:
-      throw new UnsupportedOperationException("STOP?");
-    case TType.STRING:
-      p.getStringConsumer().addString(protocol.readString());
-      break;
-    case TType.STRUCT:
-      p.getStructConsumer().addStruct(protocol, this);
-      break;
-    default:
-      throw new UnsupportedOperationException("Unknown type " + type);
-    }
+  public void readElement(TypedConsumer c, byte type) throws TException {
+    c.read(protocol, this);
   }
 
   /**
@@ -109,17 +68,6 @@ public final class EventBasedThriftReader {
   }
 
   /**
-   * reads a set from the underlying protocol and passes the event to the set event consumer
-   * @param setEventConsumer the consumer
-   * @throws TException
-   */
-  public void readSet(SetConsumer setEventConsumer)
-      throws TException {
-    setEventConsumer.addSet(protocol, this, protocol.readSetBegin());
-    protocol.readSetEnd();
-  }
-
-  /**
    * reads the set content (elements) from the underlying protocol and passes the events to the set event consumer
    * @param eventConsumer the consumer
    * @param tSet the set descriptor
@@ -133,17 +81,6 @@ public final class EventBasedThriftReader {
   }
 
   /**
-   * reads a map from the underlying protocol and passes the event to the map event consumer
-   * @param mapEventConsumer the consumer
-   * @throws TException
-   */
-  public void readMap(MapConsumer mapEventConsumer)
-      throws TException {
-    mapEventConsumer.addMap(protocol, this, protocol.readMapBegin());
-    protocol.readMapEnd();
-  }
-
-  /**
    * reads the map content (key values) from the underlying protocol and passes the events to the map event consumer
    * @param eventConsumer the consumer
    * @param tMap the map descriptor
@@ -154,17 +91,6 @@ public final class EventBasedThriftReader {
     for (int i = 0; i < tMap.size; i++) {
       eventConsumer.addMapEntry(protocol, this, tMap.keyType, tMap.valueType);
     }
-  }
-
-  /**
-   * reads a list from the underlying protocol and passes the event to the list event consumer
-   * @param listEventConsumer the consumer
-   * @throws TException
-   */
-  public void readList(ListConsumer listEventConsumer)
-      throws TException {
-    listEventConsumer.addList(protocol, this, protocol.readListBegin());
-    protocol.readListEnd();
   }
 
   /**
