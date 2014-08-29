@@ -9,6 +9,7 @@ import static parquet.format.FileMetaData._Fields.VERSION;
 import static parquet.format.event.Consumers.fieldConsumer;
 import static parquet.format.event.Consumers.listElementsOf;
 import static parquet.format.event.Consumers.listOf;
+import static parquet.format.event.Consumers.struct;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,24 +151,24 @@ public class Util {
         public void consume(long value) {
           consumer.setNumRows(value);
         }
-      }).onField(KEY_VALUE_METADATA, listElementsOf(KeyValue.class, new Consumer<KeyValue>() {
+      }).onField(KEY_VALUE_METADATA, listElementsOf(struct(KeyValue.class, new Consumer<KeyValue>() {
         @Override
         public void consume(KeyValue kv) {
           consumer.addKeyValueMetaData(kv);
         }
-      })).onField(CREATED_BY, new StringConsumer() {
+      }))).onField(CREATED_BY, new StringConsumer() {
         @Override
         public void consume(String value) {
           consumer.setCreatedBy(value);
         }
       });
       if (!skipRowGroups) {
-        eventConsumer = eventConsumer.onField(ROW_GROUPS, listElementsOf(RowGroup.class, new Consumer<RowGroup>() {
+        eventConsumer = eventConsumer.onField(ROW_GROUPS, listElementsOf(struct(RowGroup.class, new Consumer<RowGroup>() {
           @Override
           public void consume(RowGroup rowGroup) {
             consumer.addRowGroup(rowGroup);
           }
-        }));
+        })));
       }
       new EventBasedThriftReader(protocol(from)).readStruct(eventConsumer);
 

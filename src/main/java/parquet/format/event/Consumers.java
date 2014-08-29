@@ -15,6 +15,7 @@ import org.apache.thrift.protocol.TList;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolUtil;
 
+import parquet.format.event.Consumers.Consumer;
 import parquet.format.event.TypedConsumer.BoolConsumer;
 import parquet.format.event.TypedConsumer.ListConsumer;
 import parquet.format.event.TypedConsumer.StructConsumer;
@@ -94,64 +95,39 @@ public class Consumers {
    * To consume a list of elements
    * @param c the type of the list content
    * @param consumer the consumer that will receive the list
-   * @return a ListConsumer that can be passed to the DelegatingListConsumer
+   * @return a ListConsumer that can be passed to the DelegatingFieldConsumer
    */
   public static <T extends TBase<T,? extends TFieldIdEnum>> ListConsumer listOf(Class<T> c, final Consumer<List<T>> consumer) {
-    return new DelegatingListConsumer<T>(c) {
+    class ListConsumer implements Consumer<T> {
+      List<T> list;
       @Override
-      protected void consumeList(List<T> l) {
-        consumer.consume(l);
+      public void consume(T t) {
+        list.add(t);
+      }
+    }
+    final ListConsumer co = new ListConsumer();
+    return new DelegatingListElementsConsumer(struct(c, co)) {
+      @Override
+      public void consumeList(TProtocol protocol,
+          EventBasedThriftReader reader, TList tList) throws TException {
+        co.list = new ArrayList<T>();
+        super.consumeList(protocol, reader, tList);
+        consumer.consume(co.list);
       }
     };
   }
 
   /**
    * To consume list elements one by one
-   * @param c the type of the list content
-   * @param consumer the consumer that will receive the elements
-   * @return a ListConsumer that can be passed to the DelegatingListConsumer
+   * @param consumer the consumer that will read the elements
+   * @return a ListConsumer that can be passed to the DelegatingFieldConsumer
    */
-  public static <T extends TBase<T,? extends TFieldIdEnum>> ListConsumer listElementsOf(Class<T> c, final Consumer<T> consumer) {
-    return new DelegatingListElementsConsumer<T>(c) {
-      @Override
-      protected void consumeElement(T t) {
-        consumer.consume(t);
-      }
-    };
-  }
-}
-
-abstract class DelegatingListConsumer<T extends TBase<T,? extends TFieldIdEnum>> extends DelegatingListElementsConsumer<T> {
-
-  private List<T> list;
-
-  protected DelegatingListConsumer(Class<T> c) {
-    super(c);
+  public static ListConsumer listElementsOf(TypedConsumer consumer) {
+    return new DelegatingListElementsConsumer(consumer);
   }
 
-  @Override
-  public void consumeList(TProtocol protocol, EventBasedThriftReader reader, TList tList) throws TException {
-    list = new ArrayList<T>();
-    super.consumeList(protocol, reader, tList);
-    consumeList(list);
-  }
-
-  protected void consumeElement(T t) {
-    list.add(t);
-  };
-
-  abstract protected void consumeList(List<T> l);
-
-}
-
-abstract class DelegatingStructConsumer extends StructConsumer {
-  private FieldConsumer c;
-  protected DelegatingStructConsumer(FieldConsumer c) {
-    this.c = c;
-  }
-  @Override
-  public void consumeStruct(TProtocol protocol, EventBasedThriftReader reader) throws TException {
-    reader.readStruct(c);
+  public static <T extends TBase<T,? extends TFieldIdEnum>> StructConsumer struct(final Class<T> c, final Consumer<T> consumer) {
+    return new TBaseStructConsumer<T>(c, consumer);
   }
 }
 
@@ -162,39 +138,34 @@ class SkippingFieldConsumer implements FieldConsumer {
   }
 }
 
-abstract class DelegatingListElementsConsumer<T extends TBase<T,? extends TFieldIdEnum>> extends ListConsumer {
+class DelegatingListElementsConsumer extends ListConsumer {
 
-  private TBaseStructConsumer<T> elementConsumer;
+  private TypedConsumer elementConsumer;
 
-  protected DelegatingListElementsConsumer(Class<T> c) {
-    this.elementConsumer = new TBaseStructConsumer<T>(c) {
-      protected void addObject(T t) {
-        consumeElement(t);
-      }
-    };
+  protected DelegatingListElementsConsumer(TypedConsumer consumer) {
+    this.elementConsumer = consumer;
   }
-
-  abstract protected void consumeElement(T t);
 
   @Override
   public void consumeElement(TProtocol protocol, EventBasedThriftReader reader, byte elemType) throws TException {
-    elementConsumer.consumeStruct(protocol, reader);
+    elementConsumer.read(protocol, reader, elemType);
   }
 }
-
-abstract class TBaseStructConsumer<T extends TBase<T, ? extends TFieldIdEnum>> extends StructConsumer {
+class TBaseStructConsumer<T extends TBase<T, ? extends TFieldIdEnum>> extends StructConsumer {
 
   private final Class<T> c;
+  private Consumer<T> consumer;
 
-  public TBaseStructConsumer(Class<T> c) {
+  public TBaseStructConsumer(Class<T> c, Consumer<T> consumer) {
     this.c = c;
+    this.consumer = consumer;
   }
 
   @Override
   public void consumeStruct(TProtocol protocol, EventBasedThriftReader reader) throws TException {
     T o = newObject();
     o.read(protocol);
-    addObject(o);
+    consumer.consume(o);
   }
 
   protected T newObject() {
@@ -207,5 +178,4 @@ abstract class TBaseStructConsumer<T extends TBase<T, ? extends TFieldIdEnum>> e
     }
   }
 
-  abstract protected void addObject(T t);
 }
