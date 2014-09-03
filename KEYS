@@ -1,0 +1,10 @@
+This file contains the PGP keys of various developers.
+
+Users: pgp < KEYS
+  gpg --import KEYS
+Developers: 
+  pgp -kxa <your name> and append it to this file.
+  (pgpk -ll <your name> && pgpk -xa <your name>) >> this file.
+  (gpg --list-sigs <your name>
+    && gpg --armor --export <your name>) >> this file.
+
