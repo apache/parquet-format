@@ -473,7 +473,7 @@ struct ColumnMetaData {
   /** Set of all encodings used for data pages in this column.
    * This information can be used to determine if all pages are
    * dictionary encoded for example **/
-  13: required set<Encoding> data_encodings;
+  13: optional set<Encoding> data_encodings;
 }
 
 struct ColumnChunk {
