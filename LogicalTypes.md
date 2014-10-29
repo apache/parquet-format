@@ -148,3 +148,189 @@ primitive type. The `binary` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
+
+## Nested Types
+
+This section specifies how `LIST` and `MAP` can be used to encode nested types
+by adding group levels around repeated fields that are not present in the data.
+
+This does not affect repeated fields that are not annotated: A repeated field
+that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
+by `LIST` or `MAP` should be interpreted as a required list of required
+elements where the element type is the type of the field.
+
+### Lists
+
+`LIST` is used to annotate types that should be interpreted as lists.
+
+`LIST` must always annotate a 3-level structure:
+
+```
+<list-repetition> group <name> (LIST) {
+  repeated group array {
+    <element-repetition> <element-type> element;
+  }
+}
+```
+
+* The outer-most level must be a group annotated with `LIST` that contains a
+  single field named `array`. The repetition of this level must be either
+  `optional` or `required` and determines whether the list is nullable.
+* The middle level, named `array`, must be a repeated group with a single
+  field named `element`.
+* The `element` field encodes the list's element type and repetition.
+
+The following examples demonstrate two of the possible lists of string values.
+
+```
+// List<String> (list non-null, elements nullable)
+required group my_list (LIST) {
+  repeated group array {
+    optional binary element (UTF8);
+  }
+}
+
+// List<String> (list nullable, elements non-null)
+optional group my_list (LIST) {
+  repeated group array {
+    required binary element (UTF8);
+  }
+}
+```
+
+Element types can be nested structures. For example, a list of lists:
+
+```
+// List<List<Integer>>
+optional group array_of_arrays (LIST) {
+  repeated group array {
+    required group element (LIST) {
+      repeated group array {
+        required int32 element;
+      }
+    }
+  }
+}
+```
+
+#### Backward-compatibility rules
+
+It is required that the repeated group of elements is named `array` and that
+its element field is named `element`. However, these names may not be used in
+existing data and should not be enforced as errors when reading. For example,
+the following field schema should produce a nullable list of non-null strings,
+even though the repeated group is named `element`.
+
+```
+optional group my_list (LIST) {
+  repeated group element {
+    required binary str (UTF8);
+  };
+}
+```
+
+Some existing data uses `LIST` to annotate the repeated group named `array` in
+the above requirements, without the outer group. For backward-compatibility,
+this structure must be supported as a required list named for the repeated group.
+
+```
+// List<String> (non-null list)
+repeated group my_list (LIST) {
+  required binary element (UTF8);
+}
+```
+
+Some existing data did not include the inner element layer. For
+backward-compatibility, the type of elements in `LIST`-annotated structures
+should always be determined by the following rules based on the repeated field:
+
+1. If the repeated field is not a group, then its type is the element type and
+   elements are required.
+2. If the repeated field is a group with multiple fields, then its type is the
+   element type and elements are required.
+3. If the repeated field is a group with one field, then the field's type is
+   the element type with the field's repetition.
+
+Examples that can be interpreted using these rules:
+
+```
+// List<Integer> (non-null list, nullable elements)
+repeated group my_list (LIST) {
+  optional int32 element;
+}
+
+// List<Integer> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated int32 element;
+}
+
+// List<Tuple<String, Integer>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group element {
+    required binary str (UTF8);
+    required int32 num;
+  };
+}
+```
+
+### Maps
+
+`MAP` is used to annotate types that should be interpreted as a map from keys
+to values. `MAP` must annotate a 3-level structure:
+
+```
+<map-repetition> group <name> (MAP) {
+  repeated group key_value {
+    required <key-type> key;
+    <value-repetition> <value-type> value;
+  }
+}
+```
+
+* The outer-most level must be a group annotated with `MAP` that contains a
+  single field named `key_value`. The repetition of this level must be either
+  `optional` or `required` and determines whether the list is nullable.
+* The middle level, named `key_value`, must be a repeated group with a `key`
+  field for map keys and, optionally, a `value` field for map values.
+* The `key` field encodes the map's key type. This field must have
+  repetition `required` and must always be present.
+* The `value` field encodes the map's value type and repetition. This field can
+  be `optional` or omitted.
+
+The following example demonstrates the type for a non-null map from strings to
+nullable integers:
+
+```
+// Map<String, Integer>
+required group my_map (MAP) {
+  repeated group key_value {
+    required binary key (UTF8);
+    optional int32 value;
+  }
+}
+```
+
+If there are multiple key-value pairs for the same key, then the final value
+for that key must be the last value. Other values may be ignored or may be
+added with replacement to the map container in the order that they are encoded.
+The `MAP` annotation should not be used to encode multi-maps using duplicate
+keys.
+
+#### Backward-compatibility rules
+
+It is required that the repeated group of key-value pairs is named `key_value`
+and that its fields are named `key` and `value`. However, these names may not
+be used in existing data and should not be enforced as errors when reading.
+
+Some existing data uses `MAP` to annotate repeated key-value groups, the middle
+level named `key_value` in the above requirements. For backward-compatibility,
+this structure must be supported as a required map named for the repeated
+group.
+
+```
+// Map<String, Integer> (non-null map)
+repeated group my_map (MAP) {
+  required binary key (UTF8);
+  optional int32 value;
+}
+```
