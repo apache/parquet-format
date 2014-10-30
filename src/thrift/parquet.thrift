@@ -430,6 +430,22 @@ struct SortingColumn {
 }
 
 /**
+ * statistics of a give page type and encoding
+ */
+struct PageEncodingStats {
+
+  /** the page type (data/dic/...) **/
+  1: required PageType page_type;
+
+  /** encoding of the page **/
+  2: required Encoding encoding;
+
+  /** number of pages of this type with this encoding **/
+  3: required i32 count;
+
+}
+
+/**
  * Description for column metadata
  */
 struct ColumnMetaData {
@@ -470,10 +486,10 @@ struct ColumnMetaData {
   /** optional statistics for this column chunk */
   12: optional Statistics statistics;
 
-  /** Set of all encodings used for data pages in this column.
-   * This information can be used to determine if all pages are
+  /** Set of all encodings used for pages in this column chunk.
+   * This information can be used to determine if all data pages are
    * dictionary encoded for example **/
-  13: optional set<Encoding> data_encodings;
+  13: optional list<PageEncodingStats> encoding_stats;
 }
 
 struct ColumnChunk {
