@@ -430,7 +430,7 @@ struct SortingColumn {
 }
 
 /**
- * statistics of a give page type and encoding
+ * statistics of a given page type and encoding
  */
 struct PageEncodingStats {
 
