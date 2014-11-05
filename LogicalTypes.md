@@ -229,17 +229,6 @@ optional group my_list (LIST) {
 }
 ```
 
-Some existing data uses `LIST` to annotate the repeated group named `array` in
-the above requirements, without the outer group. For backward-compatibility,
-this structure must be supported as a required list named for the repeated group.
-
-```
-// List<String> (non-null list)
-repeated group my_list (LIST) {
-  required binary element (UTF8);
-}
-```
-
 Some existing data did not include the inner element layer. For
 backward-compatibility, the type of elements in `LIST`-annotated structures
 should always be determined by the following rules based on the repeated field:
@@ -322,15 +311,3 @@ It is required that the repeated group of key-value pairs is named `key_value`
 and that its fields are named `key` and `value`. However, these names may not
 be used in existing data and should not be enforced as errors when reading.
 
-Some existing data uses `MAP` to annotate repeated key-value groups, the middle
-level named `key_value` in the above requirements. For backward-compatibility,
-this structure must be supported as a required map named for the repeated
-group.
-
-```
-// Map<String, Integer> (non-null map)
-repeated group my_map (MAP) {
-  required binary key (UTF8);
-  optional int32 value;
-}
-```
