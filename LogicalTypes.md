@@ -167,16 +167,16 @@ elements where the element type is the type of the field.
 
 ```
 <list-repetition> group <name> (LIST) {
-  repeated group array {
+  repeated group list {
     <element-repetition> <element-type> element;
   }
 }
 ```
 
 * The outer-most level must be a group annotated with `LIST` that contains a
-  single field named `array`. The repetition of this level must be either
+  single field named `list`. The repetition of this level must be either
   `optional` or `required` and determines whether the list is nullable.
-* The middle level, named `array`, must be a repeated group with a single
+* The middle level, named `list`, must be a repeated group with a single
   field named `element`.
 * The `element` field encodes the list's element type and repetition.
 
@@ -185,14 +185,14 @@ The following examples demonstrate two of the possible lists of string values.
 ```
 // List<String> (list non-null, elements nullable)
 required group my_list (LIST) {
-  repeated group array {
+  repeated group list {
     optional binary element (UTF8);
   }
 }
 
 // List<String> (list nullable, elements non-null)
 optional group my_list (LIST) {
-  repeated group array {
+  repeated group list {
     required binary element (UTF8);
   }
 }
@@ -203,9 +203,9 @@ Element types can be nested structures. For example, a list of lists:
 ```
 // List<List<Integer>>
 optional group array_of_arrays (LIST) {
-  repeated group array {
+  repeated group list {
     required group element (LIST) {
-      repeated group array {
+      repeated group list {
         required int32 element;
       }
     }
@@ -237,17 +237,15 @@ should always be determined by the following rules based on the repeated field:
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
    element type and elements are required.
-3. If the repeated field is a group with one field, then the field's type is
-   the element type with the field's repetition.
+3. If the repeated field is a group with one field and is named either "array"
+   or uses the `LIST`-annotated group's name with "tuple" appended then the
+   repeated type is the element type and elements are required.
+4. Otherwise, the repeated field's type is the element type with the repeated
+   field's repetition.
 
 Examples that can be interpreted using these rules:
 
 ```
-// List<Integer> (non-null list, nullable elements)
-repeated group my_list (LIST) {
-  optional int32 element;
-}
-
 // List<Integer> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated int32 element;
@@ -258,6 +256,20 @@ optional group my_list (LIST) {
   repeated group element {
     required binary str (UTF8);
     required int32 num;
+  };
+}
+
+// List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group array {
+    required binary str (UTF8);
+  };
+}
+
+// List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group my_list_tuple {
+    required binary str (UTF8);
   };
 }
 ```
