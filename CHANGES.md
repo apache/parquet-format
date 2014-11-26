@@ -19,6 +19,13 @@
 
 # Parquet #
 
+### Version 2.2.0 ###
+
+* [PARQUET-23](https://issues.apache.org/jira/browse/PARQUET-23): Rename packages and maven coordinates to org.apache
+* [PARQUET-119](https://issues.apache.org/jira/browse/PARQUET-119): Add encoding stats to ColumnMetaData
+* [PARQUET-79](https://issues.apache.org/jira/browse/PARQUET-79): Streaming thrift API
+* [PARQUET-12](https://issues.apache.org/jira/browse/PARQUET-12): New logical types
+
 ### Version 2.1.0 ###
 * ISSUE [84](https://github.com/Parquet/parquet-format/pull/84): Add metadata in the schema for storing decimals.
 * ISSUE [89](https://github.com/Parquet/parquet-format/pull/89): Added statistics to the data page header
