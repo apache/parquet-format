@@ -200,3 +200,14 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+--------------------------------------------------------------------------------
+
+This product includes code from Apache Spark.
+
+* dev/merge_parquet_pr.py is based on Spark's dev/merge_spark_pr.py
+
+Copyright: 2014 The Apache Software Foundation.
+Home page: https://spark.apache.org/
+License: http://www.apache.org/licenses/LICENSE-2.0
+
