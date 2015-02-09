@@ -36,10 +36,10 @@ if [ -d tmp/ ]; then
   exit
 fi
 
-tag=apache-parquet-format-$version
+tag=apache-parquet-format-$version-incubating
 tagrc=${tag}-rc${rc}
 
-echo "Preparing source for $tag_rc"
+echo "Preparing source for $tagrc"
 
 release_hash=`git rev-list $tag 2> /dev/null | head -n 1 `
 
@@ -50,7 +50,7 @@ fi
 
 echo "Using commit $release_hash"
 
-tarball=$tag-incubating.tar.gz
+tarball=$tag.tar.gz
 
 # be conservative and use the release hash, even though git produces the same
 # archive (identical hashes) using the scm tag

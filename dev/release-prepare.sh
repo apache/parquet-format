@@ -25,7 +25,7 @@ if [ -z "$version" ]; then
   exit
 fi
 
-tag=apache-parquet-format-$version
+tag=apache-parquet-format-$version-incubating
 
 mvn release:clean
 mvn release:prepare -Dtag=$tag -DreleaseVersion=$version
