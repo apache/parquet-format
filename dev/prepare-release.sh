@@ -18,16 +18,16 @@
 # under the License.
 #
 
-version=$1
-
-if [ -z "$version" ]; then
+if [ -z "$1" ]; then
   echo "Usage: $0 <version>"
   exit
 fi
 
-tag=apache-parquet-format-$version-incubating
+version=$1-incubating
+
+tag=apache-parquet-format-$version
 
 mvn release:clean
 mvn release:prepare -Dtag=$tag -DreleaseVersion=$version
 
-echo "Finish staging binary artifacts by running: mvn release:perform"
+echo "Finish staging binary artifacts by running: sh dev/perform-release.sh"
