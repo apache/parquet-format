@@ -18,25 +18,25 @@
 # under the License.
 #
 
-version=$1
+if [ -z "$1" ]; then
+  echo "Usage: $0 <version> <rc-num>"
+  exit
+fi
+
+if [ -z "$2" ]; then
+  echo "Usage: $0 <version> <rc-num>"
+  exit
+fi
+
+version=$1-incubating
 rc=$2
-
-if [ -z "$version" ]; then
-  echo "Usage: $0 <version> <rc-num>"
-  exit
-fi
-
-if [ -z "$rc" ]; then
-  echo "Usage: $0 <version> <rc-num>"
-  exit
-fi
 
 if [ -d tmp/ ]; then
   echo "Cannot run: tmp/ exists"
   exit
 fi
 
-tag=apache-parquet-format-$version-incubating
+tag=apache-parquet-format-$version
 tagrc=${tag}-rc${rc}
 
 echo "Preparing source for $tagrc"
