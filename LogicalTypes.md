@@ -323,3 +323,28 @@ It is required that the repeated group of key-value pairs is named `key_value`
 and that its fields are named `key` and `value`. However, these names may not
 be used in existing data and should not be enforced as errors when reading.
 
+Some existing data incorrectly used `MAP_KEY_VALUE` in place of `MAP`. For
+backward-compatibility, a group annotated with `MAP_KEY_VALUE` that is not
+contained by a `MAP`-annotated group should be handled as a `MAP`-annotated
+group.
+
+Examples that can be interpreted using these rules:
+
+```
+// Map<String, Integer> (nullable map, non-null values)
+optional group my_map (MAP) {
+  repeated group map {
+    required binary str (UTF8);
+    required int32 num;
+  }
+}
+
+// Map<String, Integer> (nullable map, nullable values)
+optional group my_map (MAP_KEY_VALUE) {
+  repeated group map {
+    required binary key (UTF8);
+    optional int32 value;
+  }
+}
+```
+
