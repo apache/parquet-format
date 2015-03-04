@@ -509,6 +509,9 @@ struct ColumnChunk {
 }
 
 struct RowGroup {
+  /** Metadata for each column chunk in this row group.
+   * This list must have the same order as the SchemaElement list in FileMetaData.
+   **/
   1: required list<ColumnChunk> columns
 
   /** Total byte size of all the uncompressed column data in this row group **/
