@@ -148,3 +148,208 @@ primitive type. The `binary` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
+
+## Nested Types
+
+This section specifies how `LIST` and `MAP` can be used to encode nested types
+by adding group levels around repeated fields that are not present in the data.
+
+This does not affect repeated fields that are not annotated: A repeated field
+that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
+by `LIST` or `MAP` should be interpreted as a required list of required
+elements where the element type is the type of the field.
+
+Implementations should use either `LIST` and `MAP` annotations _or_ unannotated
+repeated fields, but not both. When using the annotations, no unannotated
+repeated types are allowed.
+
+### Lists
+
+`LIST` is used to annotate types that should be interpreted as lists.
+
+`LIST` must always annotate a 3-level structure:
+
+```
+<list-repetition> group <name> (LIST) {
+  repeated group list {
+    <element-repetition> <element-type> element;
+  }
+}
+```
+
+* The outer-most level must be a group annotated with `LIST` that contains a
+  single field named `list`. The repetition of this level must be either
+  `optional` or `required` and determines whether the list is nullable.
+* The middle level, named `list`, must be a repeated group with a single
+  field named `element`.
+* The `element` field encodes the list's element type and repetition. Element
+  repetition must be `required` or `optional`.
+
+The following examples demonstrate two of the possible lists of string values.
+
+```
+// List<String> (list non-null, elements nullable)
+required group my_list (LIST) {
+  repeated group list {
+    optional binary element (UTF8);
+  }
+}
+
+// List<String> (list nullable, elements non-null)
+optional group my_list (LIST) {
+  repeated group list {
+    required binary element (UTF8);
+  }
+}
+```
+
+Element types can be nested structures. For example, a list of lists:
+
+```
+// List<List<Integer>>
+optional group array_of_arrays (LIST) {
+  repeated group list {
+    required group element (LIST) {
+      repeated group list {
+        required int32 element;
+      }
+    }
+  }
+}
+```
+
+#### Backward-compatibility rules
+
+It is required that the repeated group of elements is named `array` and that
+its element field is named `element`. However, these names may not be used in
+existing data and should not be enforced as errors when reading. For example,
+the following field schema should produce a nullable list of non-null strings,
+even though the repeated group is named `element`.
+
+```
+optional group my_list (LIST) {
+  repeated group element {
+    required binary str (UTF8);
+  };
+}
+```
+
+Some existing data did not include the inner element layer. For
+backward-compatibility, the type of elements in `LIST`-annotated structures
+should always be determined by the following rules based on the repeated field:
+
+1. If the repeated field is not a group, then its type is the element type and
+   elements are required.
+2. If the repeated field is a group with multiple fields, then its type is the
+   element type and elements are required.
+3. If the repeated field is a group with one field and is named either "array"
+   or uses the `LIST`-annotated group's name with "tuple" appended then the
+   repeated type is the element type and elements are required.
+4. Otherwise, the repeated field's type is the element type with the repeated
+   field's repetition.
+
+Examples that can be interpreted using these rules:
+
+```
+// List<Integer> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated int32 element;
+}
+
+// List<Tuple<String, Integer>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group element {
+    required binary str (UTF8);
+    required int32 num;
+  };
+}
+
+// List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group array {
+    required binary str (UTF8);
+  };
+}
+
+// List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group my_list_tuple {
+    required binary str (UTF8);
+  };
+}
+```
+
+### Maps
+
+`MAP` is used to annotate types that should be interpreted as a map from keys
+to values. `MAP` must annotate a 3-level structure:
+
+```
+<map-repetition> group <name> (MAP) {
+  repeated group key_value {
+    required <key-type> key;
+    <value-repetition> <value-type> value;
+  }
+}
+```
+
+* The outer-most level must be a group annotated with `MAP` that contains a
+  single field named `key_value`. The repetition of this level must be either
+  `optional` or `required` and determines whether the list is nullable.
+* The middle level, named `key_value`, must be a repeated group with a `key`
+  field for map keys and, optionally, a `value` field for map values.
+* The `key` field encodes the map's key type. This field must have
+  repetition `required` and must always be present.
+* The `value` field encodes the map's value type and repetition. This field can
+  be `required`, `optional`, or omitted.
+
+The following example demonstrates the type for a non-null map from strings to
+nullable integers:
+
+```
+// Map<String, Integer>
+required group my_map (MAP) {
+  repeated group key_value {
+    required binary key (UTF8);
+    optional int32 value;
+  }
+}
+```
+
+If there are multiple key-value pairs for the same key, then the final value
+for that key must be the last value. Other values may be ignored or may be
+added with replacement to the map container in the order that they are encoded.
+The `MAP` annotation should not be used to encode multi-maps using duplicate
+keys.
+
+#### Backward-compatibility rules
+
+It is required that the repeated group of key-value pairs is named `key_value`
+and that its fields are named `key` and `value`. However, these names may not
+be used in existing data and should not be enforced as errors when reading.
+
+Some existing data incorrectly used `MAP_KEY_VALUE` in place of `MAP`. For
+backward-compatibility, a group annotated with `MAP_KEY_VALUE` that is not
+contained by a `MAP`-annotated group should be handled as a `MAP`-annotated
+group.
+
+Examples that can be interpreted using these rules:
+
+```
+// Map<String, Integer> (nullable map, non-null values)
+optional group my_map (MAP) {
+  repeated group map {
+    required binary str (UTF8);
+    required int32 num;
+  }
+}
+
+// Map<String, Integer> (nullable map, nullable values)
+optional group my_map (MAP_KEY_VALUE) {
+  repeated group map {
+    required binary key (UTF8);
+    optional int32 value;
+  }
+}
+```
+
