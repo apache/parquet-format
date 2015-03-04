@@ -159,6 +159,10 @@ that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
 by `LIST` or `MAP` should be interpreted as a required list of required
 elements where the element type is the type of the field.
 
+Implementations should use either `LIST` and `MAP` annotations _or_ unannotated
+repeated fields, but not both. When using the annotations, no unannotated
+repeated types are allowed.
+
 ### Lists
 
 `LIST` is used to annotate types that should be interpreted as lists.
@@ -178,7 +182,8 @@ elements where the element type is the type of the field.
   `optional` or `required` and determines whether the list is nullable.
 * The middle level, named `list`, must be a repeated group with a single
   field named `element`.
-* The `element` field encodes the list's element type and repetition.
+* The `element` field encodes the list's element type and repetition. Element
+  repetition must be `required` or `optional`.
 
 The following examples demonstrate two of the possible lists of string values.
 
@@ -296,7 +301,7 @@ to values. `MAP` must annotate a 3-level structure:
 * The `key` field encodes the map's key type. This field must have
   repetition `required` and must always be present.
 * The `value` field encodes the map's value type and repetition. This field can
-  be `optional` or omitted.
+  be `required`, `optional`, or omitted.
 
 The following example demonstrates the type for a non-null map from strings to
 nullable integers:
