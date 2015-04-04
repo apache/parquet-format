@@ -220,7 +220,7 @@ optional group array_of_arrays (LIST) {
 
 #### Backward-compatibility rules
 
-It is required that the repeated group of elements is named `array` and that
+It is required that the repeated group of elements is named `list` and that
 its element field is named `element`. However, these names may not be used in
 existing data and should not be enforced as errors when reading. For example,
 the following field schema should produce a nullable list of non-null strings,
@@ -234,16 +234,16 @@ optional group my_list (LIST) {
 }
 ```
 
-Some existing data did not include the inner element layer. For
+Some existing data does not include the inner element layer. For
 backward-compatibility, the type of elements in `LIST`-annotated structures
-should always be determined by the following rules based on the repeated field:
+should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
    element type and elements are required.
-3. If the repeated field is a group with one field and is named either "array"
-   or uses the `LIST`-annotated group's name with "tuple" appended then the
+3. If the repeated field is a group with one field and is named either `array`
+   or uses the `LIST`-annotated group's name with `_tuple` appended then the
    repeated type is the element type and elements are required.
 4. Otherwise, the repeated field's type is the element type with the repeated
    field's repetition.
