@@ -95,12 +95,12 @@ enum ConvertedType {
    * Stored as days since Unix epoch, encoded as the INT32 physical type.
    *
    */
-  DATE = 6; 
+  DATE = 6;
 
-  /** 
-   * A time 
+  /**
+   * A time
    *
-   * The total number of milliseconds since midnight.  The value is stored 
+   * The total number of milliseconds since midnight.  The value is stored
    * as an INT32 physical type.
    */
   TIME_MILLIS = 7;
@@ -115,11 +115,11 @@ enum ConvertedType {
 
   /**
    * A date/time combination
-   * 
+   *
    * Date and time recorded as milliseconds since the Unix epoch.  Recorded as
    * a physical type of INT64.
    */
-  TIMESTAMP_MILLIS = 9; 
+  TIMESTAMP_MILLIS = 9;
 
   /**
    * A date/time combination
@@ -130,11 +130,11 @@ enum ConvertedType {
   TIMESTAMP_MICROS = 10;
 
 
-  /** 
-   * An unsigned integer value.  
-   * 
-   * The number describes the maximum number of meainful data bits in 
-   * the stored value. 8, 16 and 32 bit values are stored using the 
+  /**
+   * An unsigned integer value.
+   *
+   * The number describes the maximum number of meainful data bits in
+   * the stored value. 8, 16 and 32 bit values are stored using the
    * INT32 physical type.  64 bit values are stored using the INT64
    * physical type.
    *
@@ -158,29 +158,29 @@ enum ConvertedType {
   INT_32 = 17;
   INT_64 = 18;
 
-  /** 
+  /**
    * An embedded JSON document
-   * 
+   *
    * A JSON document embedded within a single UTF8 column.
    */
   JSON = 19;
 
-  /** 
+  /**
    * An embedded BSON document
-   * 
-   * A BSON document embedded within a single BINARY column. 
+   *
+   * A BSON document embedded within a single BINARY column.
    */
   BSON = 20;
 
   /**
    * An interval of time
-   * 
+   *
    * This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
    * This data is composed of three separate little endian unsigned
    * integers.  Each stores a component of a duration of time.  The first
    * integer identifies the number of months associated with the duration,
    * the second identifies the number of days associated with the duration
-   * and the third identifies the number of milliseconds associated with 
+   * and the third identifies the number of milliseconds associated with
    * the provided duration.  This duration of time is independent of any
    * particular timezone or date.
    */
@@ -208,6 +208,12 @@ enum FieldRepetitionType {
   REPEATED = 2;
 }
 
+struct BloomFilter{
+    1: required list<i64> bitSet;
+    2: required i32 numBits;
+    3: required i32 numHashFunctions;
+}
+
 /**
  * Statistics per row group and per page
  * All fields are optional.
@@ -232,6 +238,7 @@ struct Statistics {
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
+<<<<<<< HEAD
    /**
     * Min and max values for the column, determined by its ColumnOrder.
     *
@@ -240,6 +247,7 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   7: optional BloomFilter bloom_filter;
 }
 
 /**
