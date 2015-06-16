@@ -106,16 +106,29 @@ A `SchemaElement` with the `DECIMAL` `ConvertedType` must also have both
 annotate an `int32` that stores the number of days from the Unix epoch, 1
 January 1970.
 
-### TIME_MILLIS
+### TIME\_MILLIS
 
-`TIME_MILLIS` is used for a logical time type, without a date. It must annotate
-an `int32` that stores the number of milliseconds after midnight.
+`TIME_MILLIS` is used for a logical time type with millisecond precision,
+without a date. It must annotate an `int32` that stores the number of
+milliseconds after midnight.
 
-### TIMESTAMP_MILLIS
+### TIME\_MICROS
 
-`TIMESTAMP_MILLIS` is used for a combined logical date and time type. It must
-annotate an `int64` that stores the number of milliseconds from the Unix epoch,
-00:00:00.000 on 1 January 1970, UTC.
+`TIME_MICROS` is used for a logical time type with microsecond precision,
+without a date. It must annotate an `int64` that stores the number of
+microseconds after midnight.
+
+### TIMESTAMP\_MILLIS
+
+`TIMESTAMP_MILLIS` is used for a combined logical date and time type, with
+millisecond precision. It must annotate an `int64` that stores the number of
+milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
+
+### TIMESTAMP\_MICROS
+
+`TIMESTAMP_MICROS` is used for a combined logical date and time type with
+microsecond precision. It must annotate an `int64` that stores the number of
+microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
 
 ### INTERVAL
 
