@@ -51,6 +51,9 @@ i32 numBits; number of bit which is evaluated in the way discussed in the previo
 i32 numHashFunctions; number of hash functions to generate the bit from the encountering entries
 ```
 
+#### Implementation of the bloom filter in parquet-mr
+Currently we support two bloom filter strategies. One is using two 32bit hash functions and another is using all 128 bits of Murmur3 128 when hashing. The first one is mentioned in "Less Hashing, Same Performance: Building a Better Bloom Filter" by Kirsch et.al. From abstract 'only two hash functions are necessary to effectively implement a Bloom filter without any loss in the asymptotic false positive probability' Lets split up 64-bit hashcode into two 32-bit hash codes and employ the technique mentioned in the above paper
+
 #### Build a bloom filter in the parquet-mr
 To build a bloom filter, users need to add the following four configurations:
 

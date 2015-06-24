@@ -208,10 +208,28 @@ enum FieldRepetitionType {
   REPEATED = 2;
 }
 
+enum BloomFilterStrategy{
+  /**
+   * See "Less Hashing, Same Performance: Building a Better Bloom Filter" by Adam Kirsch and
+   * Michael Mitzenmacher. The paper argues that this trick doesn't significantly deteriorate the
+   * performance of a Bloom filter (yet only needs two 32bit hash functions).
+   */
+  MURMUR128_32 = 0;
+
+  /**
+   * This strategy uses all 128 bits of {@link Hashing#murmur3_128} when hashing. It looks
+   * different than the implementation in MURMUR128_MITZ_32 because we're avoiding the
+   * multiplication in the loop and doing a (much simpler) += hash2. We're also changing the
+   * index to a positive number by AND'ing with Long.MAX_VALUE instead of flipping the bits.
+   */
+  MURMUR128_64 = 1;
+}
+
 struct BloomFilter{
     1: required list<i64> bitSet;
     2: required i32 numBits;
     3: required i32 numHashFunctions;
+    4: required BloomFilterStrategy bloomFilterStrategy;
 }
 
 /**
