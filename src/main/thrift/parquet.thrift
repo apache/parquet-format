@@ -256,7 +256,7 @@ struct Statistics {
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
-<<<<<<< HEAD
+
    /**
     * Min and max values for the column, determined by its ColumnOrder.
     *
