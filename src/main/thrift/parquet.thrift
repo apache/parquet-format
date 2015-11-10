@@ -226,7 +226,7 @@ enum BloomFilterStrategy{
 }
 
 struct BloomFilter{
-    1: required list<i64> bitSet;
+    1: required binary bitSet;
     2: required i32 numBits;
     3: required i32 numHashFunctions;
     4: required BloomFilterStrategy bloomFilterStrategy;
