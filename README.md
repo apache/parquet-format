@@ -46,30 +46,30 @@ The `parquet-compatibility` project contains compatibility tests that can be use
 
 ## Building
 
-Java resources can be build using `mvn package.` The current stable version should always be available from Maven Central.
+Java resources can be build using `mvn package`. The current stable version should always be available from Maven Central.
 
 C++ thrift resources can be generated via make.
 
 Thrift can be also code-genned into any other thrift-supported language.
 
 ## Glossary
-  - Block (hdfs block): This means a block in hdfs and the meaning is 
+  - Block (HDFS block): This means a block in HDFS and the meaning is 
     unchanged for describing this file format.  The file format is 
-    designed to work well on top of hdfs.
+    designed to work well on top of HDFS.
 
-  - File: A hdfs file that must include the metadata for the file.
+  - File: A HDFS file that must include the metadata for the file.
     It does not need to actually contain the data.
 
   - Row group: A logical horizontal partitioning of the data into rows.
     There is no physical structure that is guaranteed for a row group.
     A row group consists of a column chunk for each column in the dataset.
 
-  - Column chunk: A chunk of the data for a particular column.  These live
-    in a particular row group and is guaranteed to be contiguous in the file.
+  - Column chunk: A chunk of the data for a particular column.  They live
+    in a particular row group and are guaranteed to be contiguous in the file.
 
   - Page: Column chunks are divided up into pages.  A page is conceptually
     an indivisible unit (in terms of compression and encoding).  There can
-    be multiple page types which is interleaved in a column chunk.
+    be multiple page types which are interleaved in a column chunk.
 
 Hierarchically, a file consists of one or more row groups.  A row group
 contains exactly one column chunk per column.  Column chunks contain one or
@@ -81,7 +81,7 @@ more pages.
   - Encoding/Compression - Page
 
 ## File format
-This file and the thrift definition should be read together to understand the format.
+This file and the [thrift definition](src/main/thrift/parquet.thrift) should be read together to understand the format.
 
     4-byte magic number "PAR1"
     <Column 1 Chunk 1 + Column Metadata>
@@ -98,13 +98,13 @@ This file and the thrift definition should be read together to understand the fo
     ...
     <Column N Chunk M + Column Metadata>
     File Metadata
-    4-byte length in bytes of file metadata
+    4-byte length in bytes of file metadata (little endian)
     4-byte magic number "PAR1"
 
 In the above example, there are N columns in this table, split into M row 
 groups.  The file metadata contains the locations of all the column metadata 
 start locations.  More details on what is contained in the metadata can be found 
-in the thrift files.
+in the thrift definition.
 
 Metadata is written after the data to allow for single pass writing.
 
@@ -139,7 +139,7 @@ by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
 example, strings are stored as byte arrays (binary) with a UTF8 annotation.
 These annotations define how to further decode and interpret the data.
-Annotations are stored as a `ConvertedType` in the file metadata and are
+Annotations are stored as `ConvertedType` fields in the file metadata and are
 documented in
 [LogicalTypes.md][logical-types].
 
@@ -165,9 +165,10 @@ nothing else.
 ## Data Pages
 For data pages, the 3 pieces of information are encoded back to back, after the page
 header.  We have the 
- - definition levels data,  
  - repetition levels data, 
+ - definition levels data,  
  - encoded values.
+
 The size of specified in the header is for all 3 pieces combined.
 
 The data for the data page is always required.  The definition and repetition levels
@@ -183,7 +184,7 @@ The supported encodings are described in [Encodings.md](https://github.com/Parqu
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
-header and readers can skip over page they are not interested in.  The data for the 
+header and readers can skip over pages they are not interested in.  The data for the 
 page follows the header and can be compressed and/or encoded.  The compression and 
 encoding is specified in the page metadata.
 

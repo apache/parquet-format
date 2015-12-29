@@ -53,7 +53,7 @@ using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too b
 or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
 written first, before the data pages of the column chunk.
 
-Dictionary page format: the entries in the dictionary - in dictionary order - using the [plain](#PLAIN) enncoding.
+Dictionary page format: the entries in the dictionary - in dictionary order - using the [plain](#PLAIN) encoding.
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
