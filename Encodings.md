@@ -198,7 +198,7 @@ The encoded data is
 8 (block size), 1 (miniblock count), 8 (value count), 7 (first value)
 
  block
-0 (minimum delta), 2 (bitwidth), 000000111111b (0,0,0,3,3,3 packed on 2 bits)
+-2 (minimum delta), 2 (bitwidth), 00000011111111b (0,0,0,3,3,3,3 packed on 2 bits)
 
 #### Characteristics
 This encoding is similar to the [RLE/bit-packing](#RLE) encoding. However the [RLE/bit-packing](#RLE) encoding is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
