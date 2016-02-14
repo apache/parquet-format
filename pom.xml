@@ -141,18 +141,9 @@
               <artifactSet>
                 <includes>
                   <include>org.apache.thrift:libthrift</include>
-                  <include>org.slf4j:slf4j-api</include>
-                  <include>org.slf4j:slf4j-nop</include>
                 </includes>
               </artifactSet>
               <filters>
-                <filter>
-                  <!-- Exclude SLF4J's meta files, covered by LICENSE and NOTICE -->
-                  <artifact>org.slf4j:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/**/*</exclude>
-                  </excludes>
-                </filter>
                 <filter>
                   <!-- Sigh. The Thrift jar contains its source -->
                   <artifact>org.apache.thrift:libthrift</artifact>
@@ -167,10 +158,6 @@
                 <relocation>
                   <pattern>org.apache.thrift</pattern>
                   <shadedPattern>${shade.prefix}.org.apache.thrift</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.slf4j</pattern>
-                  <shadedPattern>${shade.prefix}.org.slf4j</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -219,12 +206,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-nop</artifactId>
-      <version>1.7.2</version>
+      <version>1.7.16</version>
     </dependency>
     <dependency>
       <groupId>org.apache.thrift</groupId>
