@@ -88,7 +88,7 @@ integer. A precision too large for the underlying type (see below) is an error.
 
 `DECIMAL` can be used to annotate the following types:
 * `int32`: for 1 &lt;= precision &lt;= 9
-* `int64`: for 1 &lt;= precision &lt;= 18; precision &lt;= 10 will produce a
+* `int64`: for 1 &lt;= precision &lt;= 18; precision &lt; 10 will produce a
   warning
 * `fixed_len_byte_array`: precision is limited by the array size. Length `n`
   can store &lt;= `floor(log_10(2^(8*n - 1) - 1))` base-10 digits
