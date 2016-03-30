@@ -111,13 +111,13 @@ Metadata is written after the data to allow for single pass writing.
 Readers are expected to first read the file metadata to find all the column 
 chunks they are interested in.  The columns chunks should then be read sequentially.
 
- ![File Layout](https://raw.github.com/Parquet/parquet-format/master/doc/images/FileLayout.gif)
+ ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
 
 ## Metadata
 There are three types of metadata: file metadata, column (chunk) metadata and page
 header metadata.  All thrift structures are serialized using the TCompactProtocol.
 
- ![Metadata diagram](https://github.com/Parquet/parquet-format/raw/master/doc/images/FileFormat.gif)
+ ![Metadata diagram](https://github.com/apache/parquet-format/raw/master/doc/images/FileFormat.gif)
 
 ## Types
 The types supported by the file format are intended to be as minimal as possible,
