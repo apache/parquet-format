@@ -64,7 +64,7 @@ This encoding uses a combination of bit-packing and run length encoding to more 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
 ```
 rle-bit-packed-hybrid: <length> <encoded-data>
-length := length of the <encoded-data> in bytes stored as 4 bytes little endian
+length := length of the <encoded-data> in bytes stored as 4 bytes little endian (unsigned int32)
 encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>
 bit-packed-run := <bit-packed-header> <bit-packed-values>
