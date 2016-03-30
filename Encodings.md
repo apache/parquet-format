@@ -27,9 +27,9 @@ This file contains the specification of all supported encodings.
 Supported Types: all
 
 This is the plain encoding that must be supported for types.  It is
-intended to be the simplest encoding.  Values are encoded back to back. 
+intended to be the simplest encoding.  Values are encoded back to back.
 
-The plain encoding is used whenever a more efficient encoding can not be used. It 
+The plain encoding is used whenever a more efficient encoding can not be used. It
 stores the data in the following format:
  - BOOLEAN: [Bit Packed](#RLE), LSB first
  - INT32: 4 bytes little endian
@@ -41,16 +41,16 @@ stores the data in the following format:
  - FIXED_LEN_BYTE_ARRAY: the bytes contained in the array
 
 For native types, this outputs the data as little endian. Floating
-    point types are encoded in IEEE.  
+    point types are encoded in IEEE.
 
 For the byte array type, it encodes the length as a 4 byte little
 endian, followed by the bytes.
 
 ### Dictionary Encoding (PLAIN_DICTIONARY = 2)
-The dictionary encoding builds a dictionary of values encountered in a given column. The 
+The dictionary encoding builds a dictionary of values encountered in a given column. The
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
 using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
-or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is 
+or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is
 written first, before the data pages of the column chunk.
 
 Dictionary page format: the entries in the dictionary - in dictionary order - using the [plain](#PLAIN) enncoding.
@@ -66,14 +66,14 @@ The grammar for this encoding looks like this, given a fixed bit-width known in 
 rle-bit-packed-hybrid: <length> <encoded-data>
 length := length of the <encoded-data> in bytes stored as 4 bytes little endian
 encoded-data := <run>*
-run := <bit-packed-run> | <rle-run>  
-bit-packed-run := <bit-packed-header> <bit-packed-values>  
-bit-packed-header := varint-encode(<bit-pack-count> << 1 | 1)  
-// we always bit-pack a multiple of 8 values at a time, so we only store the number of values / 8  
-bit-pack-count := (number of values in this run) / 8  
-bit-packed-values := *see 1 below*  
-rle-run := <rle-header> <repeated-value>  
-rle-header := varint-encode( (number of times repeated) << 1)  
+run := <bit-packed-run> | <rle-run>
+bit-packed-run := <bit-packed-header> <bit-packed-values>
+bit-packed-header := varint-encode(<bit-pack-count> << 1 | 1)
+// we always bit-pack a multiple of 8 values at a time, so we only store the number of values / 8
+bit-pack-count := (number of values in this run) / 8
+bit-packed-values := *see 1 below*
+rle-run := <rle-header> <repeated-value>
+rle-header := varint-encode( (number of times repeated) << 1)
 repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
 ```
 
@@ -82,14 +82,14 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    though the order of the bits in each value remains in the usual order of most significant to least
    significant. For example, to pack the same values as the example in the deprecated encoding above:
 
-   The numbers 1 through 7 using bit width 3:  
+   The numbers 1 through 7 using bit width 3:
    ```
    dec value: 0   1   2   3   4   5   6   7
    bit value: 000 001 010 011 100 101 110 111
    bit label: ABC DEF GHI JKL MNO PQR STU VWX
    ```
-   
-   would be encoded like this where spaces mark byte boundaries (3 bytes):  
+
+   would be encoded like this where spaces mark byte boundaries (3 bytes):
    ```
    bit value: 10001000 11000110 11111010
    bit label: HIDEFABC RMNOJKLG VWXSTUPQ
@@ -114,13 +114,13 @@ This implementation is deprecated because the [RLE/bit-packing](#RLE) hybrid is 
 For compatibility reasons, this implementation packs values from the most significant bit to the least significant bit,
 which is not the same as the [RLE/bit-packing](#RLE) hybrid.
 
-For example, the numbers 1 through 7 using bit width 3:  
+For example, the numbers 1 through 7 using bit width 3:
 ```
 dec value: 0   1   2   3   4   5   6   7
 bit value: 000 001 010 011 100 101 110 111
 bit label: ABC DEF GHI JKL MNO PQR STU VWX
 ```
-would be encoded like this where spaces mark byte boundaries (3 bytes):  
+would be encoded like this where spaces mark byte boundaries (3 bytes):
 ```
 bit value: 00000101 00111001 01110111
 bit label: ABCDEFGH IJKLMNOP QRSTUVWX
@@ -141,7 +141,7 @@ The header is defined as follows:
  * the total value count is stored as a VLQ int
  * the first value is stored as a zigzag VLQ int
 
-Each block contains 
+Each block contains
 ```
 <min delta> <list of bitwidths of miniblocks> <miniblocks>
 ```
@@ -233,4 +233,4 @@ sequence of strings, store the prefix length of the previous entry plus the suff
 For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
 
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
-the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY). 
+the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
