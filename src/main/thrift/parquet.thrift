@@ -284,7 +284,7 @@ enum Encoding {
    */
   PLAIN_DICTIONARY = 2;
 
-  /** Group packed run length encoding. Usable for definition/reptition levels
+  /** Group packed run length encoding. Usable for definition/repetition levels
    * encoding and Booleans (on one bit: 0 is false; 1 is true.)
    */
   RLE = 3;
@@ -365,7 +365,7 @@ struct DictionaryPageHeader {
 }
 
 /**
- * New page format alowing reading levels without decompressing the data
+ * New page format allowing reading levels without decompressing the data
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
  **/
