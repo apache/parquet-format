@@ -195,7 +195,7 @@ enum FieldRepetitionType {
  * Statistics per row group and per page
  * All fields are optional.
  *
- * For BinaryStatistics in parquet-mr, we want to distinguish between the statistics derived from
+ * For BinaryStatistics in Parquet, we want to distinguish between the statistics derived from
  * comparisons of signed or unsigned bytes.
  * By default, Parquet will compare Binary type data as a signed bytestring, and this is the
  * default behavior for filter pushdown when signed and unsigned are not specified in the
