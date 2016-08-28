@@ -199,8 +199,9 @@ enum FieldRepetitionType {
  * comparisons of signed or unsigned bytes.
  * By default, Parquet will compare Binary type data as a signed bytestring, and this is the
  * default behavior for filter pushdown when signed and unsigned are not specified in the
- * Statistics. However, when signed_min, signed_max, unsigned_min and unsigned_max are all
- * specified, the client has the option of using either signed or unsigned bytestring statistics.
+ * Statistics. An unsigned min/max may optionally be specified in the file format, in which case
+ * unsigned semantics will be used for comparisons, otherwise the default is to assume signed
+ * byte comparison.
  */
 struct Statistics {
    /** min and max value of the column, encoded in PLAIN encoding */
@@ -210,12 +211,9 @@ struct Statistics {
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
-   /* Signed min and max */
-   5: optional binary signed_max;
-   6: optional binary signed_min;
    /* Unsigned min and max */
-   7: optional binary unsigned_max;
-   8: optional binary unsigned_min;
+   5: optional binary unsigned_max;
+   6: optional binary unsigned_min;
 }
 
 /**
