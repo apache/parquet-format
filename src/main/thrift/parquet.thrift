@@ -195,12 +195,14 @@ enum FieldRepetitionType {
  * Statistics per row group and per page
  * All fields are optional.
  *
- * For BinaryStatistics in Parquet, we want to distinguish between the statistics derived from
- * comparisons of signed or unsigned bytes.
- * By default, Parquet will compare Binary type data as a signed bytestring, and this is the
- * default behavior for filter pushdown when signed and unsigned are not specified in the
- * Statistics. However, when signed_min, signed_max, unsigned_min and unsigned_max are all
- * specified, the client has the option of using either signed or unsigned bytestring statistics.
+ * For BinaryStatistics in Parquet, we want to distinguish between the
+ * statistics derived from comparisons of signed or unsigned bytes.  The min
+ * and max fields are deprecated for BinaryStatistics, instead relying on
+ * specification of {unsigned,signed}_{min,max}. The filter API should allow
+ * clients to specify which statistics and method of comparison should be used
+ * for filtering. To maintain backward format compatibility, when filtering
+ * based on signed statistics the signed_min and signed_max are checked first,
+ * and if they are unset it falls back to using the values in min and max.
  */
 struct Statistics {
    /** min and max value of the column, encoded in PLAIN encoding */
