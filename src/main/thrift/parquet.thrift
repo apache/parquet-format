@@ -212,10 +212,10 @@ struct Statistics {
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
-   /* Signed min and max */
+   /* Signed min and max for binary fields */
    5: optional binary signed_max;
    6: optional binary signed_min;
-   /* Unsigned min and max */
+   /* Unsigned min and max for binary fields */
    7: optional binary unsigned_max;
    8: optional binary unsigned_min;
 }
