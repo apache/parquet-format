@@ -202,7 +202,8 @@ enum FieldRepetitionType {
  * clients to specify which statistics and method of comparison should be used
  * for filtering. To maintain backward format compatibility, when filtering
  * based on signed statistics the signed_min and signed_max are checked first,
- * and if they are unset it falls back to using the values in min and max.
+ * and if they are unset it falls back to using the values in min and max,
+ * treating them as signed bytestrings.
  */
 struct Statistics {
    /** min and max value of the column, encoded in PLAIN encoding */
