@@ -195,6 +195,12 @@ enum FieldRepetitionType {
  * Statistics per row group and per page
  * All fields are optional.
  *
+ * Binaries are sorted lexicographically (byte by byte), treating each byte as
+ * an integer.  The signed sorting treats each byte as a signed two's
+ * compliment number, and the unsigned treats the byte as an unsigned number.
+ * When one bytestring is a prefix of another, the containing bytestring is
+ * "greater than" the prefix.
+ *
  * For BinaryStatistics in Parquet, we want to distinguish between the
  * statistics derived from comparisons of signed or unsigned bytes.  The min
  * and max fields are deprecated for BinaryStatistics, instead relying on
