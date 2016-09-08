@@ -143,7 +143,7 @@ Annotations are stored as `ConvertedType` fields in the file metadata and are
 documented in
 [LogicalTypes.md][logical-types].
 
-[logical-types]: https://github.com/Parquet/parquet-format/blob/master/LogicalTypes.md
+[logical-types]: LogicalTypes.md
 
 ## Nested Encoding
 To encode nested columns, Parquet uses the Dremel encoding with definition and 
