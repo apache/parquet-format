@@ -177,9 +177,12 @@ enum ConvertedType {
 
   /**
    * A Union type
-   * This type annotates data stored as a Group
-   * this shows the intent to have heterogenous types under the same field name
-   * the names of the fields in the annotated Group are not important in such a case
+   * This type annotates data stored as a Group.
+   * This shows the intent to have heterogenous types under the same field name.
+   * The names of the fields in the annotated Group are not important in such a case.
+   * All fields of the Group must be optional and exactly one is defined for each instance of the group.
+   * If more than one is defined the behavior is undefined and may changed depending on the projection applied.
+   * A Union can not contain null but can be null itself if it's an optional field.
    */
   UNION = 24;
 

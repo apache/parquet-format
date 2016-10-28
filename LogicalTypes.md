@@ -366,7 +366,32 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+### Unions
+
+A Union type annotates data stored as a Group.
+It describes the different possible types under the same field name.
+The names of the fields in the annotated Group are not important in such a case, but
+as a convention the type names are used.
+All fields of the Group must be optional and exactly one is defined for each instance of the group.
+If more than one is defined the behavior is undefined and may changed depending on the projection applied.
+A Union can not contain null but can be null itself if in an optional field.
+
+// Union<String, Integer, Boolean> (nullable union of either String, Integer or Boolean)
+optional group my_union (Union) {
+  optional binary string (UTF8);
+  optional int32 integer;
+  optional boolean bool;
+}
+
+// Union<String, Integer, Boolean> (required union of either String, Integer or Boolean)
+required group my_union (Union) {
+  optional binary string (UTF8);
+  optional int32 integer;
+  optional boolean bool;
+}
+
 ## Null
 Sometimes when discovering the schema of existing data values are always null and there's no type information.
 The `NULL` type can be used to annotates a column that is always null.
 (Similar to Null type in Avro)
+
