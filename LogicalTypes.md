@@ -366,3 +366,7 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+## Null
+Sometimes when discovering the schema of existing data values are always null and there's no type information.
+The `NULL` type can be used to annotates a column that is always null.
+(Similar to Null type in Avro)

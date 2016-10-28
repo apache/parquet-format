@@ -181,12 +181,6 @@ enum ConvertedType {
    * values are always null
    */
   NULL = 25;
-
-  /**
-   * Annotates a FLOAT type when the original type was half precision on 16 bits
-   * IEEE 754-2008 the 16-bit base 2 format
-   */
-  FLOAT_HALF_PRECISION = 26;
 }
 
 /**
