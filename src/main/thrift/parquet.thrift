@@ -162,19 +162,48 @@ enum ConvertedType {
   BSON = 20;
 
   /**
+   * @Deprecated: use INTERVAL_YEAR_MONTH or INTERVAL_DAY_TIME
+   * since the SQL standard defines either YEAR_MONTH or DAY_TIME unit.
+   * This is deprecated in favor of those 2 types
+   *
    * An interval of time
-   * 
+   *
    * This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
    * This data is composed of three separate little endian unsigned
    * integers.  Each stores a component of a duration of time.  The first
    * integer identifies the number of months associated with the duration,
    * the second identifies the number of days associated with the duration
-   * and the third identifies the number of milliseconds associated with 
+   * and the third identifies the number of milliseconds associated with
    * the provided duration.  This duration of time is independent of any
    * particular timezone or date.
    */
   INTERVAL = 21;
-  
+
+  /**
+   * An interval of time with a year-month unit.
+   *
+   * This type annotates data stored as an INT32
+   * This data is stored as a little endian unsigned
+   * integer identifying the number of months associated with the duration.
+   * This duration of time is independent of any
+   * particular timezone or date.
+   */
+  INTERVAL_YEAR_MONTH = 22;
+
+  /**
+   * An interval of time with days-milliseconds unit
+   *
+   * This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 8
+   * This data is composed of two separate little endian unsigned
+   * integers.  Each stores a component of a duration of time.
+   *
+   * The first identifies the number of days associated with the duration
+   * and the second identifies the number of milliseconds associated with
+   * the provided duration.  This duration of time is independent of any
+   * particular timezone or date.
+   */
+  INTERVAL_DAY_TIME = 23;
+
 }
 
 /**

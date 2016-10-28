@@ -130,8 +130,12 @@ milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
 microsecond precision. It must annotate an `int64` that stores the number of
 microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
 
-### INTERVAL
+### INTERVAL types
 
+#### INTERVAL
+`INTERVAL` is deprecated. Please use the more precise `INTERVAL_YEAR_MONTH` and
+`INTERVAL_DAY_TIME` per SQL spec.
+For historical reference:
 `INTERVAL` is used for an interval of time. It must annotate a
 `fixed_len_byte_array` of length 12. This array stores three little-endian
 unsigned integers that represent durations at different granularities of time.
@@ -143,6 +147,25 @@ Each component in this representation is independent of the others. For
 example, there is no requirement that a large number of days should be
 expressed as a mix of months and days because there is not a constant
 conversion from days to months.
+
+#### INTERVAL_YEAR_MONTH
+`INTERVAL_YEAR_MONTH` describes an interval of time with year-month unit.
+It annotates data stored as an INT32
+This data is stored as a little endian unsigned
+integer identifying the number of months associated with the duration.
+This duration of time is independent of any
+particular timezone or date.
+
+#### INTERVAL_DAY_TIME
+`INTERVAL_DAY_TIME` describes  interval of time with days-milliseconds unit
+This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 8
+This data is composed of two separate little endian unsigned
+integers.  Each stores a component of a duration of time.
+
+The first identifies the number of days associated with the duration
+and the second identifies the number of milliseconds associated with
+the provided duration.  This duration of time is independent of any
+particular timezone or date.
 
 ## Embedded Types
 
