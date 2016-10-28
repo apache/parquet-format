@@ -376,6 +376,7 @@ All fields of the Group must be optional and exactly one is defined for each ins
 If more than one is defined the behavior is undefined and may changed depending on the projection applied.
 A Union can not contain null but can be null itself if in an optional field.
 
+```
 // Union<String, Integer, Boolean> (nullable union of either String, Integer or Boolean)
 optional group my_union (Union) {
   optional binary string (UTF8);
@@ -389,6 +390,7 @@ required group my_union (Union) {
   optional int32 integer;
   optional boolean bool;
 }
+```
 
 ## Null
 Sometimes when discovering the schema of existing data values are always null and there's no type information.
