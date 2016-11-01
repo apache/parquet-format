@@ -384,7 +384,7 @@ required group my_union (UNION) {
   optional boolean bool;
 }
 ```
-A projection might return an empty union if the non-null field is projected out. However we know that the Union is inon-null,
+A projection might return an empty union if the non-null field is projected out. However we know that the Union is non-null,
 it just contains a value that was not read from disk.
 
  - If the union is nullable then at most one field is non-null and the field containing the union is optional
@@ -403,7 +403,6 @@ If the Union field is null then the value was null.
 If the Union field is non-null then the value is non-null but was not read from disk.
 
  - If - despite the spec - a group instance contains more than one non-null field the behavior is undefined and may change depending on the projection applied.
-
 
 #### Mapping to Avro Unions
 - an Avro Union that contains Null and at least two other types will map to an optional Parquet Union (of the remaining types).
