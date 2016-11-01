@@ -370,27 +370,44 @@ optional group my_map (MAP_KEY_VALUE) {
 
 A Union type annotates data stored as a Group.
 It describes the different possible types under the same field name.
-The names of the fields in the annotated Group are not important in such a case, but
-as a convention the type names are used.
-All fields of the Group must be optional and exactly one is defined for each instance of the group.
-If more than one is defined the behavior is undefined and may changed depending on the projection applied.
-A Union can not contain null but can be null itself if in an optional field.
+The group contains one optional field for each possible type in the Union.
+The names of the fields in the annotated Group are not important, but as a convention the type names are used.
 
+#### Nullability
+ - If the union is not nullable then exactly one field is non-null and the field containing the union is required.
 ```
-// Union<String, Integer, Boolean> (nullable union of either String, Integer or Boolean)
-optional group my_union (Union) {
-  optional binary string (UTF8);
-  optional int32 integer;
-  optional boolean bool;
-}
-
-// Union<String, Integer, Boolean> (required union of either String, Integer or Boolean)
-required group my_union (Union) {
+// Union<String, Integer, Boolean>
+// (exactly one of either String, Integer or Boolean is non-null)
+required group my_union (UNION) {
   optional binary string (UTF8);
   optional int32 integer;
   optional boolean bool;
 }
 ```
+A projection might return an empty union if the non-null field is projected out. However we know that the Union is inon-null,
+it just contains a value that was not read from disk.
+
+ - If the union is nullable then at most one field is non-null and the field containing the union is optional
+```
+// Optional<Union<String, Integer, Boolean>>
+// (at most one of either String, Integer or Boolean is non-null
+// if they are all null then the field my_union itself must be null)
+optional  group my_union (UNION) {
+  optional binary string (UTF8);
+  optional int32 integer;
+  optional boolean bool;
+}
+```
+The union field is used to differentiate a null value (the field was null to start with) from a projection that excludes the non-null field.
+If the Union field is null then the value was null.
+If the Union field is non-null then the value is non-null but was not read from disk.
+
+ - If - despite the spec - a group instance contains more than one non-null field the behavior is undefined and may change depending on the projection applied.
+
+
+#### Mapping to Avro Unions
+- an Avro Union that contains Null and at least two other types will map to an optional Parquet Union (of the remaining types).
+- an Avro Union that does not contain null will map to a required Parquet Union.
 
 ## Null
 Sometimes when discovering the schema of existing data values are always null and there's no type information.
