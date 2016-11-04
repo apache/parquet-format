@@ -174,7 +174,13 @@ enum ConvertedType {
    * particular timezone or date.
    */
   INTERVAL = 21;
-  
+
+  /**
+   * Annotates a column that is always null
+   * Sometimes when discovering the schema of existing data
+   * values are always null
+   */
+  NULL = 25;
 }
 
 /**
