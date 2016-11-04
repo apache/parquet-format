@@ -376,7 +376,7 @@ The names of the fields in the annotated Group are not important, but as a conve
 #### Nullability
  - If the union is not nullable then exactly one field is non-null and the field containing the union is required.
 ```
-// Union<String, Integer, Boolean>
+// Union<String, Integer, Boolean> (where the value of the union is not null)
 // (exactly one of either String, Integer or Boolean is non-null)
 required group my_union (UNION) {
   optional binary string (UTF8);
@@ -389,18 +389,18 @@ it just contains a value that was not read from disk.
 
  - If the union is nullable then at most one field is non-null and the field containing the union is optional
 ```
-// Optional<Union<String, Integer, Boolean>>
-// (at most one of either String, Integer or Boolean is non-null
-// if they are all null then the field my_union itself must be null)
+// Union<String, Integer, Boolean> (where the value of the union may be null)
+// at most one of either String, Integer or Boolean is non-null
+// if they are all null then the field my_union itself must be null
 optional  group my_union (UNION) {
   optional binary string (UTF8);
   optional int32 integer;
   optional boolean bool;
 }
 ```
-The union field is used to differentiate a null value (the field was null to start with) from a projection that excludes the non-null field.
-If the Union field is null then the value was null.
-If the Union field is non-null then the value is non-null but was not read from disk.
+The definition level of the UNION group is used to differentiate a null value (the union was null to start with) from a projection that excludes the non-null field.
+If the Union group is null then the value was null.
+If the Union group is non-null, but all of the options within it are null, then the value was non-null but was an option that was not projected.
 
  - If - despite the spec - a group instance contains more than one non-null field the behavior is undefined and may change depending on the projection applied.
 
