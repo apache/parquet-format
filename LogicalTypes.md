@@ -404,6 +404,14 @@ If the Union group is non-null, but all of the options within it are null, then 
 
  - If - despite the spec - a group instance contains more than one non-null field the behavior is undefined and may change depending on the projection applied.
 
+#### Projecting Unions
+The following points are to be noted when projecting columns out of unions:
+- At least one column from one of the branches must be included in the projection to know when the union is null or not.
+- When projecting out some branches of the union, the type of the union is "unknown" for those at read time. Each object model integration (avro, thrift, ...) has its own rules to expose this.
+- At least one column from each branch must be included in the projection to always know the type.
+- The mechanism to filter records with "unknown" type (meaning these columns have been excluded from the projection) is defined by the model as well.
+Find details about Thrift and Avro in their respective directory.
+
 #### Mapping to Avro Unions
 - an Avro Union that contains Null and at least two other types will map to an optional Parquet Union (of the remaining types).
 - an Avro Union that does not contain null will map to a required Parquet Union.
