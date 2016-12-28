@@ -212,6 +212,15 @@ The format is explicitly designed to separate the metadata from the data.  This
 allows splitting columns into multiple files, as well as having a single metadata
 file reference multiple parquet files.  
 
+## RowGroup Statistics
+In Parquet, the metadata for each RowGroup contains Statistics, which can be used by
+clients for filtering purposes. An example implementation of filtering logic can be found
+in [parquet-mr](https://github.com/apache/parquet-mr). Statistics include information
+like the minimum and maximum for primitive types, while for binary data there is an
+additional notion of _signed_ and _unsigned_ interpretations of the byte strings, which
+have different comparison operations and are stored in the optional fields
+`unsigned_min`, `unsigned_max`, `signed_min` and `signed_max`.
+
 ## Configurations
 - Row group size: Larger row groups allow for larger column chunks which makes it 
 possible to do larger sequential IO.  Larger groups also require more buffering in 

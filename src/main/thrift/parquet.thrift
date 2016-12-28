@@ -200,6 +200,22 @@ enum FieldRepetitionType {
 /**
  * Statistics per row group and per page
  * All fields are optional.
+ *
+ * Binaries are sorted lexicographically (byte by byte), treating each byte as
+ * an integer.  The signed sorting treats each byte as a signed two's
+ * compliment number, and the unsigned treats the byte as an unsigned number.
+ * When one bytestring is a prefix of another, the containing bytestring is
+ * "greater than" the prefix.
+ *
+ * For BinaryStatistics in Parquet, we want to distinguish between the
+ * statistics derived from comparisons of signed or unsigned bytes.  The min
+ * and max fields are deprecated for BinaryStatistics, instead relying on
+ * specification of {unsigned,signed}_{min,max}. The filter API should allow
+ * clients to specify which statistics and method of comparison should be used
+ * for filtering. To maintain backward format compatibility, when filtering
+ * based on signed statistics the signed_min and signed_max are checked first,
+ * and if they are unset it falls back to using the values in min and max,
+ * treating them as signed bytestrings.
  */
 struct Statistics {
    /** min and max value of the column, encoded in PLAIN encoding */
@@ -209,6 +225,12 @@ struct Statistics {
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
+   /* Signed min and max for binary fields */
+   5: optional binary signed_max;
+   6: optional binary signed_min;
+   /* Unsigned min and max for binary fields */
+   7: optional binary unsigned_max;
+   8: optional binary unsigned_min;
 }
 
 /**
