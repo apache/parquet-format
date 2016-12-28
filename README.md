@@ -233,7 +233,7 @@ There are many places in the format for compatible extensions:
 - Page types: Additional page types can be added and safely skipped.
 
 ## Contributing
-Comment on the issue and/or contact [the parquet-dev group](https://groups.google.com/d/forum/parquet-dev) with your questions and ideas.
+Comment on the issue and/or contact [the parquet-dev mailing list](http://mail-archives.apache.org/mod_mbox/parquet-dev/) with your questions and ideas.
 Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-MR subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-MR project](github.com/Parquet/parquet-mr)
 
 ## Code of Conduct
