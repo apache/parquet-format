@@ -202,7 +202,9 @@ enum FieldRepetitionType {
  * All fields are optional.
  */
 struct Statistics {
-   /** min and max value of the column, encoded in PLAIN encoding */
+   /** min and max value of the column, encoded in PLAIN encoding. However, BYTE_ARRAY
+    * columns store the values as strings directly, without prefixing them with their
+    * length. BOOLEAN columns store the values using a single byte. */
    1: optional binary max;
    2: optional binary min;
    /** count of null value in the column */
