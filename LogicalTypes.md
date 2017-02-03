@@ -144,6 +144,15 @@ example, there is no requirement that a large number of days should be
 expressed as a mix of months and days because there is not a constant
 conversion from days to months.
 
+### INT96 timestamps (also called IMPALA_TIMESTAMP)
+
+_(deprecated)_ Timestamps saved as an `int96` are made up of the nanoseconds in the day
+(first 8 byte) and the Julian day (last 4 bytes). No timezone is attached to this value.
+To convert the timestamp into nanoseconds since the Unix epoch, 00:00:00.000000
+on 1 January 1970, the following formula can be used:
+`(julian_day - 2440588) * (86400 * 1000 * 1000 * 1000) + nanoseconds`.
+The magic number `2440588` is the julian day for 1 January 1970.
+
 ## Embedded Types
 
 ### JSON
