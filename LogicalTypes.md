@@ -153,6 +153,9 @@ on 1 January 1970, the following formula can be used:
 `(julian_day - 2440588) * (86400 * 1000 * 1000 * 1000) + nanoseconds`.
 The magic number `2440588` is the julian day for 1 January 1970.
 
+Note that these timestamps are the common usage of the `int96` physical type and are not
+marked with a special logical type annotation.
+
 ## Embedded Types
 
 ### JSON
