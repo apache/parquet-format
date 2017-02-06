@@ -547,6 +547,61 @@ struct RowGroup {
   4: optional list<SortingColumn> sorting_columns
 }
 
+/** Identifier for built-in sort order used to produce min and max values. */
+enum Order {
+  /**
+   * The signed ordering is the order produced by comparing single primitive
+   * values with a signed comparator, or the lexicographic ordering produced by
+   * comparing each byte of a binary or fixed using a signed comparator.
+   *
+   * (A signed comparator uses the most-significant bit as a sign bit; an
+   * unsigned comparator uses the most-significant bit as part of the value's
+   * magnitude. Note that unsigned comparison is not defined for floating
+   * point values.)
+   */
+  SIGNED = 0;
+
+  /**
+   * The unsigned ordering is produced by comparing single primitive values
+   * with an unsigned comparison, or the lexicographic ordering produced by
+   * comparing each byte of a binary or fixed using an unsigned comparator.
+   *
+   * (A signed comparator uses the most-significant bit as a sign bit; an
+   * unsigned comparator uses the most-significant bit as part of the value's
+   * magnitude. Note that unsigned comparison is not defined for floating
+   * point values.)
+   */
+  UNSIGNED = 1;
+
+  /**
+   * Identifiers for custom orderings, to be defined in the ColumnOrder struct.
+   */
+  //CUSTOM = 2;
+}
+
+/** Descriptor for the order used for min, max, and sorting values in a column
+ */
+struct ColumnOrder {
+  /** The order used for this column */
+  0: required Order order;
+
+  /** Whether the order used is ascending (true) or descending (false) */
+  1: required boolean is_ascending;
+
+  /**
+   * A string that identifies the order for this column. This field should be
+   * set if the order is any value other than SIGNED or UNSIGNED and is used to
+   * identify the actual order used for min, max, and soring values.
+   *
+   * This identifier should follow one of the following formats:
+   * * 'icu54:<locale-keyword>' - ICU 54 ordering for the ICU 54 locale keyword
+   *
+   * To define order formats other than those listed above, contact the Parquet
+   * list.
+   */
+  //2: optional string custom_order;
+}
+
 /**
  * Description for file metadata
  */
@@ -576,5 +631,8 @@ struct FileMetaData {
    * e.g. impala version 1.0 (build 6cf94d29b2b7115df4de2c06e2ab4326d721eb55)
    **/
   6: optional string created_by
+
+  /** Sort order used for each column in this file */
+  7: optional list<ColumnOrder> column_orders;
 }
 
