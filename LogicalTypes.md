@@ -37,6 +37,8 @@ may require additional metadata fields, as well as rules for those fields.
 `UTF8` may only be used to annotate the binary primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
+The sort order used for `UTF8` strings must be `UNSIGNED` byte-wise comparison.
+
 ## Numeric Types
 
 ### Signed Integers
@@ -55,6 +57,8 @@ allows.
 implied by the `int32` and `int64` primitive types if no other annotation is
 present and should be considered optional.
 
+The sort order used for signed integer types must be `SIGNED`.
+
 ### Unsigned Integers
 
 `UINT_8`, `UINT_16`, `UINT_32`, and `UINT_64` annotations can be used to
@@ -69,6 +73,8 @@ allows.
 
 `UINT_8`, `UINT_16`, and `UINT_32` must annotate an `int32` primitive type and
 `UINT_64` must annotate an `int64` primitive type.
+
+The sort order used for unsigned integer types must be `UNSIGNED`.
 
 ### DECIMAL
 
@@ -98,6 +104,15 @@ integer. A precision too large for the underlying type (see below) is an error.
 A `SchemaElement` with the `DECIMAL` `ConvertedType` must also have both
 `scale` and `precision` fields set, even if scale is 0 by default.
 
+The sort order used for `DECIMAL` values must be `SIGNED`. The order is
+must be equivalent to signed comparison of decimal values.
+
+If the column uses `int32` or `int64` physical types, then signed comparison of
+the integer values produces the correct ordering. If the physical type is
+fixed, then the correct ordering can be produced by flipping the
+most-significant bit in the first byte and then using unsigned byte-wise
+comparison.
+
 ## Date/Time Types
 
 ### DATE
@@ -106,11 +121,15 @@ A `SchemaElement` with the `DECIMAL` `ConvertedType` must also have both
 annotate an `int32` that stores the number of days from the Unix epoch, 1
 January 1970.
 
+The sort order used for `DATE` is `SIGNED`.
+
 ### TIME\_MILLIS
 
 `TIME_MILLIS` is used for a logical time type with millisecond precision,
 without a date. It must annotate an `int32` that stores the number of
 milliseconds after midnight.
+
+The sort order used for `TIME\_MILLIS` is `SIGNED`.
 
 ### TIME\_MICROS
 
@@ -118,17 +137,23 @@ milliseconds after midnight.
 without a date. It must annotate an `int64` that stores the number of
 microseconds after midnight.
 
+The sort order used for `TIME\_MICROS` is `SIGNED`.
+
 ### TIMESTAMP\_MILLIS
 
 `TIMESTAMP_MILLIS` is used for a combined logical date and time type, with
 millisecond precision. It must annotate an `int64` that stores the number of
 milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
 
+The sort order used for `TIMESTAMP\_MILLIS` is `SIGNED`.
+
 ### TIMESTAMP\_MICROS
 
 `TIMESTAMP_MICROS` is used for a combined logical date and time type with
 microsecond precision. It must annotate an `int64` that stores the number of
 microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
+
+The sort order used for `TIMESTAMP\_MICROS` is `SIGNED`.
 
 ### INTERVAL
 
@@ -143,6 +168,9 @@ Each component in this representation is independent of the others. For
 example, there is no requirement that a large number of days should be
 expressed as a mix of months and days because there is not a constant
 conversion from days to months.
+
+The sort order used for `INTERVAL` is `UNSIGNED`, produced by sorting by
+the value of months, then days, then milliseconds with unsigned comparison.
 
 ## Embedded Types
 
