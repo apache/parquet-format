@@ -583,10 +583,7 @@ enum Order {
  */
 struct ColumnOrder {
   /** The order used for this column */
-  0: required Order order;
-
-  /** Whether the order used is ascending (true) or descending (false) */
-  1: required boolean is_ascending;
+  1: required Order order;
 
   /**
    * A string that identifies the order for this column. This field should be
