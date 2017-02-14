@@ -629,7 +629,13 @@ struct FileMetaData {
    **/
   6: optional string created_by
 
-  /** Sort order used for each column in this file */
+  /**
+   * Sort order used for each column in this file.
+   *
+   * If this list is not present, then the order for each column is assumed to
+   * be SIGNED. In addition, min and max values for INTERVAL or DECIMAL stored
+   * as fixed or bytes should be ignored.
+   */
   7: optional list<ColumnOrder> column_orders;
 }
 

@@ -174,6 +174,8 @@ the value of months, then days, then milliseconds with unsigned comparison.
 
 ## Embedded Types
 
+Embedded types do not have type-specific orderings.
+
 ### JSON
 
 `JSON` is used for an embedded JSON document. It must annotate a `binary`
