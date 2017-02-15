@@ -202,13 +202,33 @@ enum FieldRepetitionType {
  * All fields are optional.
  */
 struct Statistics {
-   /** min and max value of the column, encoded in PLAIN encoding */
+   /**
+    * DEPRECATED: min and max value of the column. Use min_value and max_value.
+    *
+    * Values are encoded using PLAIN encoding, except that variable-length byte
+    * arrays do not include a length prefix.
+    *
+    * These fields encode min and max values determined by SIGNED comparison
+    * only. New files should use the correct order for a column's logical type
+    * and store the values in the min_value and max_value fields.
+    *
+    * To support older readers, these may be set when the column order is
+    * SIGNED.
+    */
    1: optional binary max;
    2: optional binary min;
    /** count of null value in the column */
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
+   /**
+    * Min and max values for the column, determined by its ColumnOrder.
+    *
+    * Values are encoded using PLAIN encoding, except that variable-length byte
+    * arrays do not include a length prefix.
+    */
+   5: optional binary max_value;
+   6: optional binary min_value;
 }
 
 /**
@@ -576,7 +596,7 @@ enum Order {
   /**
    * Identifiers for custom orderings, to be defined in the ColumnOrder struct.
    */
-  //CUSTOM = 2;
+  CUSTOM = 2;
 }
 
 /** Descriptor for the order used for min, max, and sorting values in a column
@@ -596,7 +616,7 @@ struct ColumnOrder {
    * To define order formats other than those listed above, contact the Parquet
    * list.
    */
-  //2: optional string custom_order;
+  2: optional string custom_order;
 }
 
 /**
