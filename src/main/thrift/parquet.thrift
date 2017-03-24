@@ -599,24 +599,15 @@ enum Order {
   CUSTOM = 2;
 }
 
-/** Descriptor for the order used for min, max, and sorting values in a column
- */
-struct ColumnOrder {
-  /** The order used for this column */
-  1: required Order order;
+/** Empty structs to signal SIGNED or UNSIGNED sort orders */
+struct Signed {}
+struct Unsigned {}
 
-  /**
-   * A string that identifies the order for this column. This field should be
-   * set if the order is any value other than SIGNED or UNSIGNED and is used to
-   * identify the actual order used for min, max, and soring values.
-   *
-   * This identifier should follow one of the following formats:
-   * * 'icu54:<locale-keyword>' - ICU 54 ordering for the ICU 54 locale keyword
-   *
-   * To define order formats other than those listed above, contact the Parquet
-   * list.
-   */
-  2: optional string custom_order;
+/** Union containing the order used for min, max, and sorting values in a column
+ */
+union ColumnOrder {
+  1: Signed SIGNED;
+  2: Unsigned UNSIGNED;
 }
 
 /**
@@ -653,7 +644,7 @@ struct FileMetaData {
    * Sort order used for each column in this file.
    *
    * If this list is not present, then the order for each column is assumed to
-   * be SIGNED. In addition, min and max values for INTERVAL or DECIMAL stored
+   * be Signed. In addition, min and max values for INTERVAL or DECIMAL stored
    * as fixed or bytes should be ignored.
    */
   7: optional list<ColumnOrder> column_orders;
