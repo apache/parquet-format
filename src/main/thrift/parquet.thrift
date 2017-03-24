@@ -28,6 +28,17 @@ namespace java org.apache.parquet.format
  * with the encodings to control the on disk storage format.
  * For example INT16 is not included as a type since a good encoding of INT32
  * would handle this.
+ *
+ * When a logical type is not present, the type-defined sort order of these
+ * physical types are:
+ * * BOOLEAN - false, true
+ * * INT32 - signed comparison
+ * * INT64 - signed comparison
+ * * INT96 - signed comparison
+ * * FLOAT - signed comparison
+ * * DOUBLE - signed comparison
+ * * BYTE_ARRAY - unsigned byte-wise comparison
+ * * FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
  */
 enum Type {
   BOOLEAN = 0;
@@ -567,47 +578,21 @@ struct RowGroup {
   4: optional list<SortingColumn> sorting_columns
 }
 
-/** Identifier for built-in sort order used to produce min and max values. */
-enum Order {
-  /**
-   * The signed ordering is the order produced by comparing single primitive
-   * values with a signed comparator, or the lexicographic ordering produced by
-   * comparing each byte of a binary or fixed using a signed comparator.
-   *
-   * (A signed comparator uses the most-significant bit as a sign bit; an
-   * unsigned comparator uses the most-significant bit as part of the value's
-   * magnitude. Note that unsigned comparison is not defined for floating
-   * point values.)
-   */
-  SIGNED = 0;
+/** Empty struct to signal the order defined by the physical or logical type */
+struct TypeDefinedOrder {}
 
-  /**
-   * The unsigned ordering is produced by comparing single primitive values
-   * with an unsigned comparison, or the lexicographic ordering produced by
-   * comparing each byte of a binary or fixed using an unsigned comparator.
-   *
-   * (A signed comparator uses the most-significant bit as a sign bit; an
-   * unsigned comparator uses the most-significant bit as part of the value's
-   * magnitude. Note that unsigned comparison is not defined for floating
-   * point values.)
-   */
-  UNSIGNED = 1;
-
-  /**
-   * Identifiers for custom orderings, to be defined in the ColumnOrder struct.
-   */
-  CUSTOM = 2;
-}
-
-/** Empty structs to signal SIGNED or UNSIGNED sort orders */
-struct Signed {}
-struct Unsigned {}
-
-/** Union containing the order used for min, max, and sorting values in a column
+/**
+ * Union to specify the order used for min, max, and sorting values in a column.
+ *
+ * Possible values are:
+ * * TypeDefinedOrder - the column uses the order defined by its logical or
+ *                      physical type (if there is no logical type).
+ *
+ * If the reader does not support the value of this union, min and max stats
+ * for this column should be ignored.
  */
 union ColumnOrder {
-  1: Signed SIGNED;
-  2: Unsigned UNSIGNED;
+  1: TypeDefinedOrder TYPE_ORDER;
 }
 
 /**
