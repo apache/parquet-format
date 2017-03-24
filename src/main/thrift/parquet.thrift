@@ -175,11 +175,6 @@ enum ConvertedType {
    */
   INTERVAL = 21;
 
-  /**
-   * Annotates a column that is always null
-   * Sometimes when discovering the schema of existing data
-   * values are always null
-   */
   NULL = 25;
 }
 
@@ -237,6 +232,13 @@ struct MapType {}
 struct ListType {}
 struct EnumType {}
 struct DateType {}
+
+/**
+ * Logical type to annotate a column that is always null.
+ *
+ * Sometimes when discovering the schema of existing data values are always
+ * null and the physical type is assumed.
+ */
 struct NullType {}
 
 /**
