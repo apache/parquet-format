@@ -169,7 +169,7 @@ header.  We have the
  - definition levels data,  
  - encoded values.
 
-The size of specified in the header is for all 3 pieces combined.
+The value of `uncompressed_page_size` specified in the header is for all 3 pieces combined.
 
 The data for the data page is always required.  The definition and repetition levels
 are optional, based on the schema definition.  If the column is not nested (i.e.
