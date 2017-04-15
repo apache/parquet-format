@@ -174,8 +174,6 @@ enum ConvertedType {
    * particular timezone or date.
    */
   INTERVAL = 21;
-
-  NULL = 25;
 }
 
 /**
