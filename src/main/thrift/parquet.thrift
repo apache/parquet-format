@@ -278,21 +278,16 @@ struct TimeType {
  * bitWidth must be 8, 16, 32, or 64.
  */
 struct IntType {
-  1: required i32 bitWidth
+  1: required byte bitWidth
   2: required bool isSigned
 }
 
-/** Embedded formats for logical EmbeddedType */
-struct JSON {}
-struct BSON {}
-union EmbeddedFormat {
-  1: JSON JSON
-  2: BSON BSON
+/** Embedded JSON logical type annotation */
+struct JsonType {
 }
 
-/** Embedded logical type annotation */
-struct EmbeddedType {
-  1: required EmbeddedFormat format
+/** Embedded BSON logical type annotation */
+struct BsonType {
 }
 
 /**
@@ -313,8 +308,9 @@ union LogicalType {
   8:  TimestampType TIMESTAMP // use ConvertedType TIMESTAMP_MICROS or TIMESTAMP_MILLIS
   // 9: reserved for INTERVAL
   10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
-  11: EmbeddedType EMBEDDED   // use ConvertedType JSON or BSON
-  12: NullType NULL           // no compatible ConvertedType
+  11: NullType NULL           // no compatible ConvertedType
+  12: JsonType JSON           // use ConvertedType JSON
+  13: BsonType BSON           // use ConvertedType BSON
 }
 
 /**
