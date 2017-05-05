@@ -578,8 +578,9 @@ struct RowGroup {
   4: optional list<SortingColumn> sorting_columns
 }
 
-/** Empty struct to signal the order defined by the physical or logical type */
+/** Empty structs to signal the order defined by the physical or logical type */
 struct TypeDefinedOrder {}
+struct InvalidOrder {}
 
 /**
  * Union to specify the order used for min, max, and sorting values in a column.
@@ -588,11 +589,16 @@ struct TypeDefinedOrder {}
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
  *
+ * * InvalidOrder     - the column uses an invalid order that no reader should support.
+ *                      This order can be used to test logic to exclude unsupported orders
+ *                      and should not be used otherwise.
+ *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
  */
 union ColumnOrder {
-  1: TypeDefinedOrder TYPE_ORDER;
+  1: TypeDefinedOrder TYPE_ORDER
+  2: InvalidOrder INVALID_ORDER
 }
 
 /**
