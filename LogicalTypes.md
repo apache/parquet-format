@@ -32,12 +32,23 @@ This file contains the specification for all logical types.
 The parquet format's `ConvertedType` stores the type annotation. The annotation
 may require additional metadata fields, as well as rules for those fields.
 
-### UTF8 (Strings)
+## String Types
+
+### UTF8
 
 `UTF8` may only be used to annotate the binary primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
 The sort order used for `UTF8` strings is `UNSIGNED` byte-wise comparison.
+
+### ENUM
+
+`ENUM` annotates the binary primitive type and indicates that the value
+was converted from an enumerated type in another data model (e.g. Thrift, Avro, Protobuf).
+Applications using a data model lacking a native enum type should interpret `ENUM`
+annotated field as a UTF-8 encoded string. 
+
+The sort order used for `ENUM`s is `UNSIGNED` byte-wise comparison.
 
 ## Numeric Types
 
