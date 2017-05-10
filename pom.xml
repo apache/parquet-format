@@ -209,8 +209,8 @@
             <exclude>*/jdiff/*.xml</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>licenses/**</exclude>
-            <exclude>thrift-0.7.0/**</exclude>
-            <exclude>thrift-0.7.0.tar.gz</exclude>
+            <exclude>thrift-0.9.0/**</exclude>
+            <exclude>thrift-0.9.0.tar.gz</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -231,7 +231,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.7.0</version>
+      <version>0.9.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
