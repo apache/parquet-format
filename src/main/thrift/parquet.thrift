@@ -219,12 +219,12 @@ struct Statistics {
     * Values are encoded using PLAIN encoding, except that variable-length byte
     * arrays do not include a length prefix.
     *
-    * These fields encode min and max values determined by SIGNED comparison
+    * These fields encode min and max values determined by signed comparison
     * only. New files should use the correct order for a column's logical type
     * and store the values in the min_value and max_value fields.
     *
     * To support older readers, these may be set when the column order is
-    * SIGNED.
+    * signed.
     */
    1: optional binary max;
    2: optional binary min;
@@ -583,6 +583,8 @@ struct TypeDefinedOrder {}
 
 /**
  * Union to specify the order used for min, max, and sorting values in a column.
+ * This union takes the role of an enhanced enum that allows rich elements
+ * (which will be needed for a collation-based ordering in the future).
  *
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
@@ -626,11 +628,9 @@ struct FileMetaData {
   6: optional string created_by
 
   /**
-   * Sort order used for each column in this file.
-   *
-   * If this list is not present, then the order for each column is assumed to
-   * be Signed. In addition, min and max values for INTERVAL or DECIMAL stored
-   * as fixed or bytes should be ignored.
+   * Sort order used for each column in this file. Each sort order corresponds
+   * to one column, determined by its position in the list, matching the
+   * position of the column in the schema.
    */
   7: optional list<ColumnOrder> column_orders;
 }
