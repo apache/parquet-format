@@ -28,17 +28,6 @@ namespace java org.apache.parquet.format
  * with the encodings to control the on disk storage format.
  * For example INT16 is not included as a type since a good encoding of INT32
  * would handle this.
- *
- * When a logical type is not present, the type-defined sort order of these
- * physical types are:
- * * BOOLEAN - false, true
- * * INT32 - signed comparison
- * * INT64 - signed comparison
- * * INT96 - signed comparison
- * * FLOAT - signed comparison
- * * DOUBLE - signed comparison
- * * BYTE_ARRAY - unsigned byte-wise comparison
- * * FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
  */
 enum Type {
   BOOLEAN = 0;
@@ -594,6 +583,40 @@ struct TypeDefinedOrder {}
  * for this column should be ignored.
  */
 union ColumnOrder {
+
+  /**
+   * The sort orders for logical types are:
+   *   UTF8 - unsigned byte-wise comparison
+   *   INT8 - signed comparison
+   *   INT16 - signed comparison
+   *   INT32 - signed comparison
+   *   INT64 - signed comparison
+   *   UINT8 - unsigned comparison
+   *   UINT16 - unsigned comparison
+   *   UINT32 - unsigned comparison
+   *   UINT64 - unsigned comparison
+   *   DECIMAL - signed comparison
+   *   DATE - signed comparison
+   *   TIME_MILLIS - signed comparison
+   *   TIME_MICROS - signed comparison
+   *   TIMESTAMP_MILLIS - signed comparison
+   *   TIMESTAMP_MICROS - signed comparison
+   *   INTERVAL - unsigned comparison
+   *   JSON - undefined
+   *   BSON - undefined
+   *   LIST - undefined
+   *   MAP - undefined
+   *
+   * In the absence of logical types, the sort order is determined by the physical type:
+   *   BOOLEAN - false, true
+   *   INT32 - signed comparison
+   *   INT64 - signed comparison
+   *   INT96 - signed comparison
+   *   FLOAT - signed comparison
+   *   DOUBLE - signed comparison
+   *   BYTE_ARRAY - unsigned byte-wise comparison
+   *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+   */
   1: TypeDefinedOrder TYPE_ORDER;
 }
 
