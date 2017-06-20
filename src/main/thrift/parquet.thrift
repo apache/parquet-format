@@ -571,9 +571,9 @@ struct RowGroup {
 struct TypeDefinedOrder {}
 
 /**
- * Union to specify the order used for min, max, and sorting values in a column.
- * This union takes the role of an enhanced enum that allows rich elements
- * (which will be needed for a collation-based ordering in the future).
+ * Union to specify the order used for the min_value and max_value fields for a
+ * column. This union takes the role of an enhanced enum that allows rich
+ * elements (which will be needed for a collation-based ordering in the future).
  *
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
@@ -651,9 +651,16 @@ struct FileMetaData {
   6: optional string created_by
 
   /**
-   * Sort order used for each column in this file. Each sort order corresponds
-   * to one column, determined by its position in the list, matching the
-   * position of the column in the schema.
+   * Sort order used for the min_value and max_value fields of each column in
+   * this file. Each sort order corresponds to one column, determined by its
+   * position in the list, matching the position of the column in the schema.
+   *
+   * Without column_orders, the meaning of the min_value and max_value fields is
+   * undefined. To ensure well-defined behaviour, if min_value and max_value are
+   * written to a Parquet file, column_orders must be written as well.
+   *
+   * The obsolete min and max fields are always sorted by signed comparison
+   * regardless of column_orders.
    */
   7: optional list<ColumnOrder> column_orders;
 }
