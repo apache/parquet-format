@@ -545,12 +545,15 @@ struct ColumnMetaData {
 }
 
 struct ColumnChunk {
-  /** File where column data is stored.  If not set, assumed to be same file as
-    * metadata.  This path is relative to the current file.
-    **/
+  /** Deprecated and unused. Please ignore. **/
   1: optional string file_path
 
-  /** Byte offset in file_path to the ColumnMetaData **/
+  /**
+   * Deprecated and unused. Please ignore when reading and provide 0 or any
+   * other dummy value when writing. (A required field can not be made optional
+   * because leaving it unset would break old clients that expect the value to
+   * be set, even if it is unused.)
+   **/
   2: required i64 file_offset
 
   /** Column metadata for this chunk. This is the same content as what is at
