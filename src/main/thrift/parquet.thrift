@@ -420,9 +420,9 @@ struct DataPageHeaderV2 {
 
   // repetition levels and definition levels are always using RLE (without size in it)
 
-  /** length of the repetition levels */
-  5: required i32 definition_levels_byte_length;
   /** length of the definition levels */
+  5: required i32 definition_levels_byte_length;
+  /** length of the repetition levels */
   6: required i32 repetition_levels_byte_length;
 
   /**  whether the values are compressed.
