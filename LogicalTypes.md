@@ -104,8 +104,8 @@ integer. A precision too large for the underlying type (see below) is an error.
 A `SchemaElement` with the `DECIMAL` `ConvertedType` must also have both
 `scale` and `precision` fields set, even if scale is 0 by default.
 
-The sort order used for `DECIMAL` values is signed. The order is equivalent
-to signed comparison of decimal values.
+The sort order used for `DECIMAL` values is signed comparison of the represented
+value.
 
 If the column uses `int32` or `int64` physical types, then signed comparison of
 the integer values produces the correct ordering. If the physical type is
@@ -184,6 +184,8 @@ string of valid JSON as defined by the [JSON specification][json-spec]
 
 [json-spec]: http://json.org/
 
+The sort order used for `JSON` is unsigned byte-wise comparison.
+
 ### BSON
 
 `BSON` is used for an embedded BSON document. It must annotate a `binary`
@@ -191,6 +193,8 @@ primitive type. The `binary` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
+
+The sort order used for `BSON` is unsigned byte-wise comparison.
 
 ## Nested Types
 

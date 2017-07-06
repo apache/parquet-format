@@ -595,15 +595,16 @@ union ColumnOrder {
    *   UINT16 - unsigned comparison
    *   UINT32 - unsigned comparison
    *   UINT64 - unsigned comparison
-   *   DECIMAL - signed comparison
+   *   DECIMAL - signed comparison of the represented value
    *   DATE - signed comparison
    *   TIME_MILLIS - signed comparison
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
    *   TIMESTAMP_MICROS - signed comparison
    *   INTERVAL - unsigned comparison
-   *   JSON - undefined
-   *   BSON - undefined
+   *   JSON - unsigned byte-wise comparison
+   *   BSON - unsigned byte-wise comparison
+   *   ENUM - unsigned byte-wise comparison
    *   LIST - undefined
    *   MAP - undefined
    *
@@ -611,9 +612,9 @@ union ColumnOrder {
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 - signed comparison
-   *   FLOAT - signed comparison
-   *   DOUBLE - signed comparison
+   *   INT96 (only used for legacy timestamps) - unsigned comparison
+   *   FLOAT - signed comparison of the represented value
+   *   DOUBLE - signed comparison of the represented value
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    */
