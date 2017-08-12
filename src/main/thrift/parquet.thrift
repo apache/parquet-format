@@ -658,6 +658,33 @@ struct ColumnMetaData {
    * This information can be used to determine if all data pages are
    * dictionary encoded for example **/
   13: optional list<PageEncodingStats> encoding_stats;
+
+  /** Byte offset from beginning of file to bloom filter data**/
+  14: optional i64 bloom_filter_offset;
+}
+
+enum BloomFilterAlgorithm {
+    /** Block based bloom filter. **/
+    BLOCK = 0;
+}
+
+enum BloomFilterHash {
+    /** The hash function used to compute hash of column value,
+      * murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
+      * murmur3 128 bits function murmur3hash_x64_128 
+    **/
+    MURMUR3 = 0;
+}
+
+struct BloomFilterHeader {
+  /** The size of bitset in bytes, must be a power of 2 and larger than 32**/
+  1: required i32 numBytes;
+
+  /** The algorithm for setting bits. **/
+  2: required BloomFilterAlgorithm bloomFilterAlgorithm;
+
+  /** The hash function used for bloom filter. **/
+  3: required BloomFilterHash bloomFilterHash;
 }
 
 struct ColumnChunk {
