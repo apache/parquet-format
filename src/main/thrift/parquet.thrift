@@ -225,11 +225,11 @@ struct Statistics {
 }
 
 /** Empty structs to use as logical type annotations */
-struct StringType {}
-struct MapType {}
-struct ListType {}
-struct EnumType {}
-struct DateType {}
+struct StringType {}  // allowed for BINARY, must be encoded with UTF-8
+struct MapType {}     // see LogicalTypes.md
+struct ListType {}    // see LogicalTypes.md
+struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
+struct DateType {}    // allowed for INT32
 
 /**
  * Logical type to annotate a column that is always null.
@@ -237,13 +237,15 @@ struct DateType {}
  * Sometimes when discovering the schema of existing data values are always
  * null and the physical type is assumed.
  */
-struct NullType {}
+struct NullType {}    // allowed for any physical type, only null values stored
 
 /**
  * Decimal logical type annotation
  *
  * To maintain forward-compatibility in v1, implementations using this logical
  * type must also set scale and precision on the annotated SchemaElement.
+ *
+ * Allowed for physical types: INT32, INT64, FIXED, and BINARY
  */
 struct DecimalType {
   1: required i32 scale
@@ -258,13 +260,21 @@ union TimeUnit {
   2: MicroSeconds MICROS
 }
 
-/** Timestamp logical type annotation */
+/**
+ * Timestamp logical type annotation
+ *
+ * Allowed for physical types: INT64
+ */
 struct TimestampType {
   1: required bool isAdjustedToUTC
   2: required TimeUnit unit
 }
 
-/** Time logical type annotation */
+/**
+ * Time logical type annotation
+ *
+ * Allowed for physical types: INT32 (millis), INT64 (micros)
+ */
 struct TimeType {
   1: required bool isAdjustedToUTC
   2: required TimeUnit unit
@@ -274,17 +284,27 @@ struct TimeType {
  * Integer logical type annotation
  *
  * bitWidth must be 8, 16, 32, or 64.
+ *
+ * Allowed for physical types: INT32, INT64
  */
 struct IntType {
   1: required byte bitWidth
   2: required bool isSigned
 }
 
-/** Embedded JSON logical type annotation */
+/**
+ * Embedded JSON logical type annotation
+ *
+ * Allowed for physical types: BINARY
+ */
 struct JsonType {
 }
 
-/** Embedded BSON logical type annotation */
+/**
+ * Embedded BSON logical type annotation
+ *
+ * Allowed for physical types: BINARY
+ */
 struct BsonType {
 }
 
@@ -306,7 +326,7 @@ union LogicalType {
   8:  TimestampType TIMESTAMP // use ConvertedType TIMESTAMP_MICROS or TIMESTAMP_MILLIS
   // 9: reserved for INTERVAL
   10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
-  11: NullType NULL           // no compatible ConvertedType
+  11: NullType NONE           // no compatible ConvertedType
   12: JsonType JSON           // use ConvertedType JSON
   13: BsonType BSON           // use ConvertedType BSON
 }
