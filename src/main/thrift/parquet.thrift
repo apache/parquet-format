@@ -558,6 +558,18 @@ struct ColumnChunk {
    * metadata.
    **/
   3: optional ColumnMetaData meta_data
+
+  /** File offset of this column's OffsetIndex **/
+  4: optional i64 offset_index_offset
+
+  /** Size of this column's OffsetIndex, in bytes **/
+  5: optional i32 offset_index_length
+
+  /** File offset of this column's ColumnIndex **/
+  6: optional i64 column_index_offset
+
+  /** Size of this column's ColumnIndex, in bytes **/
+  7: optional i32 column_index_length
 }
 
 struct RowGroup {
@@ -593,6 +605,43 @@ struct TypeDefinedOrder {}
  */
 union ColumnOrder {
   1: TypeDefinedOrder TYPE_ORDER;
+}
+
+struct PageLocation {
+/** Offset of the page in the file **/
+  1: required i64 offset
+
+/** Size of the page, including header. The same as PageHeader.compressed_page_size **/
+  2: required i32 compressed_page_size
+
+/** Index within the RowGroup of the first row of the page **/
+  3: required i64 first_row_index
+}
+
+struct OffsetIndex {
+/** PageLocations, ordered by increasing PageLocation.offset **/
+  1: required list<PageLocation> page_locations
+}
+
+/**
+ * Description for ColumnIndex.
+ * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
+ */
+struct ColumnIndex {
+/** A list of bools to determine the validity of the corresponding min and max values **/
+  1: required list<bool> valid_values
+
+/** A list containing the lower bounds for the values of each page **/
+  2: required list<binary> min_values
+
+/** A list containing the upper bounds for the values of each page **/
+  3: optional list<binary> max_values
+
+/** A list containing DataPageHeaderV2.statistics.null_count for each page **/
+  4: optional list<i64> null_count
+
+/** A list containing DataPageHeaderV2.statistics.distinct_count for each page **/
+  5: optional list<i64> distinct_count
 }
 
 /**
