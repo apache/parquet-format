@@ -28,4 +28,4 @@ Recommendations and requirements for how to best contribute to Parquet. We striv
 
 ### License
 By contributing your code, you agree to license your contribution under the terms of the APLv2:
-https://github.com/Parquet/parquet-format/blob/master/LICENSE
+https://github.com/apache/parquet-format/blob/master/LICENSE
