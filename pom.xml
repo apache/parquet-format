@@ -87,6 +87,7 @@
     <maven.compiler.target>1.6</maven.compiler.target>
     <shade.prefix>shaded.parquet</shade.prefix>
     <thrift.executable>thrift</thrift.executable>
+    <thrift.version>0.9.3</thrift.version>
   </properties>
 
   <build>
@@ -143,18 +144,9 @@
               <artifactSet>
                 <includes>
                   <include>org.apache.thrift:libthrift</include>
-                  <include>org.slf4j:slf4j-api</include>
-                  <include>org.slf4j:slf4j-nop</include>
                 </includes>
               </artifactSet>
               <filters>
-                <filter>
-                  <!-- Exclude SLF4J's meta files, covered by LICENSE and NOTICE -->
-                  <artifact>org.slf4j:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/**/*</exclude>
-                  </excludes>
-                </filter>
                 <filter>
                   <!-- Sigh. The Thrift jar contains its source -->
                   <artifact>org.apache.thrift:libthrift</artifact>
@@ -169,10 +161,6 @@
                 <relocation>
                   <pattern>org.apache.thrift</pattern>
                   <shadedPattern>${shade.prefix}.org.apache.thrift</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.slf4j</pattern>
-                  <shadedPattern>${shade.prefix}.org.slf4j</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -209,8 +197,8 @@
             <exclude>*/jdiff/*.xml</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>licenses/**</exclude>
-            <exclude>thrift-0.7.0/**</exclude>
-            <exclude>thrift-0.7.0.tar.gz</exclude>
+            <exclude>thrift-${thrift.version}/**</exclude>
+            <exclude>thrift-${thrift.version}.tar.gz</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -231,7 +219,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.7.0</version>
+      <version>${thrift.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -240,4 +228,48 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+      </activation>
+      <id>UnixClassOS</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>check-thrift-version</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>sh</executable>
+                  <workingDirectory>${basedir}</workingDirectory>
+                  <arguments>
+                    <argument>-c</argument>
+                    <argument>${thrift.executable} -version | fgrep 'Thrift version ${thrift.version}' &amp;&amp; exit 0;
+                      echo "=================================================================================";
+                      echo "========== [FATAL] Build is configured to require Thrift version ${thrift.version} ==========";
+                      echo -n "========== Currently installed: ";
+                      ${thrift.executable} -version;
+                      echo "=================================================================================";
+                      exit 1
+                    </argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
