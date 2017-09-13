@@ -17,8 +17,8 @@
   - under the License.
   -->
 
-Parquet [![Build Status](https://travis-ci.org/Parquet/parquet-format.png?branch=master)](http://travis-ci.org/Parquet/parquet-format)
-======
+# Parquet [![Build Status](https://travis-ci.org/apache/parquet-format.png?branch=master)](http://travis-ci.org/apache/parquet-format)
+
 Parquet is a columnar storage format that supports nested data.
 
 Parquet metadata is encoded using Apache Thrift.
@@ -30,7 +30,7 @@ and writers for Parquet files.
 
 We created Parquet to make the advantages of compressed, efficient columnar data representation available to any project in the Hadoop ecosystem.
 
-Parquet is built from the ground up with complex nested data structures in mind, and uses the [record shredding and assembly algorithm](https://github.com/Parquet/parquet-mr/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) described in the Dremel paper. We believe this approach is superior to simple flattening of nested name spaces.
+Parquet is built from the ground up with complex nested data structures in mind, and uses the [record shredding and assembly algorithm](https://github.com/julienledem/redelm/wiki/The-striping-and-assembly-algorithms-from-the-Dremel-paper) described in the Dremel paper. We believe this approach is superior to simple flattening of nested name spaces.
 
 Parquet is built to support very efficient compression and encoding schemes. Multiple projects have demonstrated the performance impact of applying the right compression and encoding scheme to the data. Parquet allows compression schemes to be specified on a per-column level, and is future-proofed to allow adding more encodings as they are invented and implemented.
 
@@ -111,13 +111,13 @@ Metadata is written after the data to allow for single pass writing.
 Readers are expected to first read the file metadata to find all the column 
 chunks they are interested in.  The columns chunks should then be read sequentially.
 
- ![File Layout](https://raw.github.com/Parquet/parquet-format/master/doc/images/FileLayout.gif)
+ ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
 
 ## Metadata
 There are three types of metadata: file metadata, column (chunk) metadata and page
 header metadata.  All thrift structures are serialized using the TCompactProtocol.
 
- ![Metadata diagram](https://github.com/Parquet/parquet-format/raw/master/doc/images/FileFormat.gif)
+ ![Metadata diagram](https://github.com/apache/parquet-format/raw/master/doc/images/FileFormat.gif)
 
 ## Types
 The types supported by the file format are intended to be as minimal as possible,
@@ -180,7 +180,7 @@ skipped (if encoded, it will always have the value of the max definition level).
 For example, in the case where the column is non-nested and required, the data in the
 page is only the encoded values.
 
-The supported encodings are described in [Encodings.md](https://github.com/Parquet/parquet-format/blob/master/Encodings.md)
+The supported encodings are described in [Encodings.md](https://github.com/apache/parquet-format/blob/master/Encodings.md)
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common 
@@ -234,7 +234,7 @@ There are many places in the format for compatible extensions:
 
 ## Contributing
 Comment on the issue and/or contact [the parquet-dev mailing list](http://mail-archives.apache.org/mod_mbox/parquet-dev/) with your questions and ideas.
-Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-MR subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-MR project](github.com/Parquet/parquet-mr)
+Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-MR subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-MR project](github.com/apache/parquet-mr)
 
 ## Code of Conduct
 
