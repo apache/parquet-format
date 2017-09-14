@@ -672,11 +672,14 @@ enum BloomFilterAlgorithm {
    * filter, the high 32 bits hash value is used to select bucket, and 
    * lower 32 bits hash values are used to set bits in tiny bloom filter.
    * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically, 
-   * the tiny bloom filter size is 32 bytes. The algorithm also needs 8 odd
-   * SALT values (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU,
-   * 0x705495c7U, 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calcuate the 
-   * index of bit to set inside tiny bloom filter.
-  **/
+   * the tiny bloom filter size is 32 bytes and the algorithm set 8 bits
+   * in each bucket.
+   *
+   * In order to set bits in bucket, the algorithm need 8 SALT values 
+   * (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU, 0x705495c7U, 
+   * 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calculate index with formular:
+   *                  index[i] = (hash * SALT[i]) >> 27 
+   **/
     BLOCK = 0;
 }
 
@@ -685,10 +688,9 @@ enum BloomFilterAlgorithm {
  * Note that the hash function take plain encoding of column values as input.
  */
 enum BloomFilterHash {
-  /**
-    Murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
+  /** Murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
    * Murmur3 128 bits function murmur3hash_x64_128  
-  **/
+   **/
     MURMUR3 = 0;
 }
 
