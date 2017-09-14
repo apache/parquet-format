@@ -663,16 +663,32 @@ struct ColumnMetaData {
   14: optional i64 bloom_filter_offset;
 }
 
+/**
+  * Definition of bloom filter algorithm.
+  */
 enum BloomFilterAlgorithm {
-    /** Block based bloom filter. **/
+  /** Block based bloom filter. 
+   * The bloom filter bitset is separated into tiny bucket as tiny bloom 
+   * filter, the high 32 bits hash value is used to select bucket, and 
+   * lower 32 bits hash values are used to set bits in tiny bloom filter.
+   * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically, 
+   * the tiny bloom filter size is 32 bytes. The algorithm also needs 8 odd
+   * SALT values (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU,
+   * 0x705495c7U, 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calcuate the 
+   * index of bit to set inside tiny bloom filter.
+  **/
     BLOCK = 0;
 }
 
+/** 
+ * Definition for hash function used to compute hash of column value.
+ * Note that the hash function take plain encoding of column values as input.
+ */
 enum BloomFilterHash {
-    /** The hash function used to compute hash of column value,
-      * murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
-      * murmur3 128 bits function murmur3hash_x64_128 
-    **/
+  /**
+    Murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
+   * Murmur3 128 bits function murmur3hash_x64_128  
+  **/
     MURMUR3 = 0;
 }
 
