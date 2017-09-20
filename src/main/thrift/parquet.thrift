@@ -446,21 +446,21 @@ struct PageHeader {
   /** Compressed page size in bytes (not including this header) **/
   3: required i32 compressed_page_size
 
-  /** Encrypted page size in bytes (not including this header) **/
-  4: optional i32 encrypted_page_size
-
   /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
    *  if only a few pages needs to be read
    **/
-  5: optional i32 crc
+  4: optional i32 crc
 
   // Headers for page specific data.  One only will be set.
-  6: optional DataPageHeader data_page_header;
-  7: optional IndexPageHeader index_page_header;
-  8: optional DictionaryPageHeader dictionary_page_header;
-  9: optional DataPageHeaderV2 data_page_header_v2;
+  5: optional DataPageHeader data_page_header;
+  6: optional IndexPageHeader index_page_header;
+  7: optional DictionaryPageHeader dictionary_page_header;
+  8: optional DataPageHeaderV2 data_page_header_v2;
+  
+    /** Encrypted page size in bytes (not including this header) **/
+  9: optional i32 encrypted_page_size
+  
 }
-
 /**
  * Wrapper struct to store key values
  */
