@@ -525,8 +525,8 @@ enum BloomFilterAlgorithm {
    * filter, the high 32 bits hash value is used to select bucket, and 
    * lower 32 bits hash values are used to set bits in tiny bloom filter.
    * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically, 
-   * one tiny bloom filter contains eight 32-bit words and the algorithm
-   * set one bit in each 32-bit word.
+   * one tiny bloom filter contains eight 32-bit words (4 bytes stored in 
+   * little endian), and the algorithm set one bit in each 32-bit word.
    *
    * In order to set bits in bucket, the algorithm need 8 SALT values 
    * (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU, 0x705495c7U, 
