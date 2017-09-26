@@ -659,15 +659,16 @@ struct ColumnMetaData {
    * dictionary encoded for example **/
   13: optional list<PageEncodingStats> encoding_stats;
 
-  /** Byte offset from beginning of file to bloom filter data**/
+  /** Byte offset from beginning of file to bloom filter data. The bloom filters
+   * data of columns together is stored before the start of row group wihch describe.**/
   14: optional i64 bloom_filter_offset;
 }
 
 /**
   * Definition of bloom filter algorithm.
   */
-enum BloomFilterAlgorithm {
-  /** Block based bloom filter. 
+union BloomFilterAlgorithm {
+  /** The default value 0 represents Block based bloom filter. 
    * The bloom filter bitset is separated into tiny bucket as tiny bloom 
    * filter, the high 32 bits hash value is used to select bucket, and 
    * lower 32 bits hash values are used to set bits in tiny bloom filter.
@@ -680,22 +681,27 @@ enum BloomFilterAlgorithm {
    * 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calculate index with formular:
    *                  index[i] = (hash * SALT[i]) >> 27 
    **/
-    BLOCK = 0;
+   1: i32 algorithm = 0;
 }
 
 /** 
  * Definition for hash function used to compute hash of column value.
  * Note that the hash function take plain encoding of column values as input.
  */
-enum BloomFilterHash {
-  /** Murmur3 has 32 bits and 128 bits hash, we use lower 64 bits from 
-   * Murmur3 128 bits function murmur3hash_x64_128  
+union BloomFilterHash {
+  /** The default value 0 represents Murmur3.
+   * Murmur3 hash has 32 bits and 128 bits hash variants, we use first 64 bits from 
+   * its x64 128 bits function murmur3hash_x64_128  
    **/
-    MURMUR3 = 0;
+  1: i32 hash_strategy = 0;
 }
 
+/**
+  * Bloom filter header is stored at beginning of bloom filter data of each column 
+  * and followed by its bitset.
+  */
 struct BloomFilterHeader {
-  /** The size of bitset in bytes, must be a power of 2 and larger than 32**/
+  /** The size of bitset in bytes, must be a power of 2**/
   1: required i32 numBytes;
 
   /** The algorithm for setting bits. **/
