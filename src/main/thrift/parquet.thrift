@@ -543,8 +543,8 @@ union BloomFilterAlgorithm {
  */
 union BloomFilterHash {
   /** The default value 0 represents Murmur3.
-   * Murmur3 hash has 32 bits and 128 bits hash variants, we use first 64 bits from 
-   * its x64 128 bits function murmur3hash_x64_128  
+   * Murmur3 hash has 32 bits and 128 bits hash variants, we use least significant 
+   * 64 bits from its x64 128 bits function murmur3hash_x64_128  
    **/
   1: i32 hash_strategy = 0;
 }
