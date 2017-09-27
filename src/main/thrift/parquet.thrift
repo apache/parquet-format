@@ -518,10 +518,17 @@ struct ColumnMetaData {
 }
 
 /**
+  * Block based algorithm type annotation.
+  */
+struct BlockAlgorithm {
+}
+
+/**
   * Definition of bloom filter algorithm.
+  * In order for farward compatibility, we use union to replace enum.
   */
 union BloomFilterAlgorithm {
-  /** The default value 0 represents Block based bloom filter. 
+  /** Block based bloom filter. 
    * The bloom filter bitset is separated into tiny bucket as tiny bloom 
    * filter, the high 32 bits hash value is used to select bucket, and 
    * lower 32 bits hash values are used to set bits in tiny bloom filter.
@@ -534,19 +541,29 @@ union BloomFilterAlgorithm {
    * 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calculate index with formular:
    *                  index[i] = (hash * SALT[i]) >> 27 
    **/
-   1: i32 algorithm = 0;
+   1: BlockAlgorithm BLOCK;
+}
+
+/**
+  * Hash strategy type annotation.
+  */
+struct HashStrategy {
 }
 
 /** 
  * Definition for hash function used to compute hash of column value.
- * Note that the hash function take plain encoding of column values as input.
+ * Note that the hash function take plain encoding (little endian order for
+ * primitive types, see Encoding definition for detail) of column values as input.
+ *
+ * In order for farward compatibility, we use union to replace enum.
  */
 union BloomFilterHash {
-  /** The default value 0 represents Murmur3.
+  /** Murmur3 Hash Strategy.
    * Murmur3 hash has 32 bits and 128 bits hash variants, we use least significant 
-   * 64 bits from its x64 128 bits function murmur3hash_x64_128  
+   * 64 bits from the result of x64 128-bits function murmur3hash_x64_128 in little
+   * endian order.
    **/
-  1: i32 hash_strategy = 0;
+  1: HashStrategy MURMUR3;
 }
 
 /**
