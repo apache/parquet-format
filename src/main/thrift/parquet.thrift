@@ -547,7 +547,7 @@ union BloomFilterAlgorithm {
 /**
   * Hash strategy type annotation.
   */
-struct HashStrategy {
+struct Murmur3 {
 }
 
 /** 
@@ -563,7 +563,7 @@ union BloomFilterHash {
    * 64 bits from the result of x64 128-bits function murmur3hash_x64_128 in little
    * endian order.
    **/
-  1: HashStrategy MURMUR3;
+  1: Murmur3 MURMUR3;
 }
 
 /**
