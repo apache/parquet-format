@@ -101,7 +101,7 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    shifting and ORing with a mask. (to make this optimization work on a big-endian machine,
    you would have to use the ordering used in the [deprecated bit-packing](#BITPACKED) encoding)
 
-2. varint-encode() is ULEB-128 encoding, see http://en.wikipedia.org/wiki/Variable-length_quantity
+2. varint-encode() is ULEB-128 encoding, see https://en.wikipedia.org/wiki/LEB128
 
 ### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
 This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
@@ -230,7 +230,7 @@ Supported Types: BYTE_ARRAY
 This is also known as incremental encoding or front compression: for each element in a
 sequence of strings, store the prefix length of the previous entry plus the suffix.
 
-For a longer description, see http://en.wikipedia.org/wiki/Incremental_encoding.
+For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding.
 
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY). 
