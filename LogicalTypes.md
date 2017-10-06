@@ -411,7 +411,58 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+### Unions
+
+A Union type annotates data stored as a Group.
+It describes the different possible types under the same field name.
+The group contains one optional field for each possible type in the Union.
+The names of the fields in the annotated Group are not important, but as a convention the type names are used.
+
+#### Nullability
+ - If the union is not nullable then exactly one field is non-null and the field containing the union is required.
+```
+// Union<String, Integer, Boolean> (where the value of the union is not null)
+// (exactly one of either String, Integer or Boolean is non-null)
+required group my_union (UNION) {
+  optional binary string (UTF8);
+  optional int32 integer;
+  optional boolean bool;
+}
+```
+A projection might return an empty union if the non-null field is projected out. However we know that the Union is non-null,
+it just contains a value that was not read from disk.
+
+ - If the union is nullable then at most one field is non-null and the field containing the union is optional
+```
+// Union<String, Integer, Boolean> (where the value of the union may be null)
+// at most one of either String, Integer or Boolean is non-null
+// if they are all null then the field my_union itself must be null
+optional  group my_union (UNION) {
+  optional binary string (UTF8);
+  optional int32 integer;
+  optional boolean bool;
+}
+```
+The definition level of the UNION group is used to differentiate a null value (the union was null to start with) from a projection that excludes the non-null field.
+If the Union group is null then the value was null.
+If the Union group is non-null, but all of the options within it are null, then the value was non-null but was an option that was not projected.
+
+ - If - despite the spec - a group instance contains more than one non-null field the behavior is undefined and may change depending on the projection applied.
+
+#### Projecting Unions
+The following points are to be noted when projecting columns out of unions:
+- At least one column from one of the branches must be included in the projection to know when the union is null or not.
+- When projecting out some branches of the union, the type of the union is "unknown" for those at read time. Each object model integration (avro, thrift, ...) has its own rules to expose this.
+- At least one column from each branch must be included in the projection to always know the type.
+- The mechanism to filter records with "unknown" type (meaning these columns have been excluded from the projection) is defined by the model as well.
+Find details about Thrift and Avro in their respective directory.
+
+#### Mapping to Avro Unions
+- an Avro Union that contains Null and at least two other types will map to an optional Parquet Union (of the remaining types).
+- an Avro Union that does not contain null will map to a required Parquet Union.
+
 ## Null
 Sometimes when discovering the schema of existing data values are always null and there's no type information.
 The `NULL` type can be used to annotates a column that is always null.
 (Similar to Null type in Avro)
+

@@ -176,6 +176,18 @@ enum ConvertedType {
   INTERVAL = 21;
 
   /**
+   * A Union type
+   *
+   * This type annotates data stored as a Group.
+   * This shows the intent to have heterogenous types under the same field name.
+   * The names of the fields in the annotated Group are not important in such a case.
+   * All fields of the Group must be optional and exactly one is defined for each instance of the group.
+   * If more than one is defined the behavior is undefined and may changed depending on the projection applied.
+   * An optional Union field encodes the difference between a null value and a missing projected-out non-null value.
+   */
+  UNION = 24;
+
+  /**
    * Annotates a column that is always null
    * Sometimes when discovering the schema of existing data
    * values are always null
