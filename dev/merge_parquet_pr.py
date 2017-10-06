@@ -79,11 +79,19 @@ def fail(msg):
 
 
 def run_cmd(cmd):
-    if isinstance(cmd, list):
-        return subprocess.check_output(cmd)
-    else:
-        return subprocess.check_output(cmd.split(" "))
-
+    try:
+        if isinstance(cmd, list):
+            return subprocess.check_output(cmd)
+        else:
+            return subprocess.check_output(cmd.split(" "))
+    except subprocess.CalledProcessError as e:
+        # this avoids hiding the stdout / stderr of failed processes
+        print 'Command failed: %s' % cmd
+        print 'With output:'
+        print '--------------'
+        print e.output
+        print '--------------'
+        raise e
 
 def continue_maybe(prompt):
     result = raw_input("\n%s (y/n): " % prompt)
@@ -210,9 +218,9 @@ def fix_version_from_branch(branch, versions):
         return filter(lambda x: x.name.startswith(branch_ver), versions)[-1]
 
 def exctract_jira_id(title):
-    m = re.search('^(PARQUET-[0-9]+):.*$', title)
+    m = re.search(r'^(PARQUET-[0-9]+)\b.*$', title, re.IGNORECASE)
     if m and m.groups > 0:
-        return m.group(1)
+        return m.group(1).upper()
     else:
         fail("PR title should be prefixed by a jira id \"PARQUET-XXX: ...\", found: \"%s\"" % title)
 
