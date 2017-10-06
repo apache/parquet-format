@@ -28,17 +28,6 @@ namespace java org.apache.parquet.format
  * with the encodings to control the on disk storage format.
  * For example INT16 is not included as a type since a good encoding of INT32
  * would handle this.
- *
- * When a logical type is not present, the type-defined sort order of these
- * physical types are:
- * * BOOLEAN - false, true
- * * INT32 - signed comparison
- * * INT64 - signed comparison
- * * INT96 - signed comparison
- * * FLOAT - signed comparison
- * * DOUBLE - signed comparison
- * * BYTE_ARRAY - unsigned byte-wise comparison
- * * FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
  */
 enum Type {
   BOOLEAN = 0;
@@ -219,12 +208,12 @@ struct Statistics {
     * Values are encoded using PLAIN encoding, except that variable-length byte
     * arrays do not include a length prefix.
     *
-    * These fields encode min and max values determined by SIGNED comparison
+    * These fields encode min and max values determined by signed comparison
     * only. New files should use the correct order for a column's logical type
     * and store the values in the min_value and max_value fields.
     *
     * To support older readers, these may be set when the column order is
-    * SIGNED.
+    * signed.
     */
    1: optional binary max;
    2: optional binary min;
@@ -582,7 +571,9 @@ struct RowGroup {
 struct TypeDefinedOrder {}
 
 /**
- * Union to specify the order used for min, max, and sorting values in a column.
+ * Union to specify the order used for the min_value and max_value fields for a
+ * column. This union takes the role of an enhanced enum that allows rich
+ * elements (which will be needed for a collation-based ordering in the future).
  *
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
@@ -592,6 +583,41 @@ struct TypeDefinedOrder {}
  * for this column should be ignored.
  */
 union ColumnOrder {
+
+  /**
+   * The sort orders for logical types are:
+   *   UTF8 - unsigned byte-wise comparison
+   *   INT8 - signed comparison
+   *   INT16 - signed comparison
+   *   INT32 - signed comparison
+   *   INT64 - signed comparison
+   *   UINT8 - unsigned comparison
+   *   UINT16 - unsigned comparison
+   *   UINT32 - unsigned comparison
+   *   UINT64 - unsigned comparison
+   *   DECIMAL - signed comparison of the represented value
+   *   DATE - signed comparison
+   *   TIME_MILLIS - signed comparison
+   *   TIME_MICROS - signed comparison
+   *   TIMESTAMP_MILLIS - signed comparison
+   *   TIMESTAMP_MICROS - signed comparison
+   *   INTERVAL - unsigned comparison
+   *   JSON - unsigned byte-wise comparison
+   *   BSON - unsigned byte-wise comparison
+   *   ENUM - unsigned byte-wise comparison
+   *   LIST - undefined
+   *   MAP - undefined
+   *
+   * In the absence of logical types, the sort order is determined by the physical type:
+   *   BOOLEAN - false, true
+   *   INT32 - signed comparison
+   *   INT64 - signed comparison
+   *   INT96 (only used for legacy timestamps) - unsigned comparison
+   *   FLOAT - signed comparison of the represented value
+   *   DOUBLE - signed comparison of the represented value
+   *   BYTE_ARRAY - unsigned byte-wise comparison
+   *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+   */
   1: TypeDefinedOrder TYPE_ORDER;
 }
 
@@ -626,11 +652,16 @@ struct FileMetaData {
   6: optional string created_by
 
   /**
-   * Sort order used for each column in this file.
+   * Sort order used for the min_value and max_value fields of each column in
+   * this file. Each sort order corresponds to one column, determined by its
+   * position in the list, matching the position of the column in the schema.
    *
-   * If this list is not present, then the order for each column is assumed to
-   * be Signed. In addition, min and max values for INTERVAL or DECIMAL stored
-   * as fixed or bytes should be ignored.
+   * Without column_orders, the meaning of the min_value and max_value fields is
+   * undefined. To ensure well-defined behaviour, if min_value and max_value are
+   * written to a Parquet file, column_orders must be written as well.
+   *
+   * The obsolete min and max fields are always sorted by signed comparison
+   * regardless of column_orders.
    */
   7: optional list<ColumnOrder> column_orders;
 }
