@@ -2,19 +2,17 @@ This file contains the PGP keys of various developers.
 
 Users: pgp < KEYS
   gpg --import KEYS
-Developers: 
+Developers:
   pgp -kxa <your name> and append it to this file.
   (pgpk -ll <your name> && pgpk -xa <your name>) >> this file.
-  (gpg --list-sigs <your name>
+  (gpg --list-sigs --keyid-format long <your name>
     && gpg --armor --export <your name>) >> this file.
 
-pub   2048R/7AE7E47B 2013-04-10 [expires: 2017-04-10]
-uid                  Julien Le Dem <julien@ledem.net>
-sig 3        7AE7E47B 2013-04-10  Julien Le Dem <julien@ledem.net>
-sig          D3924CCD 2014-09-08  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sig          71F0F13B 2014-09-08  Tianshuo Deng <tdeng@twitter.com>
-sub   2048R/03C4E111 2013-04-10 [expires: 2017-04-10]
-sig          7AE7E47B 2013-04-10  Julien Le Dem <julien@ledem.net>
+pub   2048R/97D7E8647AE7E47B 2013-04-10 [expired: 2017-04-10]
+uid                          Julien Le Dem <julien@ledem.net>
+sig 3        97D7E8647AE7E47B 2013-04-10  Julien Le Dem <julien@ledem.net>
+sig          FCB3CBD9D3924CCD 2014-09-08  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sig          7CD8278971F0F13B 2014-09-08  Tianshuo Deng <tdeng@twitter.com>
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
@@ -70,13 +68,13 @@ cqCIvQIvmBpPdlyaoglwJ8wWb76uIE6VFcN71FF3EfV51/yUeQGJaoExWLY6IH8x
 Xtn3IWkBWA==
 =xpC8
 -----END PGP PUBLIC KEY BLOCK-----
-pub   2048R/71F0F13B 2013-08-26
-uid                  Tianshuo Deng <tdeng@twitter.com>
-sig 3        71F0F13B 2013-08-26  Tianshuo Deng <tdeng@twitter.com>
-sig          D3924CCD 2014-09-08  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sig          7AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
-sub   2048R/0CEDD7ED 2013-08-26
-sig          71F0F13B 2013-08-26  Tianshuo Deng <tdeng@twitter.com>
+pub   2048R/7CD8278971F0F13B 2013-08-26
+uid                          Tianshuo Deng <tdeng@twitter.com>
+sig 3        7CD8278971F0F13B 2013-08-26  Tianshuo Deng <tdeng@twitter.com>
+sig          FCB3CBD9D3924CCD 2014-09-08  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sig          97D7E8647AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
+sub   2048R/F98EFADB0CEDD7ED 2013-08-26
+sig          7CD8278971F0F13B 2013-08-26  Tianshuo Deng <tdeng@twitter.com>
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
@@ -125,19 +123,19 @@ woq9HFeHZ5sSVQ56GOwENRvjCeqDOTmbwus0MIymrcs3yHC6O0UEHPlpHzePNLJl
 /Otnj+wHn/N9LAoxr7gDpu/cpBFiPSLD189FCbU15FnFVAEuC5Vd9Y/3IhMwvg==
 =Gd1/
 -----END PGP PUBLIC KEY BLOCK-----
-pub   1024D/4318F669 2009-06-30
-uid                  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
-sig          68E327C1 2010-09-23  [User ID not found]
-sig          A7239D59 2010-09-23  Doug Cutting (Lucene guy) <cutting@apache.org>
-sig          299EB32C 2010-09-25  [User ID not found]
-sig          AEC77EAF 2010-09-27  [User ID not found]
-sig          1F27E622 2010-10-27  [User ID not found]
-sig 3        4318F669 2009-06-30  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
-sig          C987200D 2010-10-02  [User ID not found]
-sig          3D0C92B9 2010-09-24  [User ID not found]
-sig          D3924CCD 2014-09-04  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sub   2048g/BAEBF3E3 2009-06-30
-sig          4318F669 2009-06-30  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
+pub   1024D/4FB955854318F669 2009-06-30
+uid                          Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
+sig          E22A746A68E327C1 2010-09-23  [User ID not found]
+sig          DBAF69BEA7239D59 2010-09-23  [User ID not found]
+sig          E952F459299EB32C 2010-09-25  [User ID not found]
+sig          5E43CAB9AEC77EAF 2010-09-27  [User ID not found]
+sig          220F69801F27E622 2010-10-27  [User ID not found]
+sig 3        4FB955854318F669 2009-06-30  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
+sig          2C89EE98C987200D 2010-10-02  [User ID not found]
+sig          1209E7F13D0C92B9 2010-09-24  [User ID not found]
+sig          FCB3CBD9D3924CCD 2014-09-04  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sub   2048g/A306EFF1BAEBF3E3 2009-06-30
+sig          4FB955854318F669 2009-06-30  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
@@ -210,19 +208,19 @@ yDChOIyfrt/T8ooJQVaI8IhJBBgRAgAJBQJKSfejAhsMAAoJEE+5VYVDGPZpviQA
 njVeVF9MewkYAYXYwxDQs6J+KIx4AJ9xqFuYD+KbUSGjAUcDyaJPufpZng==
 =kUv7
 -----END PGP PUBLIC KEY BLOCK-----
-pub   4096R/D3924CCD 2014-08-13
-uid                  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sig 3        D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sig          4318F669 2014-09-04  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
-sig          7AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
-uid                  Ryan Blue <blue@apache.org>
-sig 3        D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sig          4318F669 2014-09-04  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
-sig          7AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
-sub   4096R/A8B58800 2014-08-13
-sig          D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
-sub   4096R/A4B2E9B5 2014-08-13
-sig          D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+pub   4096R/FCB3CBD9D3924CCD 2014-08-13
+uid                          Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sig 3        FCB3CBD9D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sig          4FB955854318F669 2014-09-04  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
+sig          97D7E8647AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
+uid                          Ryan Blue <blue@apache.org>
+sig 3        FCB3CBD9D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sig          4FB955854318F669 2014-09-04  Tom White (CODE SIGNING KEY) <tomwhite@apache.org>
+sig          97D7E8647AE7E47B 2014-09-08  Julien Le Dem <julien@ledem.net>
+sub   4096R/F16C5528A8B58800 2014-08-13
+sig          FCB3CBD9D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
+sub   4096R/86781D4FA4B2E9B5 2014-08-13
+sig          FCB3CBD9D3924CCD 2014-08-13  Ryan Blue (CODE SIGNING KEY) <blue@apache.org>
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
