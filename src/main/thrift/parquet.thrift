@@ -348,7 +348,9 @@ enum CompressionCodec {
   SNAPPY = 1;
   GZIP = 2;
   LZO = 3;
-  BROTLI = 4;
+  BROTLI = 4; // Added in 2.3.2
+  LZ4 = 5;    // Added in 2.3.2
+  ZSTD = 6;   // Added in 2.3.2
 }
 
 enum PageType {
