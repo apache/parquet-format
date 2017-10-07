@@ -48,7 +48,18 @@ was converted from an enumerated type in another data model (e.g. Thrift, Avro, 
 Applications using a data model lacking a native enum type should interpret `ENUM`
 annotated field as a UTF-8 encoded string. 
 
-The sort order used for `ENUM`s is `UNSIGNED` byte-wise comparison.
+The sort order used for `ENUM` values is unsigned byte-wise comparison.
+
+### UUID
+
+`UUID` annotates a 16-byte fixed-length binary. The value is encoded using
+big-endian, so that `00112233-4455-6677-8899-aabbccddeeff` is encoded as the
+bytes `00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff`
+(This example is from [wikipedia's UUID page][wiki-uuid]).
+
+The sort order used for `UUID` values is unsigned byte-wise comparison.
+
+[wiki-uuid]: https://en.wikipedia.org/wiki/Universally_unique_identifier
 
 ## Numeric Types
 
