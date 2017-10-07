@@ -326,7 +326,7 @@ union LogicalType {
   8:  TimestampType TIMESTAMP // use ConvertedType TIMESTAMP_MICROS or TIMESTAMP_MILLIS
   // 9: reserved for INTERVAL
   10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
-  11: NullType NONE           // no compatible ConvertedType
+  11: NullType UNKNOWN        // no compatible ConvertedType
   12: JsonType JSON           // use ConvertedType JSON
   13: BsonType BSON           // use ConvertedType BSON
 }

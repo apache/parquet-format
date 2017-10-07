@@ -49,7 +49,7 @@ public class LogicalTypes {
   public static final LogicalType UINT_16 = LogicalType.INTEGER(new IntType((byte) 16, false));
   public static final LogicalType UINT_32 = LogicalType.INTEGER(new IntType((byte) 32, false));
   public static final LogicalType UINT_64 = LogicalType.INTEGER(new IntType((byte) 64, false));
-  public static final LogicalType NULL = LogicalType.NULL(new NullType());
+  public static final LogicalType UNKNOWN = LogicalType.UNKNOWN(new NullType());
   public static final LogicalType JSON = LogicalType.JSON(new JsonType());
   public static final LogicalType BSON = LogicalType.BSON(new BsonType());
 }
