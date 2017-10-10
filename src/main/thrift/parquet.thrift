@@ -234,8 +234,9 @@ struct DateType {}    // allowed for INT32
 /**
  * Logical type to annotate a column that is always null.
  *
- * Sometimes when discovering the schema of existing data values are always
- * null and the physical type is assumed.
+ * Sometimes when discovering the schema of existing data, values are always
+ * null and the physical type can't be determined. This annotation signals
+ * the case where the physical type was guessed from all null values.
  */
 struct NullType {}    // allowed for any physical type, only null values stored
 
