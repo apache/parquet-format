@@ -226,6 +226,7 @@ struct Statistics {
 
 /** Empty structs to use as logical type annotations */
 struct StringType {}  // allowed for BINARY, must be encoded with UTF-8
+struct UUIDType {}    // allowed for FIXED[16], must encoded raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
