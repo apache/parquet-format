@@ -639,24 +639,47 @@ struct OffsetIndex {
 struct ColumnIndex {
 /**
  * A list of bools to determine the validity of the corresponding min and max
- * values. If this is true, the corresponding min and max values in the next
- * two lists are non-null.
+ * values. If true, the page contains only null values so the corresponding
+ * entries in min_values and max_values should be ignored.
  */
   1: required list<bool> null_pages
 
 /**
- * A list containing the lower bounds for the values of each page. This may be
- * the actual minimum value found on a page, but can also be a (more compact)
- * value that does not exist on that page. For ordered columns, these values
- * must be lower and upper bounds for consecutive pages respectively.
+ * Two lists containing lower and upper bounds for the values of each page.
+ * These may be the actual minimum and maximum values found on a page, but can
+ * also be (more compact) values that does not exist on a page.
+ *
+ * For ordered columns, max_values can be ommitted. In this case min_values
+ * must contain values that are both lower and upper bounds for consecutive
+ * pages respectively.
+ *
+ * Example: Consider the following values in pages delimited by |:
+ * | 1 1 2 3 | 5 8 13 21 | 34 55 89 144 |                       ^
+ * ^         ^           ^              ^
+ * Examples for valid min_values are [1 5 34], [-2 4 22], or [1 3 21].
+ *
+ * Note how the maximum value of a page is also a valid minimum boundary for
+ * the next page. In general, readers must assume that a minimum value also
+ * occurs in the previous page.
+ *
+ * For columns in descending order, min_values still stores lower bounds, i.e.
+ * values that come first in the ordering.
+ *
+ * Consider the following values:
+ * | 37 31 29 23 | 19 17 13 11 | 7 5 3 2 |
+ * ^             ^             ^         ^
+ * Examples for valid lists of minimum values are [23 11 2] or [ 20 8 0 ].
+ *
+ * If max_values is set, then pairs of min and max values may be overlapping.
+ *
+ * Again, consider the following values in pages delimited by | :
+ * | 1 1 2 3 | 5 8 13 21 | 34 55 89 144 |
+ * ^         ^           ^              ^
+ * Examples for valid min_values and max_values are:
+ * min_values: [1 5 34]   [0 4 32]   [0 0 0]
+ * max_values: [3 21 144] [4 32 256] [256 256 256]
  */
   2: required list<binary> min_values
-
-/**
- * A list containing the upper bounds for the values of each page. This may be
- * the actual maximum value found on a page, but can also be a (more compact)
- * value that does not exist on that page. May be ommitted for ordered columns.
- */
   3: optional list<binary> max_values
 
 /** A list containing the number of null values for each page **/
