@@ -174,13 +174,6 @@ enum ConvertedType {
    * particular timezone or date.
    */
   INTERVAL = 21;
-
-  /**
-   * Annotates a column that is always null
-   * Sometimes when discovering the schema of existing data
-   * values are always null
-   */
-  NULL = 25;
 }
 
 /**
@@ -231,6 +224,114 @@ struct Statistics {
    6: optional binary min_value;
 }
 
+/** Empty structs to use as logical type annotations */
+struct StringType {}  // allowed for BINARY, must be encoded with UTF-8
+struct MapType {}     // see LogicalTypes.md
+struct ListType {}    // see LogicalTypes.md
+struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
+struct DateType {}    // allowed for INT32
+
+/**
+ * Logical type to annotate a column that is always null.
+ *
+ * Sometimes when discovering the schema of existing data, values are always
+ * null and the physical type can't be determined. This annotation signals
+ * the case where the physical type was guessed from all null values.
+ */
+struct NullType {}    // allowed for any physical type, only null values stored
+
+/**
+ * Decimal logical type annotation
+ *
+ * To maintain forward-compatibility in v1, implementations using this logical
+ * type must also set scale and precision on the annotated SchemaElement.
+ *
+ * Allowed for physical types: INT32, INT64, FIXED, and BINARY
+ */
+struct DecimalType {
+  1: required i32 scale
+  2: required i32 precision
+}
+
+/** Time units for logical types */
+struct MilliSeconds {}
+struct MicroSeconds {}
+union TimeUnit {
+  1: MilliSeconds MILLIS
+  2: MicroSeconds MICROS
+}
+
+/**
+ * Timestamp logical type annotation
+ *
+ * Allowed for physical types: INT64
+ */
+struct TimestampType {
+  1: required bool isAdjustedToUTC
+  2: required TimeUnit unit
+}
+
+/**
+ * Time logical type annotation
+ *
+ * Allowed for physical types: INT32 (millis), INT64 (micros)
+ */
+struct TimeType {
+  1: required bool isAdjustedToUTC
+  2: required TimeUnit unit
+}
+
+/**
+ * Integer logical type annotation
+ *
+ * bitWidth must be 8, 16, 32, or 64.
+ *
+ * Allowed for physical types: INT32, INT64
+ */
+struct IntType {
+  1: required byte bitWidth
+  2: required bool isSigned
+}
+
+/**
+ * Embedded JSON logical type annotation
+ *
+ * Allowed for physical types: BINARY
+ */
+struct JsonType {
+}
+
+/**
+ * Embedded BSON logical type annotation
+ *
+ * Allowed for physical types: BINARY
+ */
+struct BsonType {
+}
+
+/**
+ * LogicalType annotations to replace ConvertedType.
+ *
+ * To maintain compatibility, implementations using LogicalType for a
+ * SchemaElement must also set the corresponding ConvertedType from the
+ * following table.
+ */
+union LogicalType {
+  1:  StringType STRING       // use ConvertedType UTF8 if encoding is UTF-8
+  2:  MapType MAP             // use ConvertedType MAP
+  3:  ListType LIST           // use ConvertedType LIST
+  4:  EnumType ENUM           // use ConvertedType ENUM
+  5:  DecimalType DECIMAL     // use ConvertedType DECIMAL
+  6:  DateType DATE           // use ConvertedType DATE
+  7:  TimeType TIME           // use ConvertedType TIME_MICROS or TIME_MILLIS
+  8:  TimestampType TIMESTAMP // use ConvertedType TIMESTAMP_MICROS or TIMESTAMP_MILLIS
+  // 9: reserved for INTERVAL
+  10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
+  11: NullType UNKNOWN        // no compatible ConvertedType
+  12: JsonType JSON           // use ConvertedType JSON
+  13: BsonType BSON           // use ConvertedType BSON
+}
+
 /**
  * Represents a element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
@@ -278,6 +379,13 @@ struct SchemaElement {
    */
   9: optional i32 field_id;
 
+  /**
+   * The logical type of this SchemaElement; only valid for primitives.
+   *
+   * LogicalType replaces ConvertedType, but ConvertedType is still required
+   * for some logical types to ensure forward-compatibility in format v1.
+   */
+  10: optional LogicalType logicalType
 }
 
 /**
