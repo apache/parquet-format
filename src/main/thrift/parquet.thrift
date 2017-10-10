@@ -627,7 +627,7 @@ struct PageLocation {
 struct OffsetIndex {
 /**
  * PageLocations, ordered by increasing PageLocation.offset. It is required
- * that page_locations[i].first_row_index > page_locations[i+1].first_row_index.
+ * that page_locations[i].first_row_index < page_locations[i+1].first_row_index.
  */
   1: required list<PageLocation> page_locations
 }
@@ -670,7 +670,7 @@ struct ColumnIndex {
  * ^             ^             ^         ^
  * Examples for valid lists of minimum values are [23 11 2] or [ 20 8 0 ].
  *
- * If max_values is set, then pairs of min and max values may be overlapping.
+ * If max_values is set, then pairs of min and max values may overlap.
  *
  * Again, consider the following values in pages delimited by | :
  * | 1 1 2 3 | 5 8 13 21 | 34 55 89 144 |
