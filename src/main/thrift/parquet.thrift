@@ -611,15 +611,24 @@ struct PageLocation {
 /** Offset of the page in the file **/
   1: required i64 offset
 
-/** Size of the page, including header. The same as PageHeader.compressed_page_size **/
+/**
+ * Size of the page, including header. Sum of compressed_page_size and header
+ * length
+ */
   2: required i32 compressed_page_size
 
-/** Index within the RowGroup of the first row of the page **/
+/**
+ * Index within the RowGroup of the first row of the page; this means pages
+ * change on record boundaries (r = 0).
+ */
   3: required i64 first_row_index
 }
 
 struct OffsetIndex {
-/** PageLocations, ordered by increasing PageLocation.offset **/
+/**
+ * PageLocations, ordered by increasing PageLocation.offset. It is required
+ * that page_locations[i].first_row_index > page_locations[i+1].first_row_index.
+ */
   1: required list<PageLocation> page_locations
 }
 
@@ -628,20 +637,30 @@ struct OffsetIndex {
  * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
  */
 struct ColumnIndex {
-/** A list of bools to determine the validity of the corresponding min and max values **/
-  1: required list<bool> valid_values
+/**
+ * A list of bools to determine the validity of the corresponding min and max
+ * values. If this is true, the corresponding min and max values in the next
+ * two lists are non-null.
+ */
+  1: required list<bool> null_pages
 
-/** A list containing the lower bounds for the values of each page **/
+/**
+ * A list containing the lower bounds for the values of each page. This may be
+ * the actual minimum value found on a page, but can also be a (more compact)
+ * value that does not exist on that page. For ordered columns, these values
+ * must be lower and upper bounds for consecutive pages respectively.
+ */
   2: required list<binary> min_values
 
-/** A list containing the upper bounds for the values of each page **/
+/**
+ * A list containing the upper bounds for the values of each page. This may be
+ * the actual maximum value found on a page, but can also be a (more compact)
+ * value that does not exist on that page. May be ommitted for ordered columns.
+ */
   3: optional list<binary> max_values
 
-/** A list containing DataPageHeaderV2.statistics.null_count for each page **/
+/** A list containing the number of null values for each page **/
   4: optional list<i64> null_count
-
-/** A list containing DataPageHeaderV2.statistics.distinct_count for each page **/
-  5: optional list<i64> distinct_count
 }
 
 /**
