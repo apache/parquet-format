@@ -369,6 +369,12 @@ enum PageType {
   DATA_PAGE_V2 = 3;
 }
 
+enum SortOrder {
+  UNORDERED = 0;
+  ASCENDING = 1;
+  DESCENDING = 2;
+}
+
 /** Data page header */
 struct DataPageHeader {
   /** Number of values, including NULLs, in this data page. **/
@@ -608,27 +614,27 @@ union ColumnOrder {
 }
 
 struct PageLocation {
-/** Offset of the page in the file **/
+  /** Offset of the page in the file **/
   1: required i64 offset
 
-/**
- * Size of the page, including header. Sum of compressed_page_size and header
- * length
- */
+  /**
+   * Size of the page, including header. Sum of compressed_page_size and header
+   * length
+   */
   2: required i32 compressed_page_size
 
-/**
- * Index within the RowGroup of the first row of the page; this means pages
- * change on record boundaries (r = 0).
- */
+  /**
+   * Index within the RowGroup of the first row of the page; this means pages
+   * change on record boundaries (r = 0).
+   */
   3: required i64 first_row_index
 }
 
 struct OffsetIndex {
-/**
- * PageLocations, ordered by increasing PageLocation.offset. It is required
- * that page_locations[i].first_row_index < page_locations[i+1].first_row_index.
- */
+  /**
+   * PageLocations, ordered by increasing PageLocation.offset. It is required
+   * that page_locations[i].first_row_index < page_locations[i+1].first_row_index.
+   */
   1: required list<PageLocation> page_locations
 }
 
@@ -637,53 +643,32 @@ struct OffsetIndex {
  * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
  */
 struct ColumnIndex {
-/**
- * A list of bools to determine the validity of the corresponding min and max
- * values. If true, the page contains only null values so the corresponding
- * entries in min_values and max_values should be ignored.
- */
+  /**
+   * A list of bools to determine the validity of the corresponding min and max
+   * values. If true, the page contains only null values and the corresponding
+   * entries in min_values and max_values should be ignored. If false, the
+   * corresponding entries must be valid.
+   */
   1: required list<bool> null_pages
 
-/**
- * Two lists containing lower and upper bounds for the values of each page.
- * These may be the actual minimum and maximum values found on a page, but can
- * also be (more compact) values that does not exist on a page.
- *
- * For ordered columns, max_values can be ommitted. In this case min_values
- * must contain values that are both lower and upper bounds for consecutive
- * pages respectively.
- *
- * Example: Consider the following values in pages delimited by |:
- * | 1 1 2 3 | 5 8 13 21 | 34 55 89 144 |                       ^
- * ^         ^           ^              ^
- * Examples for valid min_values are [1 5 34], [-2 4 22], or [1 3 21].
- *
- * Note how the maximum value of a page is also a valid minimum boundary for
- * the next page. In general, readers must assume that a minimum value also
- * occurs in the previous page.
- *
- * For columns in descending order, min_values still stores lower bounds, i.e.
- * values that come first in the ordering.
- *
- * Consider the following values:
- * | 37 31 29 23 | 19 17 13 11 | 7 5 3 2 |
- * ^             ^             ^         ^
- * Examples for valid lists of minimum values are [23 11 2] or [ 20 8 0 ].
- *
- * If max_values is set, then pairs of min and max values may overlap.
- *
- * Again, consider the following values in pages delimited by | :
- * | 1 1 2 3 | 5 8 13 21 | 34 55 89 144 |
- * ^         ^           ^              ^
- * Examples for valid min_values and max_values are:
- * min_values: [1 5 34]   [0 4 32]   [0 0 0]
- * max_values: [3 21 144] [4 32 256] [256 256 256]
- */
+  /**
+   * Two lists containing lower and upper bounds for the values of each page.
+   * These may be the actual minimum and maximum values found on a page, but can
+   * also be (more compact) values that does not exist on a page.
+   */
   2: required list<binary> min_values
-  3: optional list<binary> max_values
+  3: required list<binary> max_values
 
-/** A list containing the number of null values for each page **/
-  4: optional list<i64> null_count
+  /**
+   * Stores whether both min_values and max_values are orderd and if so, in
+   * which order. This allows readers to perform binary searches in both lists.
+   * Readers cannot assume that max_values[i] <= min_values[i+1], even if the
+   * lists are ordered.
+   */
+  4: required SortOrder sort_order
+
+  /** A list containing the number of null values for each page **/
+  5: optional list<i64> null_counts
 }
 
 /**
