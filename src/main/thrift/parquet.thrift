@@ -369,7 +369,7 @@ enum PageType {
   DATA_PAGE_V2 = 3;
 }
 
-enum SortOrder {
+enum BoundayOrder {
   UNORDERED = 0;
   ASCENDING = 1;
   DESCENDING = 2;
@@ -644,17 +644,19 @@ struct OffsetIndex {
  */
 struct ColumnIndex {
   /**
-   * A list of bools to determine the validity of the corresponding min and max
-   * values. If true, the page contains only null values and the corresponding
-   * entries in min_values and max_values should be ignored. If false, the
-   * corresponding entries must be valid.
+   * A list of Boolean values to determine the validity of the corresponding
+   * min and max values. If true, a page contains only null values, and writers
+   * have to set the corresponding entries in min_values and max_values to
+   * byte[0], so that all lists have the same length. If false, the
+   * corresponding entries in min_values and max_values must be valid.
    */
   1: required list<bool> null_pages
 
   /**
    * Two lists containing lower and upper bounds for the values of each page.
    * These may be the actual minimum and maximum values found on a page, but can
-   * also be (more compact) values that does not exist on a page.
+   * also be (more compact) values that does not exist on a page. Readers must
+   * make sure that values are valid before using them by inspecting null_pages.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -665,7 +667,7 @@ struct ColumnIndex {
    * Readers cannot assume that max_values[i] <= min_values[i+1], even if the
    * lists are ordered.
    */
-  4: required SortOrder sort_order
+  4: required BoundayOrder boundary_order
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
