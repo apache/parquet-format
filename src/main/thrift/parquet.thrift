@@ -369,7 +369,7 @@ enum PageType {
   DATA_PAGE_V2 = 3;
 }
 
-enum BoundayOrder {
+enum BoundaryOrder {
   UNORDERED = 0;
   ASCENDING = 1;
   DESCENDING = 2;
@@ -667,7 +667,7 @@ struct ColumnIndex {
    * Readers cannot assume that max_values[i] <= min_values[i+1], even if the
    * lists are ordered.
    */
-  4: required BoundayOrder boundary_order
+  4: required BoundaryOrder boundary_order
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
