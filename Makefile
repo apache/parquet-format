@@ -21,8 +21,8 @@
 
 thrift:
 	mkdir -p generated
-	thrift --gen cpp -o generated src/thrift/parquet.thrift 
-	thrift --gen java -o generated src/thrift/parquet.thrift 
+	thrift --gen cpp -o generated src/main/thrift/parquet.thrift
+	thrift --gen java -o generated src/main/thrift/parquet.thrift
 
 %.html: %.md
 	pandoc -f markdown_github -t html -o $@ $<

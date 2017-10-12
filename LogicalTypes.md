@@ -32,12 +32,34 @@ This file contains the specification for all logical types.
 The parquet format's `ConvertedType` stores the type annotation. The annotation
 may require additional metadata fields, as well as rules for those fields.
 
-### UTF8 (Strings)
+## String Types
+
+### UTF8
 
 `UTF8` may only be used to annotate the binary primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
-The sort order used for `UTF8` strings is `UNSIGNED` byte-wise comparison.
+The sort order used for `UTF8` strings is unsigned byte-wise comparison.
+
+### ENUM
+
+`ENUM` annotates the binary primitive type and indicates that the value
+was converted from an enumerated type in another data model (e.g. Thrift, Avro, Protobuf).
+Applications using a data model lacking a native enum type should interpret `ENUM`
+annotated field as a UTF-8 encoded string. 
+
+The sort order used for `ENUM` values is unsigned byte-wise comparison.
+
+### UUID
+
+`UUID` annotates a 16-byte fixed-length binary. The value is encoded using
+big-endian, so that `00112233-4455-6677-8899-aabbccddeeff` is encoded as the
+bytes `00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff`
+(This example is from [wikipedia's UUID page][wiki-uuid]).
+
+The sort order used for `UUID` values is unsigned byte-wise comparison.
+
+[wiki-uuid]: https://en.wikipedia.org/wiki/Universally_unique_identifier
 
 ## Numeric Types
 
@@ -57,7 +79,7 @@ allows.
 implied by the `int32` and `int64` primitive types if no other annotation is
 present and should be considered optional.
 
-The sort order used for signed integer types is `SIGNED`.
+The sort order used for signed integer types is signed.
 
 ### Unsigned Integers
 
@@ -74,7 +96,7 @@ allows.
 `UINT_8`, `UINT_16`, and `UINT_32` must annotate an `int32` primitive type and
 `UINT_64` must annotate an `int64` primitive type.
 
-The sort order used for unsigned integer types is `UNSIGNED`.
+The sort order used for unsigned integer types is unsigned.
 
 ### DECIMAL
 
@@ -104,8 +126,8 @@ integer. A precision too large for the underlying type (see below) is an error.
 A `SchemaElement` with the `DECIMAL` `ConvertedType` must also have both
 `scale` and `precision` fields set, even if scale is 0 by default.
 
-The sort order used for `DECIMAL` values is `SIGNED`. The order is equivalent
-to signed comparison of decimal values.
+The sort order used for `DECIMAL` values is signed comparison of the represented
+value.
 
 If the column uses `int32` or `int64` physical types, then signed comparison of
 the integer values produces the correct ordering. If the physical type is
@@ -121,7 +143,7 @@ comparison.
 annotate an `int32` that stores the number of days from the Unix epoch, 1
 January 1970.
 
-The sort order used for `DATE` is `SIGNED`.
+The sort order used for `DATE` is signed.
 
 ### TIME\_MILLIS
 
@@ -129,7 +151,7 @@ The sort order used for `DATE` is `SIGNED`.
 without a date. It must annotate an `int32` that stores the number of
 milliseconds after midnight.
 
-The sort order used for `TIME\_MILLIS` is `SIGNED`.
+The sort order used for `TIME\_MILLIS` is signed.
 
 ### TIME\_MICROS
 
@@ -137,7 +159,7 @@ The sort order used for `TIME\_MILLIS` is `SIGNED`.
 without a date. It must annotate an `int64` that stores the number of
 microseconds after midnight.
 
-The sort order used for `TIME\_MICROS` is `SIGNED`.
+The sort order used for `TIME\_MICROS` is signed.
 
 ### TIMESTAMP\_MILLIS
 
@@ -145,7 +167,7 @@ The sort order used for `TIME\_MICROS` is `SIGNED`.
 millisecond precision. It must annotate an `int64` that stores the number of
 milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
 
-The sort order used for `TIMESTAMP\_MILLIS` is `SIGNED`.
+The sort order used for `TIMESTAMP\_MILLIS` is signed.
 
 ### TIMESTAMP\_MICROS
 
@@ -153,7 +175,7 @@ The sort order used for `TIMESTAMP\_MILLIS` is `SIGNED`.
 microsecond precision. It must annotate an `int64` that stores the number of
 microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
 
-The sort order used for `TIMESTAMP\_MICROS` is `SIGNED`.
+The sort order used for `TIMESTAMP\_MICROS` is signed.
 
 ### INTERVAL
 
@@ -169,7 +191,7 @@ example, there is no requirement that a large number of days should be
 expressed as a mix of months and days because there is not a constant
 conversion from days to months.
 
-The sort order used for `INTERVAL` is `UNSIGNED`, produced by sorting by
+The sort order used for `INTERVAL` is unsigned, produced by sorting by
 the value of months, then days, then milliseconds with unsigned comparison.
 
 ## Embedded Types
@@ -184,6 +206,8 @@ string of valid JSON as defined by the [JSON specification][json-spec]
 
 [json-spec]: http://json.org/
 
+The sort order used for `JSON` is unsigned byte-wise comparison.
+
 ### BSON
 
 `BSON` is used for an embedded BSON document. It must annotate a `binary`
@@ -191,6 +215,8 @@ primitive type. The `binary` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
+
+The sort order used for `BSON` is unsigned byte-wise comparison.
 
 ## Nested Types
 
