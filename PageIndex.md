@@ -24,11 +24,12 @@ footer. These pages contain statistics for DataPages and can be used to skip
 pages when scanning data in ordered and unordered columns.
 
 ## Problem Statement
-In the current format, Statistics are stored for ColumnChunks in ColumnMetaData
-and for individual pages inside DataPageHeader structs. When reading pages, a
-reader has to process the page header in order to determine whether the page
-can be skipped based on the statistics. This means the reader has to access all
-pages in a column, thus likely reading most of the column data from disk.
+In previous versions of the format, Statistics are stored for ColumnChunks in
+ColumnMetaData and for individual pages inside DataPageHeader structs. When
+reading pages, a reader had to process the page header in order to determine
+whether the page could be skipped based on the statistics. This means the reader
+had to access all pages in a column, thus likely reading most of the column
+data from disk.
 
 ## Goals
 1. Make both range scans and point lookups I/O efficient by allowing direct
