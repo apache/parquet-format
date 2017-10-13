@@ -189,10 +189,6 @@ header and readers can skip over pages they are not interested in.  The data for
 page follows the header and can be compressed and/or encoded.  The compression and
 encoding is specified in the page metadata.
 
-Additionally, files can contain an optional column index to allow readers to
-skip pages more efficiently. See [PageIndex.md](PageIndex.md) for details and
-the reasoning behind adding these to the format.
-
 ## Checksumming
 Data pages can be individually checksummed.  This allows disabling of checksums at the
 HDFS file level, to better support single row lookups.

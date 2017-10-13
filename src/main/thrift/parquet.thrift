@@ -755,6 +755,9 @@ union ColumnOrder {
   1: TypeDefinedOrder TYPE_ORDER;
 }
 
+/** Stores the offset and size of a page within a file. This allows to read the
+ * page directly and without scanning through previous pages.
+ */
 struct PageLocation {
   /** Offset of the page in the file **/
   1: required i64 offset
@@ -772,6 +775,22 @@ struct PageLocation {
   3: required i64 first_row_index
 }
 
+/**
+ * An offset index allows navigation by row number and is is used to retrieve
+ * values for rows identified as matches via the ColumnIndex. Once rows of a
+ * column are skipped, the corresponding rows in the other columns have to be
+ * skipped. Hence the OffsetIndexes for each column in a RowGroup are stored
+ * together. Offset and column index structures should be stored near the
+ * footer of a file, so that a reader does not have to pay the I/O and
+ * deserialization cost for reading the them if it is not doing selective scans.
+ *
+ *      ColumnIndex structs for              | OffsetIndex structs for
+ *      row_groups[i].columns[j]             | rowgroups[i].columns[j]
+ * ---+-----+----+-----+----+-----+----+-----+-----+----+-----+----+-----+----+-----+--------------+
+ * .. | i:0 | .. | i:0 | .. | i:m | .. | i:m | i:0 | .. | i:0 | .. | i:m | .. | i:m | FileMetaData |
+ * .. | j:0 | .. | j:n | .. | j:0 | .. | j:n | j:0 | .. | j:n | .. | j:0 | .. | j:n |              |
+ * ---+-----+----+-----+----+-----+----+-----+-----+----+-----+----+-----+----+-----+--------------+
+ */
 struct OffsetIndex {
   /**
    * PageLocations, ordered by increasing PageLocation.offset. It is required
@@ -781,7 +800,10 @@ struct OffsetIndex {
 }
 
 /**
- * Description for ColumnIndex.
+ * A column index contains statistics for all pages of a column and can be used
+ * to skip pages when scanning data in ordered and unordered columns. The
+ * column index is used to locate data pages that contain matching values for a
+ * scan predicate.
  * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
  */
 struct ColumnIndex {
