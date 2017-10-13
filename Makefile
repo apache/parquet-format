@@ -27,4 +27,4 @@ thrift:
 %.html: %.md
 	pandoc -f markdown_github -t html -o $@ $<
 
-doc: PageIndex.html LogicalTypes.html
+doc: README.html PageIndex.html LogicalTypes.html

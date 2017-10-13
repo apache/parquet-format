@@ -79,26 +79,10 @@ Some observations:
   only reason to write page-level statistics when writing ColumnIndex structs
   is to support older readers (not recommended).
 
-This allows a reader to find matching pages by performing a binary search in
-`min_values`. For unordered columns, a reader can find matching pages by
-sequentially reading `min_values` and `max_values`.
-
-Let T = (S, A, B) be a table with three columns. T is sorted on S and has a
-ColumnIndex with `min_values` populated. Pseudocode for a full point lookup
-with S = v looks like this:
-
-    idx = lower_bound(S.column_index.min_values, v) // BinarySearch
-
-    if idx = 0: return empty set
-
-    page_offset := S.offset_index.page_locations[idx - 1].offset
-    row := Find value in DataPage at page_offset using binary search
-
-    For column c : (A, B):
-      c_idx := lower_bound(c.offset_index.page_locations.first_row_index, row)
-      c_page_offset := c.offset_index.page_locations[c_idx].offset
-      c_row_offset := c.offset_index.page_locations[c_idx + 1].first_row_index - row
-      c_value := file[c_page_offset + type_size(C) * c_row_offset]
+For ordered columns, this allows a reader to find matching pages by performing
+a binary search in `min_values` and `max_values`. For unordered columns, a
+reader can find matching pages by sequentially reading `min_values` and
+`max_values`.
 
 For range scans this approach can be extended to return ranges of rows, page
 indices, and page offsets to scan in each column. The reader can then

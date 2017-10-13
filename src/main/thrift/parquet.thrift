@@ -796,9 +796,11 @@ struct ColumnIndex {
 
   /**
    * Two lists containing lower and upper bounds for the values of each page.
-   * These may be the actual minimum and maximum values found on a page, but can
-   * also be (more compact) values that does not exist on a page. Readers must
-   * make sure that values are valid before using them by inspecting null_pages.
+   * These may be the actual minimum and maximum values found on a page, but
+   * can also be (more compact) values that does not exist on a page. For
+   * example, instead of storing ""Blart Versenwald III", a writer may set
+   * min_values[i]="B", max_values[i]="C". Readers must make sure that values
+   * are valid before using them by inspecting null_pages.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
