@@ -34,17 +34,17 @@ data from disk.
 ## Goals
 1. Make both range scans and point lookups I/O efficient by allowing direct
    access to pages based on their min and max values. In particular:
-1. A single-row lookup in a rowgroup based on the sort column of that rowgroup
+2. A single-row lookup in a rowgroup based on the sort column of that rowgroup
    will only read one data page per retrieved column.
     * Range scans on the sort column will only need to read the exact data
       pages that contain relevant data.
     * Make other selective scans I/O efficient: if we have a very selective
       predicate on a non-sorting column, for the other retrieved columns we
       should only need to access data pages that contain matching rows.
-1. No additional decoding effort for scans without selective predicates, e.g.,
+3. No additional decoding effort for scans without selective predicates, e.g.,
    full-row group scans. If a reader determines that it does not need to read
    the index data, it does not incur any overhead.
-1. Index pages for sorted columns use minimal storage by storing only the
+4. Index pages for sorted columns use minimal storage by storing only the
    boundary elements between pages.
 
 ## Non-Goals
@@ -76,6 +76,13 @@ Some observations:
   bound for the last page, because the row group Statistics can provide that.
   We still include those for the sake of uniformity, and the overhead should be
   negligible.
+* We store lower and upper bounds for the values of each page. These may be the
+  actual minimum and maximum values found on a page, but can also be (more
+  compact) values that do not exist on a page. For example, instead of storing
+  ""Blart Versenwald III", a writer may set `min_values[i]="B"`,
+  `max_values[i]="C"`. This allows writers to truncate large values and writers
+  should use this to enforce some reasonable bound on the size of the index
+  structures.
 * Readers that support ColumnIndex should not also use page statistics. The
   only reason to write page-level statistics when writing ColumnIndex structs
   is to support older readers (not recommended).

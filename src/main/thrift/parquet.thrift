@@ -474,6 +474,10 @@ enum PageType {
   DATA_PAGE_V2 = 3;
 }
 
+/**
+ * Enum to annotate whether lists of min/max elements inside column indexes
+ * are ordered and if so, in which direction.
+ */
 enum BoundaryOrder {
   UNORDERED = 0;
   ASCENDING = 1;
@@ -670,16 +674,16 @@ struct ColumnChunk {
    **/
   3: optional ColumnMetaData meta_data
 
-  /** File offset of this column's OffsetIndex **/
+  /** File offset of ColumnChunk's OffsetIndex **/
   4: optional i64 offset_index_offset
 
-  /** Size of this column's OffsetIndex, in bytes **/
+  /** Size of ColumnChunk's OffsetIndex, in bytes **/
   5: optional i32 offset_index_length
 
-  /** File offset of this column's ColumnIndex **/
+  /** File offset of ColumnChunk's ColumnIndex **/
   6: optional i64 column_index_offset
 
-  /** Size of this column's ColumnIndex, in bytes **/
+  /** Size of ColumnChunk's ColumnIndex, in bytes **/
   7: optional i32 column_index_length
 }
 
@@ -797,7 +801,7 @@ struct ColumnIndex {
   /**
    * Two lists containing lower and upper bounds for the values of each page.
    * These may be the actual minimum and maximum values found on a page, but
-   * can also be (more compact) values that does not exist on a page. For
+   * can also be (more compact) values that do not exist on a page. For
    * example, instead of storing ""Blart Versenwald III", a writer may set
    * min_values[i]="B", max_values[i]="C". Readers must make sure that values
    * are valid before using them by inspecting null_pages.
@@ -807,9 +811,9 @@ struct ColumnIndex {
 
   /**
    * Stores whether both min_values and max_values are orderd and if so, in
-   * which order. This allows readers to perform binary searches in both lists.
-   * Readers cannot assume that max_values[i] <= min_values[i+1], even if the
-   * lists are ordered.
+   * which direction. This allows readers to perform binary searches in both
+   * lists. Readers cannot assume that max_values[i] <= min_values[i+1], even
+   * if the lists are ordered.
    */
   4: required BoundaryOrder boundary_order
 
