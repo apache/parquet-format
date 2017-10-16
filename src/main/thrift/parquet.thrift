@@ -475,7 +475,7 @@ enum PageType {
 }
 
 /**
- * Enum to annotate whether lists of min/max elements inside column indexes
+ * Enum to annotate whether lists of min/max elements inside ColumnIndex
  * are ordered and if so, in which direction.
  */
 enum BoundaryOrder {
@@ -803,8 +803,9 @@ struct ColumnIndex {
    * These may be the actual minimum and maximum values found on a page, but
    * can also be (more compact) values that do not exist on a page. For
    * example, instead of storing ""Blart Versenwald III", a writer may set
-   * min_values[i]="B", max_values[i]="C". Readers must make sure that values
-   * are valid before using them by inspecting null_pages.
+   * min_values[i]="B", max_values[i]="C". Such more compact values must still
+   * be valid values within the column's logical type. Readers must make sure
+   * that list entries are populated before using them by inspecting null_pages.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
