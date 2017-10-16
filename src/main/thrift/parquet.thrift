@@ -474,6 +474,16 @@ enum PageType {
   DATA_PAGE_V2 = 3;
 }
 
+/**
+ * Enum to annotate whether lists of min/max elements inside ColumnIndex
+ * are ordered and if so, in which direction.
+ */
+enum BoundaryOrder {
+  UNORDERED = 0;
+  ASCENDING = 1;
+  DESCENDING = 2;
+}
+
 /** Data page header */
 struct DataPageHeader {
   /** Number of values, including NULLs, in this data page. **/
@@ -663,6 +673,18 @@ struct ColumnChunk {
    * metadata.
    **/
   3: optional ColumnMetaData meta_data
+
+  /** File offset of ColumnChunk's OffsetIndex **/
+  4: optional i64 offset_index_offset
+
+  /** Size of ColumnChunk's OffsetIndex, in bytes **/
+  5: optional i32 offset_index_length
+
+  /** File offset of ColumnChunk's ColumnIndex **/
+  6: optional i64 column_index_offset
+
+  /** Size of ColumnChunk's ColumnIndex, in bytes **/
+  7: optional i32 column_index_length
 }
 
 struct RowGroup {
@@ -735,6 +757,69 @@ union ColumnOrder {
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    */
   1: TypeDefinedOrder TYPE_ORDER;
+}
+
+struct PageLocation {
+  /** Offset of the page in the file **/
+  1: required i64 offset
+
+  /**
+   * Size of the page, including header. Sum of compressed_page_size and header
+   * length
+   */
+  2: required i32 compressed_page_size
+
+  /**
+   * Index within the RowGroup of the first row of the page; this means pages
+   * change on record boundaries (r = 0).
+   */
+  3: required i64 first_row_index
+}
+
+struct OffsetIndex {
+  /**
+   * PageLocations, ordered by increasing PageLocation.offset. It is required
+   * that page_locations[i].first_row_index < page_locations[i+1].first_row_index.
+   */
+  1: required list<PageLocation> page_locations
+}
+
+/**
+ * Description for ColumnIndex.
+ * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
+ */
+struct ColumnIndex {
+  /**
+   * A list of Boolean values to determine the validity of the corresponding
+   * min and max values. If true, a page contains only null values, and writers
+   * have to set the corresponding entries in min_values and max_values to
+   * byte[0], so that all lists have the same length. If false, the
+   * corresponding entries in min_values and max_values must be valid.
+   */
+  1: required list<bool> null_pages
+
+  /**
+   * Two lists containing lower and upper bounds for the values of each page.
+   * These may be the actual minimum and maximum values found on a page, but
+   * can also be (more compact) values that do not exist on a page. For
+   * example, instead of storing ""Blart Versenwald III", a writer may set
+   * min_values[i]="B", max_values[i]="C". Such more compact values must still
+   * be valid values within the column's logical type. Readers must make sure
+   * that list entries are populated before using them by inspecting null_pages.
+   */
+  2: required list<binary> min_values
+  3: required list<binary> max_values
+
+  /**
+   * Stores whether both min_values and max_values are orderd and if so, in
+   * which direction. This allows readers to perform binary searches in both
+   * lists. Readers cannot assume that max_values[i] <= min_values[i+1], even
+   * if the lists are ordered.
+   */
+  4: required BoundaryOrder boundary_order
+
+  /** A list containing the number of null values for each page **/
+  5: optional list<i64> null_counts
 }
 
 /**
