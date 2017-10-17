@@ -192,7 +192,6 @@
             <exclude>**/build/**</exclude>
             <exclude>**/target/**</exclude>
             <exclude>.git/**</exclude>
-            <exclude>.gitignore</exclude>
             <exclude>.idea/**</exclude>
             <exclude>*/jdiff/*.xml</exclude>
             <exclude>.travis.yml</exclude>
