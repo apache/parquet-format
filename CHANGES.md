@@ -19,6 +19,43 @@
 
 # Parquet #
 
+### Version 2.4.0 ###
+
+#### Bug
+
+*   [PARQUET-255](https://issues.apache.org/jira/browse/PARQUET-255) - Typo in decimal type specification
+*   [PARQUET-322](https://issues.apache.org/jira/browse/PARQUET-322) - Document ENUM as a logical type
+*   [PARQUET-412](https://issues.apache.org/jira/browse/PARQUET-412) - Format: Do not shade slf4j-api
+*   [PARQUET-419](https://issues.apache.org/jira/browse/PARQUET-419) - Update dev script in parquet-cpp to remove incubator.
+*   [PARQUET-655](https://issues.apache.org/jira/browse/PARQUET-655) - The LogicalTypes.md link in README.md points to the old Parquet GitHub repository
+*   [PARQUET-1031](https://issues.apache.org/jira/browse/PARQUET-1031) - Fix spelling errors, whitespace, GitHub urls
+*   [PARQUET-1032](https://issues.apache.org/jira/browse/PARQUET-1032) - Change link in Encodings.md for variable length encoding
+*   [PARQUET-1050](https://issues.apache.org/jira/browse/PARQUET-1050) - The comment of Parquet Format Thrift definition file error
+*   [PARQUET-1076](https://issues.apache.org/jira/browse/PARQUET-1076) - [Format] Switch to long key ids in KEYs file
+*   [PARQUET-1091](https://issues.apache.org/jira/browse/PARQUET-1091) - Wrong and broken links in README
+*   [PARQUET-1102](https://issues.apache.org/jira/browse/PARQUET-1102) - Travis CI builds are failing for parquet-format PRs
+*   [PARQUET-1134](https://issues.apache.org/jira/browse/PARQUET-1134) - Release Parquet format 2.4.0
+*   [PARQUET-1136](https://issues.apache.org/jira/browse/PARQUET-1136) - Makefile is broken
+
+#### Improvement
+
+*   [PARQUET-371](https://issues.apache.org/jira/browse/PARQUET-371) - Bumps Thrift version to 0.9.3
+*   [PARQUET-407](https://issues.apache.org/jira/browse/PARQUET-407) - Incorrect delta-encoding example
+*   [PARQUET-428](https://issues.apache.org/jira/browse/PARQUET-428) - Support INT96 and FIXED_LEN_BYTE_ARRAY types
+*   [PARQUET-601](https://issues.apache.org/jira/browse/PARQUET-601) - Add support in Parquet to configure the encoding used by ValueWriters
+*   [PARQUET-609](https://issues.apache.org/jira/browse/PARQUET-609) - Add Brotli compression to Parquet format
+*   [PARQUET-757](https://issues.apache.org/jira/browse/PARQUET-757) - Add NULL type to Bring Parquet logical types to par with Arrow
+*   [PARQUET-804](https://issues.apache.org/jira/browse/PARQUET-804) - parquet-format README.md still links to the old Google group
+*   [PARQUET-922](https://issues.apache.org/jira/browse/PARQUET-922) - Add index pages to the format to support efficient page skipping
+*   [PARQUET-1049](https://issues.apache.org/jira/browse/PARQUET-1049) - Make thrift version a property in pom.xml
+
+#### Task
+
+*   [PARQUET-450](https://issues.apache.org/jira/browse/PARQUET-450) - Small typos/issues in parquet-format documentation
+*   [PARQUET-667](https://issues.apache.org/jira/browse/PARQUET-667) - Update committers lists to point to apache website
+*   [PARQUET-1124](https://issues.apache.org/jira/browse/PARQUET-1124) - Add new compression codecs to the Parquet spec
+*   [PARQUET-1125](https://issues.apache.org/jira/browse/PARQUET-1125) - Add UUID logical type
+
 ### Version 2.2.0 ###
 
 * [PARQUET-23](https://issues.apache.org/jira/browse/PARQUET-23): Rename packages and maven coordinates to org.apache
