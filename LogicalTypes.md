@@ -192,7 +192,7 @@ expressed as a mix of months and days because there is not a constant
 conversion from days to months.
 
 The sort order used for `INTERVAL` is undefined. When writing data, no min/max
-statistics should be saved for this tpye and if such non-compliant statistics
+statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored.
 
 ## Embedded Types
