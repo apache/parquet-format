@@ -136,7 +136,7 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 ```
 
 Note that the BIT_PACKED encoding method is only supported for encoding
-repetition and definnition levels.
+repetition and definition levels.
 
 ### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
