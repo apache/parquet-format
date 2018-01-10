@@ -59,6 +59,7 @@ Data page format: the bit width used to encode the entry ids stored as 1 byte (m
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
 ### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
+
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
@@ -103,7 +104,15 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
 
 2. varint-encode() is ULEB-128 encoding, see https://en.wikipedia.org/wiki/LEB128
 
+Note that the RLE encoding method is only supported for the following types of
+data:
+
+* Repetition and definition levels
+* Dictionary indices
+* Boolean values in data pages, as an alternative to PLAIN encoding
+
 ### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
+
 This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
 There is no padding between values (except for the last byte) which is padded with 0s.
@@ -125,6 +134,9 @@ would be encoded like this where spaces mark byte boundaries (3 bytes):
 bit value: 00000101 00111001 01110111
 bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 ```
+
+Note that the BIT_PACKED encoding method is only supported for encoding
+repetition and definition levels.
 
 ### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
