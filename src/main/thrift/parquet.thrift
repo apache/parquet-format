@@ -867,3 +867,36 @@ struct FileMetaData {
   7: optional list<ColumnOrder> column_orders;
 }
 
+
+struct ColumnCryptoMetaData {
+  /** Path in schema **/
+  1: required list<string> path_in_schema
+  
+  /** Encrypted or plaintext **/
+  2: required bool encrypted
+}
+
+
+struct FileCryptoMetaData {
+  /** Encryption algorithm ID **/
+  1: required i32 algorithm_id
+    
+  /** Metadata of the key used for encryption of footer, 
+   *  and (possibly) columns **/
+  2: optional binary key_metadata
+
+  /** Offset of the encrypted Parquet footer **/
+  3: required i64 footer_offset
+  
+  /** If file IVs (nonces) are comprised of a fixed part,
+   *  and a variable part (random or counter), keep the fixed
+   *  part here **/
+  4: optional binary iv_prefix
+
+  /** File uniform encryption: true if all columns, 
+   * and footer, are encrypted with the same key **/
+  5: required bool uniform_encryption
+  
+  /** Written only if uniform_encryption is false **/
+  6: optional list<ColumnCryptoMetaData> column_crypto_meta_data
+}
