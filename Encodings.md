@@ -34,7 +34,7 @@ stores the data in the following format:
  - BOOLEAN: [Bit Packed](#RLE), LSB first
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
- - INT96: 12 bytes little endian
+ - INT96: 12 bytes little endian (deprecated)
  - FLOAT: 4 bytes IEEE little endian
  - DOUBLE: 8 bytes IEEE little endian
  - BYTE_ARRAY: length in 4 bytes little endian followed by the bytes contained in the array
