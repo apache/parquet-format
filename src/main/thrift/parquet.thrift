@@ -452,7 +452,7 @@ enum Encoding {
 /**
  * Supported compression algorithms.
  *
- * Codecs added in 2.3.2 can be read by readers based on 2.3.2 and later.
+ * Codecs added in 2.4 can be read by readers based on 2.4 and later.
  * Codec support may vary between readers based on the format version and
  * libraries available at runtime. Gzip, Snappy, and LZ4 codecs are
  * widely available, while Zstd and Brotli require additional libraries.
@@ -462,9 +462,9 @@ enum CompressionCodec {
   SNAPPY = 1;
   GZIP = 2;
   LZO = 3;
-  BROTLI = 4; // Added in 2.3.2
-  LZ4 = 5;    // Added in 2.3.2
-  ZSTD = 6;   // Added in 2.3.2
+  BROTLI = 4; // Added in 2.4
+  LZ4 = 5;    // Added in 2.4
+  ZSTD = 6;   // Added in 2.4
 }
 
 enum PageType {
