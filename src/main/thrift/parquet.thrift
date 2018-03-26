@@ -751,10 +751,19 @@ union ColumnOrder {
    *   INT32 - signed comparison
    *   INT64 - signed comparison
    *   INT96 (only used for legacy timestamps) - undefined
-   *   FLOAT - signed comparison of the represented value
-   *   DOUBLE - signed comparison of the represented value
+   *   FLOAT - signed comparison of the represented value (*)
+   *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+   *
+   * (*) Because the sorting order is not specified properly for floating
+   *     point values (relations vs. total ordering) the following
+   *     compatibility rules should be applied when reading statistics:
+   *     - If the min is a NaN, it should be ignored.
+   *     - If the max is a NaN, it should be ignored.
+   *     - If the min is +0, the row group may contain -0 values as well.
+   *     - If the max is -0, the row group may contain +0 values as well.
+   *     - When looking for NaN values, min and max should be ignored.
    */
   1: TypeDefinedOrder TYPE_ORDER;
 }
