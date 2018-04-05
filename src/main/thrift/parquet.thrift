@@ -318,7 +318,7 @@ struct BsonType {
  * following table.
  */
 union LogicalType {
-  1:  StringType STRING       // use ConvertedType UTF8 if encoding is UTF-8
+  1:  StringType STRING       // use ConvertedType UTF8
   2:  MapType MAP             // use ConvertedType MAP
   3:  ListType LIST           // use ConvertedType LIST
   4:  EnumType ENUM           // use ConvertedType ENUM
@@ -331,6 +331,7 @@ union LogicalType {
   11: NullType UNKNOWN        // no compatible ConvertedType
   12: JsonType JSON           // use ConvertedType JSON
   13: BsonType BSON           // use ConvertedType BSON
+  14: UUIDType UUID
 }
 
 /**
@@ -381,7 +382,7 @@ struct SchemaElement {
   9: optional i32 field_id;
 
   /**
-   * The logical type of this SchemaElement; only valid for primitives.
+   * The logical type of this SchemaElement
    *
    * LogicalType replaces ConvertedType, but ConvertedType is still required
    * for some logical types to ensure forward-compatibility in format v1.
