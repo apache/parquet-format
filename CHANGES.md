@@ -19,6 +19,33 @@
 
 # Parquet #
 
+### Version 2.5.0 ###
+
+#### Bug
+
+*   [PARQUET-323](https://issues.apache.org/jira/browse/PARQUET-323) - INT96 should be marked as deprecated
+*   [PARQUET-1064](https://issues.apache.org/jira/browse/PARQUET-1064) - Deprecate type-defined sort ordering for INTERVAL type
+*   [PARQUET-1065](https://issues.apache.org/jira/browse/PARQUET-1065) - Deprecate type-defined sort ordering for INT96 type
+*   [PARQUET-1145](https://issues.apache.org/jira/browse/PARQUET-1145) - Add license to .gitignore and .travis.yml
+*   [PARQUET-1156](https://issues.apache.org/jira/browse/PARQUET-1156) - dev/merge\_parquet\_pr.py problems
+*   [PARQUET-1236](https://issues.apache.org/jira/browse/PARQUET-1236) - Upgrade org.slf4j:slf4j-api:1.7.2 to 1.7.12
+*   [PARQUET-1242](https://issues.apache.org/jira/browse/PARQUET-1242) - parquet.thrift refers to wrong releases for the new compressions
+*   [PARQUET-1251](https://issues.apache.org/jira/browse/PARQUET-1251) - Clarify ambiguous min/max stats for FLOAT/DOUBLE
+*   [PARQUET-1258](https://issues.apache.org/jira/browse/PARQUET-1258) - Update scm developer connection to github
+
+#### New Feature
+
+*   [PARQUET-1201](https://issues.apache.org/jira/browse/PARQUET-1201)  - Write column indexes
+
+#### Improvement
+
+*   [PARQUET-1171](https://issues.apache.org/jira/browse/PARQUET-1171) - \[C++\] Clarify valid uses for RLE, BIT_PACKED encodings
+*   [PARQUET-1197](https://issues.apache.org/jira/browse/PARQUET-1197) - Log rat failures
+
+#### Task
+
+*   [PARQUET-1234](https://issues.apache.org/jira/browse/PARQUET-1234) - Release Parquet format 2.5.0
+
 ### Version 2.4.0 ###
 
 #### Bug

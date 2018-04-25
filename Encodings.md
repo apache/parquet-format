@@ -34,7 +34,7 @@ stores the data in the following format:
  - BOOLEAN: [Bit Packed](#RLE), LSB first
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
- - INT96: 12 bytes little endian
+ - INT96: 12 bytes little endian (deprecated)
  - FLOAT: 4 bytes IEEE little endian
  - DOUBLE: 8 bytes IEEE little endian
  - BYTE_ARRAY: length in 4 bytes little endian followed by the bytes contained in the array
@@ -46,7 +46,7 @@ For native types, this outputs the data as little endian. Floating
 For the byte array type, it encodes the length as a 4 byte little
 endian, followed by the bytes.
 
-### Dictionary Encoding (PLAIN_DICTIONARY = 2)
+### Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
 The dictionary encoding builds a dictionary of values encountered in a given column. The
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
 using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
@@ -57,6 +57,9 @@ Dictionary page format: the entries in the dictionary - in dictionary order - us
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
+
+Using the PLAIN_DICTIONARY enum value is deprecated in the Parquet 2.0 specification. Prefer using RLE_DICTIONARY
+in a data page and PLAIN in a dictionary page for Parquet 2.0+ files.
 
 ### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 
