@@ -30,6 +30,7 @@ import static org.apache.parquet.format.event.Consumers.listElementsOf;
 import static org.apache.parquet.format.event.Consumers.listOf;
 import static org.apache.parquet.format.event.Consumers.struct;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,7 +41,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
-
+import org.apache.thrift.transport.TMemoryBuffer;
 import org.apache.parquet.format.event.Consumers.Consumer;
 import org.apache.parquet.format.event.Consumers.DelegatingFieldConsumer;
 import org.apache.parquet.format.event.EventBasedThriftReader;
@@ -58,36 +59,70 @@ import org.apache.parquet.format.event.TypedConsumer.StringConsumer;
 public class Util {
 
   public static void writeColumnIndex(ColumnIndex columnIndex, OutputStream to) throws IOException {
-    write(columnIndex, to);
+    writeColumnIndex(columnIndex, to, (BlockCrypto.Encryptor) null);
+  }
+  
+  public static void writeColumnIndex(ColumnIndex columnIndex, OutputStream to, BlockCrypto.Encryptor encryptor) throws IOException {
+    write(columnIndex, to, encryptor);
   }
 
   public static ColumnIndex readColumnIndex(InputStream from) throws IOException {
-    return read(from, new ColumnIndex());
+    return readColumnIndex(from, (BlockCrypto.Decryptor) null);
+  }
+  
+  public static ColumnIndex readColumnIndex(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {
+    return read(from, new ColumnIndex(), decryptor);
   }
 
   public static void writeOffsetIndex(OffsetIndex offsetIndex, OutputStream to) throws IOException {
-    write(offsetIndex, to);
+    writeOffsetIndex(offsetIndex, to, (BlockCrypto.Encryptor) null);
+  }
+  
+  public static void writeOffsetIndex(OffsetIndex offsetIndex, OutputStream to, BlockCrypto.Encryptor encryptor) throws IOException {
+    write(offsetIndex, to, encryptor);
   }
 
   public static OffsetIndex readOffsetIndex(InputStream from) throws IOException {
-    return read(from, new OffsetIndex());
+    return readOffsetIndex(from, (BlockCrypto.Decryptor) null);
+  }
+  
+  public static OffsetIndex readOffsetIndex(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {
+    return read(from, new OffsetIndex(), decryptor);
   }
 
   public static void writePageHeader(PageHeader pageHeader, OutputStream to) throws IOException {
-    write(pageHeader, to);
+    writePageHeader(pageHeader, to, (BlockCrypto.Encryptor) null);
+  }
+  
+  public static void writePageHeader(PageHeader pageHeader, OutputStream to, BlockCrypto.Encryptor encryptor) throws IOException {
+    write(pageHeader, to, encryptor);
   }
 
   public static PageHeader readPageHeader(InputStream from) throws IOException {
-    return read(from, new PageHeader());
+    return readPageHeader(from, (BlockCrypto.Decryptor) null);
+  }
+  
+  public static PageHeader readPageHeader(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {
+    return read(from, new PageHeader(), decryptor);
   }
 
   public static void writeFileMetaData(org.apache.parquet.format.FileMetaData fileMetadata, OutputStream to) throws IOException {
-    write(fileMetadata, to);
+    writeFileMetaData(fileMetadata, to, (BlockCrypto.Encryptor) null);
+  }
+  
+  public static void writeFileMetaData(org.apache.parquet.format.FileMetaData fileMetadata, OutputStream to,
+      BlockCrypto.Encryptor encryptor) throws IOException {
+    write(fileMetadata, to, encryptor);
   }
 
   public static FileMetaData readFileMetaData(InputStream from) throws IOException {
-    return read(from, new FileMetaData());
+    return readFileMetaData(from, (BlockCrypto.Decryptor) null);
   }
+  
+  public static FileMetaData readFileMetaData(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {
+    return read(from, new FileMetaData(), decryptor);
+  }
+  
   /**
    * reads the meta data from the stream
    * @param from the stream to read the metadata from
@@ -96,13 +131,24 @@ public class Util {
    * @throws IOException
    */
   public static FileMetaData readFileMetaData(InputStream from, boolean skipRowGroups) throws IOException {
+    return readFileMetaData(from, skipRowGroups, (BlockCrypto.Decryptor) null);
+  }
+  public static FileMetaData readFileMetaData(InputStream from, boolean skipRowGroups, BlockCrypto.Decryptor decryptor) throws IOException {
     FileMetaData md = new FileMetaData();
     if (skipRowGroups) {
-      readFileMetaData(from, new DefaultFileMetaDataConsumer(md), skipRowGroups);
+      readFileMetaData(from, new DefaultFileMetaDataConsumer(md), skipRowGroups, decryptor);
     } else {
-      read(from, md);
+      read(from, md, decryptor);
     }
     return md;
+  }
+  
+  public static void writeFileCryptoMetaData(org.apache.parquet.format.FileCryptoMetaData cryptoMetadata, OutputStream to) throws IOException { 
+    write(cryptoMetadata, to, (BlockCrypto.Encryptor) null);
+  }
+  
+  public static FileCryptoMetaData readFileCryptoMetaData(InputStream from) throws IOException {
+    return read(from, new FileCryptoMetaData(), (BlockCrypto.Decryptor) null);
   }
 
   /**
@@ -165,10 +211,18 @@ public class Util {
   }
 
   public static void readFileMetaData(InputStream from, FileMetaDataConsumer consumer) throws IOException {
-    readFileMetaData(from, consumer, false);
+    readFileMetaData(from, consumer, (BlockCrypto.Decryptor) null);
+  }
+  public static void readFileMetaData(InputStream from, FileMetaDataConsumer consumer, BlockCrypto.Decryptor decryptor) throws IOException {
+    readFileMetaData(from, consumer, false, decryptor);
+  }
+  
+  public static void readFileMetaData(InputStream from, final FileMetaDataConsumer consumer, boolean skipRowGroups) throws IOException {
+    readFileMetaData(from, consumer, skipRowGroups, (BlockCrypto.Decryptor) null);
   }
 
-  public static void readFileMetaData(InputStream from, final FileMetaDataConsumer consumer, boolean skipRowGroups) throws IOException {
+  public static void readFileMetaData(InputStream input, final FileMetaDataConsumer consumer, 
+      boolean skipRowGroups, BlockCrypto.Decryptor decryptor) throws IOException {
     try {
       DelegatingFieldConsumer eventConsumer = fieldConsumer()
       .onField(VERSION, new I32Consumer() {
@@ -205,8 +259,9 @@ public class Util {
           }
         })));
       }
+      
+      InputStream from = (null == decryptor? input : decryptStream(input, decryptor));
       new EventBasedThriftReader(protocol(from)).readStruct(eventConsumer);
-
     } catch (TException e) {
       throw new IOException("can not read FileMetaData: " + e.getMessage(), e);
     }
@@ -223,8 +278,41 @@ public class Util {
   private static InterningProtocol protocol(TIOStreamTransport t) {
     return new InterningProtocol(new TCompactProtocol(t));
   }
+  
+  private static InputStream decryptStream(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {    
+    byte[] i32rd = new byte[4];
+    int got = 0;
+    // Read the length of encrypted Thrift structure
+    while (got < 4) {
+      int n = from.read(i32rd, got, 4-got);
+      if (n <= 0) {
+        throw new IOException("Tried to read int (4 bytes), but only got " + got + " bytes.");
+      }
+      got += n;
+    }
+    int clen =
+        ((i32rd[3] & 0xff) << 24) |
+        ((i32rd[2] & 0xff) << 16) |
+        ((i32rd[1] & 0xff) <<  8) |
+        ((i32rd[0] & 0xff));
+    if (clen < 1) throw new IOException("Wrong length of encrypted metadata "+clen);
+    byte[] cbuf = new byte[clen];
+    got = 0;
+    // Read the encrypted structure contents
+    while (got < clen) {
+      int n = from.read(cbuf, got, clen-got);
+      if (n <= 0) {
+        throw new IOException("Tried to read " + clen + " bytes, but only got " + got + " bytes.");
+      }
+      got += n;
+    }
+    // Decrypt the structure contents
+    byte[] pbuf = decryptor.decrypt(cbuf, 0, clen);
+    return new ByteArrayInputStream(pbuf);
+  }
 
-  private static <T extends TBase<?,?>> T read(InputStream from, T tbase) throws IOException {
+  private static <T extends TBase<?,?>> T read(InputStream input, T tbase, BlockCrypto.Decryptor decryptor) throws IOException {
+    InputStream from = (null == decryptor? input : decryptStream(input, decryptor));
     try {
       tbase.read(protocol(from));
       return tbase;
@@ -233,11 +321,37 @@ public class Util {
     }
   }
 
-  private static void write(TBase<?, ?> tbase, OutputStream to) throws IOException {
+  private static void write(TBase<?, ?> tbase, OutputStream to, BlockCrypto.Encryptor encryptor) throws IOException {
+    if (null == encryptor) { 
+      try {
+        tbase.write(protocol(to));
+        return;
+      } catch (TException e) {
+        throw new IOException("can not write " + tbase, e);
+      }
+    }
+    // Serialize and encrypt the structure
+    TMemoryBuffer tmb = new TMemoryBuffer(100);
     try {
-      tbase.write(protocol(to));
+      tbase.write(new InterningProtocol(new TCompactProtocol(tmb)));
     } catch (TException e) {
       throw new IOException("can not write " + tbase, e);
     }
+    byte[] pbuf = tmb.getArray();
+    int plen = tmb.length();
+    byte[] cbuf = encryptor.encrypt(pbuf, 0, plen);
+    int clen = cbuf.length;
+    // Serialize the length of encrypted structure
+    byte[] i32out = new byte[4];
+    i32out[3] = (byte)(0xff & (clen >> 24));
+    i32out[2] = (byte)(0xff & (clen >> 16));
+    i32out[1] = (byte)(0xff & (clen >> 8));
+    i32out[0] = (byte)(0xff & (clen));
+    // Write and flush
+    to.write(i32out, 0, 4);
+    to.write(cbuf, 0, clen);
+    to.flush();
   }
 }
+
+
