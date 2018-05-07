@@ -72,12 +72,14 @@ length := length of the <encoded-data> in bytes stored as 4 bytes little endian 
 encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>
 bit-packed-run := <bit-packed-header> <bit-packed-values>
-bit-packed-header := varint-encode(<bit-pack-count> << 1 | 1)
+bit-packed-header := varint-encode(<bit-pack-scaled-run-len> << 1 | 1)
 // we always bit-pack a multiple of 8 values at a time, so we only store the number of values / 8
-bit-pack-count := (number of values in this run) / 8
+bit-pack-scaled-run-len := (bit-packed-run-len) / 8
+bit-packed-run-len := *see 3 below*
 bit-packed-values := *see 1 below*
 rle-run := <rle-header> <repeated-value>
-rle-header := varint-encode( (number of times repeated) << 1)
+rle-header := varint-encode( (rle-run-len) << 1)
+rle-run-len := *see 3 below*
 repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
 ```
 
@@ -106,6 +108,13 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    you would have to use the ordering used in the [deprecated bit-packing](#BITPACKED) encoding)
 
 2. varint-encode() is ULEB-128 encoding, see https://en.wikipedia.org/wiki/LEB128
+
+3. bit-packed-run-len and rle-run-len must be in the range \[1, 2<sup>31</sup> - 1\].
+   This means that a Parquet implementation can always store the run length in a signed
+   32-bit integer. This length restriction was not part of the Parquet 2.5.0 and earlier
+   specifications, but longer runs were not readable by the most common Parquet
+   implementations so, in practice, were not safe for Parquet writers to emit.
+
 
 Note that the RLE encoding method is only supported for the following types of
 data:
