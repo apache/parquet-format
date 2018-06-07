@@ -123,6 +123,14 @@ public class Util {
     return read(from, new FileMetaData(), decryptor);
   }
   
+  public static void writeColumnMetaData(ColumnMetaData columnMetaData, OutputStream to, BlockCrypto.Encryptor encryptor) throws IOException {
+    write(columnMetaData, to, encryptor);
+  }
+  
+  public static ColumnMetaData readColumnMetaData(InputStream from, BlockCrypto.Decryptor decryptor) throws IOException {
+    return read(from, new ColumnMetaData(), decryptor);
+  }
+  
   /**
    * reads the meta data from the stream
    * @param from the stream to read the metadata from
@@ -353,5 +361,4 @@ public class Util {
     to.flush();
   }
 }
-
 
