@@ -686,6 +686,9 @@ struct ColumnChunk {
 
   /** Size of ColumnChunk's ColumnIndex, in bytes **/
   7: optional i32 column_index_length
+  
+  /** Path in schema - for encrypted columns **/
+  8: optional list<string> path_in_schema
 }
 
 struct RowGroup {
@@ -888,10 +891,18 @@ struct ColumnCryptoMetaData {
   3: optional binary key_metadata
 }
 
+/**
+ * Supported encryption algorithms.
+ */
+enum EncryptionAlgorithm {
+  AES_GCM_V1 = 0;
+  AES_GCM_CTR_V1 = 1;
+}
+
 
 struct FileCryptoMetaData {
-  /** Encryption algorithm ID **/
-  1: required i32 algorithm_id
+  /** Encryption algorithm enum **/
+  1: required EncryptionAlgorithm encryption_algorithm
   
   /** Parquet footer can be encrypted, or left as plaintext **/
   2: required bool encrypted_footer
