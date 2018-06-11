@@ -887,8 +887,13 @@ struct ColumnCryptoMetaData {
   /** Encrypted or plaintext **/
   2: required bool encrypted
   
-  /** Metadata of the key used for encryption of the this column **/
-  3: optional binary key_metadata
+  /** Column can be encrypted with the footer key,
+   * or a column-specific key **/
+  3: required bool encrypted_with_footer_key
+  
+  /** Metadata of the column-specific key.
+   * Ignored if encrypted_with_footer_key is true **/
+  4: optional binary column_key_metadata
 }
 
 /**
@@ -899,23 +904,22 @@ enum EncryptionAlgorithm {
   AES_GCM_CTR_V1 = 1;
 }
 
-
 struct FileCryptoMetaData {
-  /** Encryption algorithm enum **/
+  /** Encryption algorithm ID **/
   1: required EncryptionAlgorithm encryption_algorithm
   
   /** Parquet footer can be encrypted, or left as plaintext **/
   2: required bool encrypted_footer
     
-  /** Metadata of the key used for encryption of footer, 
+  /** Metadata of key used for encryption of footer, 
    *  and (possibly) columns **/
-  3: optional binary key_metadata
+  3: optional binary footer_key_metadata
 
-  /** Offset of the encrypted Parquet footer **/
+  /** Offset of Parquet footer (encrypted, or plaintext) **/
   4: required i64 footer_offset
   
   /** If file IVs (nonces) are comprised of a fixed part,
-   *  and a variable part (random or counter), keep the fixed
+   *  and variable parts (random or counter), keep the fixed
    *  part here **/
   5: optional binary iv_prefix
 
@@ -926,5 +930,6 @@ struct FileCryptoMetaData {
   /** Written only if uniform_encryption is false **/
   7: optional list<ColumnCryptoMetaData> column_crypto_meta_data
 }
+
 
 
