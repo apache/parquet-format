@@ -303,12 +303,12 @@ public class Util {
         ((i32rd[2] & 0xff) << 16) |
         ((i32rd[1] & 0xff) <<  8) |
         ((i32rd[0] & 0xff));
-    if (clen < 1) throw new IOException("Wrong length of encrypted metadata "+clen);
+    if (clen < 1) throw new IOException("Wrong length of encrypted metadata: " + clen);
     byte[] cbuf = new byte[clen];
     got = 0;
     // Read the encrypted structure contents
     while (got < clen) {
-      int n = from.read(cbuf, got, clen-got);
+      int n = from.read(cbuf, got, clen - got);
       if (n <= 0) {
         throw new IOException("Tried to read " + clen + " bytes, but only got " + got + " bytes.");
       }

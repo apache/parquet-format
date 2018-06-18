@@ -25,8 +25,7 @@ public interface BlockCrypto{
 
   public interface Encryptor{
     /**
-     * Encrypts the plaintext. The returned result should contain the ciphertext including a metadata (if any) 
-     * required for decryption (nonce - full or suffix, tag, etc) - depending on the algorithm. 
+     * Encrypts the plaintext.
      * Make sure the returned contents starts at offset 0 and fills up the byte array.
      * Input plaintext starts at offset 0, and has a length of plaintext.length.
      * @param plaintext
@@ -36,8 +35,7 @@ public interface BlockCrypto{
     public byte[] encrypt(byte[] plaintext) throws IOException;
 
     /**
-     * Encrypts the plaintext. The returned result should contain the ciphertext including a metadata (if any) 
-     * required for decryption (nonce - full or suffix, tag, etc) - depending on the algorithm. 
+     * Encrypts the plaintext.
      * Make sure the returned contents starts at offset 0 and fills up the byte array.
      * Input plaintext starts at offset, and has a length of len.
      * @param plaintext
@@ -52,8 +50,7 @@ public interface BlockCrypto{
 
   public interface Decryptor{  
     /**
-     * Decrypts the ciphertext (containing a metadata, if any, required for decryption 
-     * such as nonce - full or suffix, tag, etc - depending on the algorithm). 
+     * Decrypts the ciphertext. 
      * Make sure the returned plaintext starts at offset 0 and and fills up the byte array.
      * Input ciphertext starts at offset 0, and has a length of ciphertext.length.
      * @param ciphertext
@@ -63,8 +60,7 @@ public interface BlockCrypto{
     public byte[] decrypt(byte[] ciphertext) throws IOException;
 
     /**
-     * Decrypts the ciphertext (containing a metadata, if any, required for decryption 
-     * such as nonce - full or suffix, tag, etc - depending on the algorithm). 
+     * Decrypts the ciphertext. 
      * Make sure the returned plaintext starts at offset 0 and and fills up the byte array.
      * Input ciphertext starts at offset, and has a length of len.
      * @param ciphertext
@@ -76,4 +72,5 @@ public interface BlockCrypto{
     public byte[] decrypt(byte[] ciphertext, int offset, int len) throws IOException;
   }
 }
+
 
