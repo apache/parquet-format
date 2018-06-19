@@ -676,17 +676,17 @@ struct BlockAlgorithm {
   */
 union BloomFilterAlgorithm {
   /** Block based bloom filter. 
-   * The bloom filter bitset is separated into tiny bucket as tiny bloom 
-   * filter, the high 32 bits hash value is used to select bucket, and 
+   * The bloom filter bitset is separated into tiny bucket as tiny bloom
+   * filter, the high 32 bits hash value is used to select bucket, and
    * lower 32 bits hash values are used to set bits in tiny bloom filter.
-   * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically, 
-   * one tiny bloom filter contains eight 32-bit words (4 bytes stored in 
+   * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically,
+   * one tiny bloom filter contains eight 32-bit words (4 bytes stored in
    * little endian), and the algorithm set one bit in each 32-bit word.
    *
-   * In order to set bits in bucket, the algorithm need 8 SALT values 
-   * (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU, 0x705495c7U, 
+   * In order to set bits in bucket, the algorithm need 8 SALT values
+   * (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU, 0x705495c7U,
    * 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calculate index with formular:
-   *                  index[i] = (hash * SALT[i]) >> 27 
+   *                  index[i] = (hash * SALT[i]) >> 27
    **/
    1: BlockAlgorithm BLOCK;
 }
