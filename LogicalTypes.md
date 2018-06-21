@@ -50,203 +50,20 @@ However, to maintain compatibility, Parquet readers should be able to read
 and interpret old logical type representation (in case the new one is not present,
 because the file was written by older writer), and write `ConvertedType` field for old readers.
 
-**Forward compatibility** (old readers should be able to files written by new API):
-
-<table>
-    <tr colspan="3" align="center">
-        <th colspan="3">LogicalType</th>
-        <th>ConvertedType</th>
-    </tr>
-    <tr align="center">
-        <td colspan="3">StringType</td>
-        <td>UTF8</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">MapType</td>
-        <td>MAP</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">ListType</td>
-        <td>LIST</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">EnumType</td>
-        <td>ENUM</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">DecimalType</td>
-        <td>DECIMAL</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">DateType</td>
-        <td>DATE</td>
-    </tr>
-    <tr align="center">
-        <td rowspan="2" colspan="2">TimeType</td>
-        <td>unit = MILLIS</td>
-        <td>TIME_MILLIS</td>
-    </tr>
-    <tr align="center">
-        <td>unit = MICROS</td>
-        <td>TIME_MICROS</td>
-    </tr>
-    <tr align="center">
-        <td rowspan="2" colspan="2">TimestampType</td>
-        <td>unit = MILLIS</td>
-        <td>TIMESTAMP_MILLIS</td>
-    </tr>
-    <tr align="center">
-        <td>unit = MICROS</td>
-        <td>TIMESTAMP_MICROS</td>
-    </tr>
-    <tr align="center">
-        <td rowspan="8">IntType</td>
-        <td rowspan="4">isSigned</td>
-        <td>bitWidth = 8</td>
-        <td>INT_8</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 16</td>
-        <td>INT_16</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 32</td>
-        <td>INT_32</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 64</td>
-        <td>INT_64</td>
-    </tr>
-    <tr align="center">
-        <td rowspan="4">!isSigned</td>
-        <td>bitWidth = 8</td>
-        <td>UINT_8</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 16</td>
-        <td>UINT_16</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 32</td>
-        <td>UINT_32</td>
-    </tr>
-    <tr align="center">
-        <td>bitWidth = 64</td>
-        <td>UINT_64</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">NullType</td>
-        <td>no annotation</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">JsonType</td>
-        <td>JSON</td>
-    </tr>
-    <tr align="center">
-        <td colspan="3">BsonType</td>
-        <td>BSON</td>
-    </tr>
-</table>
-
-For `DecimalType`, precision and scale should be also written into corresponding SchemaElement in metadata.
-
-**Backward compatibility** (new readers should be able to read files written by old writers, and interpret the data properly):
-
-<table>
-    <tralign="center">
-        <th>ConvertedType</th>
-        <th>LogicalType</th>
-    </tr>
-    <tr align="center">
-        <td>UTF8</td>
-        <td>StringType</td>
-    </tr>
-    <tr align="center">
-        <td>MAP</td>
-        <td>MapType</td>
-    </tr>
-    <tr align="center">
-        <td>LIST</td>
-        <td>ListType</td>
-    </tr>
-    <tr align="center">
-        <td>ENUM</td>
-        <td>EnumType</td>
-    </tr>
-    <tr align="center">
-        <td>DECIMAL</td>
-        <td>DecimalType (precision and scale read from SchemaElement)</td>
-    </tr>
-    <tr align="center">
-        <td>DATE</td>
-        <td>DateType</td>
-    </tr>
-    <tr align="center">
-        <td>TIME_MILLIS</td>
-        <td>TimeType (isAdjustedToUTC = true, unit = MILLIS)</td>
-    </tr>
-    <tr align="center">
-        <td>TIME_MICROS</td>
-        <td>TimeType (isAdjustedToUTC = true, unit = MICROS)</td>
-    </tr>
-    <tr align="center">
-        <td>TIMESTAMP_MILLIS</td>
-        <td>TimestampType (isAdjustedToUTC = true, unit = MILLIS)</td>
-    </tr>
-    <tr align="center">
-        <td>TIMESTAMP_MICROS</td>
-        <td>TimestampType (isAdjustedToUTC = true, unit = MICROS)</td>
-    </tr>
-    <tr align="center">
-        <td>INT_8</td>
-        <td>IntType (bitWidth = 8, isSigned = true)</td>
-    </tr>
-    <tr align="center">
-        <td>INT_16</td>
-        <td>IntType (bitWidth = 16, isSigned = true)</td>
-    </tr>
-    <tr align="center">
-        <td>INT_32</td>
-        <td>IntType (bitWidth = 32, isSigned = true)</td>
-    </tr>
-    <tr align="center">
-        <td>INT_64</td>
-        <td>IntType (bitWidth = 64, isSigned = true)</td>
-    </tr>
-    <tr align="center">
-        <td>UINT_8</td>
-        <td>IntType (bitWidth = 8, isSigned = false)</td>
-    </tr>
-    <tr align="center">
-        <td>UINT_16</td>
-        <td>IntType (bitWidth = 16, isSigned = false)</td>
-    </tr>
-    <tr align="center">
-        <td>UINT_32</td>
-        <td>IntType (bitWidth = 32, isSigned = false)</td>
-    </tr>
-    <tr align="center">
-        <td>UINT_64</td>
-        <td>IntType (bitWidth = 64, isSigned = false)</td>
-    </tr>
-    <tr align="center">
-        <td>JSON</td>
-        <td>JsonType</td>
-    </tr>
-    <tr align="center">
-        <td>BSON</td>
-        <td>BsonType</td>
-    </tr>
-</table>
+Compatibility considerations are mentioned for each annotation in the corresponding section.
 
 ## String Types
 
-### UTF8
+### STRING
 
-`UTF8` may only be used to annotate the binary primitive type and indicates
+`STRING` may only be used to annotate the binary primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
-The sort order used for `UTF8` strings is unsigned byte-wise comparison.
+The sort order used for `STRING` strings is unsigned byte-wise comparison.
+
+*Compatibility*
+
+`STRING` corresponds to `UTF8` ConvertedType.
 
 ### ENUM
 
@@ -313,6 +130,79 @@ allows.
 
 The sort order used for unsigned integer types is unsigned.
 
+### Deprecated integer ConvertedType
+
+`INT_8`, `INT_16`, `INT_32`, and `INT_64` annotations can be also used to specify
+signed integers with 8, 16, 32, or 64 bit width.
+
+`INT_8`, `INT_16`, and `INT_32` must annotate an `int32` primitive type and
+`INT_64` must annotate an `int64` primitive type. `INT_32` and `INT_64` are
+implied by the `int32` and `int64` primitive types if no other annotation is
+present and should be considered optional.
+
+`UINT_8`, `UINT_16`, `UINT_32`, and `UINT_64` annotations can be also used to specify
+unsigned integers with 8, 16, 32, or 64 bit width.
+
+`UINT_8`, `UINT_16`, and `UINT_32` must annotate an `int32` primitive type and
+`UINT_64` must annotate an `int64` primitive type.
+
+*Backward compatibility:*
+
+| ConvertedType | LogicalType |
+|---------------|-------------|
+| INT_8  | IntType (bitWidth = 8, isSigned = true) |
+| INT_16 | IntType (bitWidth = 16, isSigned = true) |
+| INT_32 | IntType (bitWidth = 32, isSigned = true) |
+| INT_64 | IntType (bitWidth = 64, isSigned = true) |
+| UINT_8  | IntType (bitWidth = 8, isSigned = false) |
+| UINT_16 | IntType (bitWidth = 16, isSigned = false) |
+| UINT_32 | IntType (bitWidth = 32, isSigned = false) |
+| UINT_64 | IntType (bitWidth = 64, isSigned = false) |
+
+*Forward compatibility:*
+
+<table>
+    <tr colspan="3">
+        <th colspan="3">LogicalType</th>
+        <th>ConvertedType</th>
+    </tr>
+    <tr>
+        <td rowspan="8">IntType</td>
+        <td rowspan="4">isSigned</td>
+        <td>bitWidth = 8</td>
+        <td>INT_8</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 16</td>
+        <td>INT_16</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 32</td>
+        <td>INT_32</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 64</td>
+        <td>INT_64</td>
+    </tr>
+    <tr>
+        <td rowspan="4">!isSigned</td>
+        <td>bitWidth = 8</td>
+        <td>UINT_8</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 16</td>
+        <td>UINT_16</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 32</td>
+        <td>UINT_32</td>
+    </tr>
+    <tr>
+        <td>bitWidth = 64</td>
+        <td>UINT_64</td>
+    </tr>
+</table>
+
 ### DECIMAL
 
 `DECIMAL` annotation represents arbitrary-precision signed decimal numbers of
@@ -347,6 +237,11 @@ fixed, then the correct ordering can be produced by flipping the
 most-significant bit in the first byte and then using unsigned byte-wise
 comparison.
 
+*Compatibility*
+
+To support compatibility with older readers, implementations of parquet-format should
+write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
+
 ## Date/Time Types
 
 ### DATE
@@ -373,6 +268,39 @@ microseconds after midnight.
 
 The sort order used for `TIME` is signed.
 
+#### Deprecated time ConvertedType
+
+`TIME_MILLIS` is the deprecated ConvertedType counterpart of `TIME` logical type
+with precision `MILLIS`. Like the logical type counterpart, it must annotate an `int32`
+
+`TIME_MICROS` is the deprecated ConvertedType counterpart of `TIME` logical type
+with precision `MICROS`. Like the logical type counterpart, it must annotate an `int64`
+
+*Backward compatibility:*
+
+| ConvertedType | LogicalType |
+|---------------|-------------|
+| TIME_MILLIS | TimeType (isAdjustedToUTC = true, unit = MILLIS) |
+| TIME_MICROS | TimeType (isAdjustedToUTC = true, unit = MICROS) |
+
+*Forward compatibility:*
+
+<table>
+    <tr colspan="3">
+        <th colspan="3">LogicalType</th>
+        <th>ConvertedType</th>
+    </tr>
+    <tr>
+        <td rowspan="2" colspan="2">TimeType</td>
+        <td>unit = MILLIS</td>
+        <td>TIME_MILLIS</td>
+    </tr>
+    <tr>
+        <td>unit = MICROS</td>
+        <td>TIME_MICROS</td>
+    </tr>
+</table>
+
 ### TIMESTAMP
 
 `TIMESTAMP` is used for a combined logical date and time type, with
@@ -388,6 +316,39 @@ It must annotate an `int64` that stores the number of
 microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
 
 The sort order used for `TIMESTAMP` is signed.
+
+#### Deprecated timestamp ConvertedType
+
+`TIMESTAMP_MILLIS` is the deprecated ConvertedType counterpart of `TIMESTAMP` logical type
+with precision `MILLIS`. Like the logical type counterpart, it must annotate an `int64`
+
+`TIMESTAMP_MICROS` is the deprecated ConvertedType counterpart of `TIMESTAMP` logical type
+with precision `MICROS`. Like the logical type counterpart, it must annotate an `int64`
+
+*Backward compatibility:*
+
+| ConvertedType | LogicalType |
+|---------------|-------------|
+| TIMESTAMP_MILLIS | TimestampType (isAdjustedToUTC = true, unit = MILLIS) |
+| TIMESTAMP_MICROS | TimestampType (isAdjustedToUTC = true, unit = MICROS) |
+
+*Forward compatibility:*
+
+<table>
+    <tr colspan="3">
+        <th colspan="3">LogicalType</th>
+        <th>ConvertedType</th>
+    </tr>
+    <tr>
+        <td rowspan="2" colspan="2">TimestampType</td>
+        <td>unit = MILLIS</td>
+        <td>TIMESTAMP_MILLIS</td>
+    </tr>
+    <tr>
+        <td>unit = MICROS</td>
+        <td>TIMESTAMP_MICROS</td>
+    </tr>
+</table>
 
 ### INTERVAL
 
