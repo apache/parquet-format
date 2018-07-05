@@ -21,7 +21,7 @@ package org.apache.parquet.format;
 
 import java.io.IOException;
 
-public interface BlockCrypto{
+public interface BlockCipher{
 
   public interface Encryptor{
     /**
