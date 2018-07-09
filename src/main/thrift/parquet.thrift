@@ -659,72 +659,45 @@ struct ColumnMetaData {
    * dictionary encoded for example **/
   13: optional list<PageEncodingStats> encoding_stats;
 
-  /** Byte offset from beginning of file to bloom filter data. The bloom filters
-   * data of columns together is stored before the start of row group wihch describe.**/
+  /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
 }
 
-/**
-  * Block based algorithm type annotation.
-  */
-struct BlockAlgorithm {
-}
+/** Block-based algorithm type annotation. **/
+struct SplitBlockAlgorithm {}
 
-/**
-  * Definition of bloom filter algorithm.
-  * In order for farward compatibility, we use union to replace enum.
-  */
+/** The algorithm used in Bloom filter. **/
 union BloomFilterAlgorithm {
-  /** Block based bloom filter. 
-   * The bloom filter bitset is separated into tiny bucket as tiny bloom
-   * filter, the high 32 bits hash value is used to select bucket, and
-   * lower 32 bits hash values are used to set bits in tiny bloom filter.
-   * See “Cache-, Hash- and Space-Efficient Bloom Filters”. Specifically,
-   * one tiny bloom filter contains eight 32-bit words (4 bytes stored in
-   * little endian), and the algorithm set one bit in each 32-bit word.
-   *
-   * In order to set bits in bucket, the algorithm need 8 SALT values
-   * (0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU, 0x705495c7U,
-   * 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U) to calculate index with formular:
-   *                  index[i] = (hash * SALT[i]) >> 27
-   **/
-   1: BlockAlgorithm BLOCK;
+  /** Block-based Bloom filter. **/
+   1: SplitBlockAlgorithm BLOCK;
 }
 
-/**
-  * Hash strategy type annotation.
-  */
-struct Murmur3 {
-}
+/** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
+ * repo by Austin Appleby.
+ **/
+struct Murmur3 {}
 
 /** 
- * Definition for hash function used to compute hash of column value.
- * Note that the hash function take plain encoding (little endian order for
- * primitive types, see Encoding definition for detail) of column values as input.
- *
- * In order for farward compatibility, we use union to replace enum.
- */
+ * The hash function used in Bloom filter. This function takes the hash of a column value
+ * using plain encoding.
+ **/
 union BloomFilterHash {
-  /** Murmur3 Hash Strategy.
-   * Murmur3 hash has 32 bits and 128 bits hash variants, we use least significant 
-   * 64 bits from the result of x64 128-bits function murmur3hash_x64_128 in little
-   * endian order.
-   **/
+  /** Murmur3 Hash Strategy. **/
   1: Murmur3 MURMUR3;
 }
 
 /**
-  * Bloom filter header is stored at beginning of bloom filter data of each column 
+  * Bloom filter header is stored at beginning of Bloom filter data of each column
   * and followed by its bitset.
-  */
+  **/
 struct BloomFilterHeader {
-  /** The size of bitset in bytes, must be a power of 2**/
+  /** The size of bitset in bytes **/
   1: required i32 numBytes;
 
   /** The algorithm for setting bits. **/
   2: required BloomFilterAlgorithm algorithm;
 
-  /** The hash function used for bloom filter. **/
+  /** The hash function used for Bloom filter. **/
   3: required BloomFilterHash hash;
 }
 
