@@ -473,6 +473,7 @@ enum PageType {
   INDEX_PAGE = 1;
   DICTIONARY_PAGE = 2;
   DATA_PAGE_V2 = 3;
+  BLOOM_FILTER_PAGE = 4;
 }
 
 /**
@@ -552,6 +553,44 @@ struct DataPageHeaderV2 {
   8: optional Statistics statistics;
 }
 
+/** Block-based algorithm type annotation. **/
+struct SplitBlockAlgorithm {}
+
+/** The algorithm used in Bloom filter. **/
+union BloomFilterAlgorithm {
+  /** Block-based Bloom filter. **/
+   1: SplitBlockAlgorithm BLOCK;
+}
+
+/** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
+ * repo by Austin Appleby.
+ **/
+struct Murmur3 {}
+
+/** 
+ * The hash function used in Bloom filter. This function takes the hash of a column value
+ * using plain encoding.
+ **/
+union BloomFilterHash {
+  /** Murmur3 Hash Strategy. **/
+  1: Murmur3 MURMUR3;
+}
+
+/**
+  * Bloom filter header is stored at beginning of Bloom filter data of each column
+  * and followed by its bitset.
+  **/
+struct BloomFilterPageHeader {
+  /** The size of bitset in bytes **/
+  1: required i32 numBytes;
+
+  /** The algorithm for setting bits. **/
+  2: required BloomFilterAlgorithm algorithm;
+
+  /** The hash function used for Bloom filter. **/
+  3: required BloomFilterHash hash;
+}
+
 struct PageHeader {
   /** the type of the page: indicates which of the *_header fields is set **/
   1: required PageType type
@@ -572,6 +611,7 @@ struct PageHeader {
   6: optional IndexPageHeader index_page_header;
   7: optional DictionaryPageHeader dictionary_page_header;
   8: optional DataPageHeaderV2 data_page_header_v2;
+  9: optional BloomFilterPageHeader bloom_filter_page_header;
 }
 
 /**
@@ -661,44 +701,6 @@ struct ColumnMetaData {
 
   /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
-}
-
-/** Block-based algorithm type annotation. **/
-struct SplitBlockAlgorithm {}
-
-/** The algorithm used in Bloom filter. **/
-union BloomFilterAlgorithm {
-  /** Block-based Bloom filter. **/
-   1: SplitBlockAlgorithm BLOCK;
-}
-
-/** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
- * repo by Austin Appleby.
- **/
-struct Murmur3 {}
-
-/** 
- * The hash function used in Bloom filter. This function takes the hash of a column value
- * using plain encoding.
- **/
-union BloomFilterHash {
-  /** Murmur3 Hash Strategy. **/
-  1: Murmur3 MURMUR3;
-}
-
-/**
-  * Bloom filter header is stored at beginning of Bloom filter data of each column
-  * and followed by its bitset.
-  **/
-struct BloomFilterHeader {
-  /** The size of bitset in bytes **/
-  1: required i32 numBytes;
-
-  /** The algorithm for setting bits. **/
-  2: required BloomFilterAlgorithm algorithm;
-
-  /** The hash function used for Bloom filter. **/
-  3: required BloomFilterHash hash;
 }
 
 struct ColumnChunk {
