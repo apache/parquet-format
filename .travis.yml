@@ -16,7 +16,6 @@
 # under the License.
 
 language: java
-dist: precise
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq protobuf-compiler
