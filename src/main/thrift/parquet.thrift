@@ -559,7 +559,7 @@ struct SplitBlockAlgorithm {}
 /** The algorithm used in Bloom filter. **/
 union BloomFilterAlgorithm {
   /** Block-based Bloom filter. **/
-   1: SplitBlockAlgorithm BLOCK;
+  1: SplitBlockAlgorithm BLOCK;
 }
 
 /** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
