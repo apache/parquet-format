@@ -172,7 +172,7 @@ without a footer key.
 In files with sensitive column data, a good security practice is to encrypt not only the 
 secret columns, but also the file footer, with a separate footer key. To recap, this hides
 the file schema, number of rows, key-value properties, column names, column sort order, 
-list of encrypted columns and metadata of the column encryption keys.
+list of encrypted columns and metadata of the column encryption keys. It also makes the footer tamper-proof.
 
 A Thrift-serialized `FileCryptoMetaData` structure is written after the footer. It contains 
 information on the file encryption algorithm, on the footer (encrypted or not; offset in 
@@ -180,5 +180,5 @@ the file; optional key metadata, with a maximal length of 256) and the IV prefix
 the length of this structure is written, as a 4-byte little endian integer. Then the final 
 magic string.
 
-Only the `FileCryptoMetaData` is written as a plaintext, all other file parts are encrypted 
+Only the `FileCryptoMetaData` is written as a plaintext, all other file parts are protected
 (as needed) with appropriate keys.
