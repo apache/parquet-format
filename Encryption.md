@@ -50,7 +50,7 @@ performance requirements.
 
 
 ## Non-Goals
-* Key management
+1. Key management. 
 Keys, arbitrary key metadata and key retrieval callbacks are provided to Parquet API as input 
 parameters. Key storage, DEK encryption with KEK (data- and key-encryption keys), re-keying 
 etc, are out of scope and should be done above Parquet. Parquet accepts explicit keys, and 
@@ -65,11 +65,11 @@ Each Parquet module (footer, page headers, pages, column indexes, column metadat
 encrypted separately. Then it is possible to fetch and decrypt the footer, find the 
 offset of a required page, fetch it and decrypt the data. In this document, the term 
 “footer” always refers to the regular Parquet footer - the `FileMetaData` structure, and 
-its nested fields (`RowGroup`s / `ColumnChunk`s).
+its nested fields (row groups / column chunks).
 
 The results of compression of column pages are encrypted, before being written to the 
 output stream. A new Thrift structure, with a column crypto metadata, is added to 
-`ColumnChunk`s of the encrypted columns. This metadata provides information about the 
+column chunks of the encrypted columns. This metadata provides information about the 
 column encryption keys.
 
 The results of Thrift serialization of metadata structures are encrypted, before being 
@@ -86,7 +86,7 @@ AES is supported in Intel and other CPUs with hardware acceleration of
 crypto operations (“AES-NI”) - that can be leveraged by e.g. Java programs (automatically 
 via HotSpot), or C++ programs (via EVP-* functions in OpenSSL).
 
-Initially, two algorithms are implemented, one based on AES-GCM cipher, and the other on a 
+Initially, two algorithms are implemented, one based on an AES-GCM cipher, and the other on a 
 combination of AES-GCM and AES-CTR ciphers.
 
 AES-GCM is an authenticated encryption. Besides the data confidentiality (encryption), it 
@@ -99,7 +99,7 @@ replaced with an older version.
 
 Sometimes, a hardware acceleration of AES is unavialable (e.g. in Java 8). Then AES crypto 
 operations are implemented in software, and can be somewhat slow, becoming a performance 
-bottleneck in certain workloads. AES-CTR is a regular (not authenticated) cipher.  
+bottleneck in certain workloads. AES-CTR is a regular (not authenticated) cipher.
 It is faster than AES-GCM, since it doesn’t perform integrity verification and doesn’t 
 calculate the authentication tag. For applications running without AES acceleration and 
 willing to compromise on content verification, AES-CTR can provide a boost in Parquet 
@@ -113,15 +113,15 @@ might go unnoticed.
 ### AES_GCM_V1
 All modules are encrypted with the AES-GCM cipher. The authentication tags (16 bytes) are 
 written after each ciphertext. The IVs (12 bytes) are either written before each ciphertext, 
-or split into two parts: a fixed part (n bytes) written in the FileCryptoMetaData structure 
-(iv_prefix field), and a variable part (12-n bytes: counter, random, etc) written before 
+or split into two parts: a fixed part (n bytes) written in the `FileCryptoMetaData` structure 
+(`iv_prefix` field), and a variable part (12-n bytes: counter, random, etc) written before 
 each ciphertext.
 
 ### AES_GCM_CTR_V1
-Thrift modules are encrypted with the AES-GCM cipher, as described before. The pages are 
+Thrift modules are encrypted with the AES-GCM cipher, as described above. The pages are 
 encrypted with AES-CTR, where the IVs (16 bytes) are either written before each ciphertext, 
-or split into two parts: a fixed part (n bytes) written in the FileCryptoMetaData structure 
-(iv_prefix field), and a variable part (16-n bytes: counter, random, etc) written before 
+or split into two parts: a fixed part (n bytes) written in the `FileCryptoMetaData` structure 
+(`iv_prefix` field), and a variable part (16-n bytes: counter, random, etc) written before 
 each ciphertext.
 
 
@@ -165,7 +165,7 @@ structure. This allows to serialize each `ColumnMetaData` structure separately, 
 it with a column-specific key, thus protecting the column stats and other metadata. 
 
 The crypto metadata of columns is also protected, with the footer key, since it is set 
-in the `ColumnChunk`s that are a part of the footer. For example, the footer information 
+in the `ColumnChunk` structures that are a part of the footer. For example, the footer information 
 on which columns are plaintext and which are encrypted, with what key, etc - is invisible 
 without a footer key. 
 
@@ -174,7 +174,7 @@ secret columns, but also the file footer, with a separate footer key. To recap, 
 the file schema, number of rows, key-value properties, column names, column sort order, 
 list of encrypted columns and metadata of the column encryption keys.
 
-A Thrift-serialized `FileCryptoMetaData` structure is written after the footer, and contains 
+A Thrift-serialized `FileCryptoMetaData` structure is written after the footer. It contains 
 information on the file encryption algorithm, on the footer (encrypted or not; offset in 
 the file; optional key metadata, with a maximal length of 256) and the IV prefix. Then 
 the length of this structure is written, as a 4-byte little endian integer. Then the final 
