@@ -134,7 +134,7 @@ The encrypted Parquet files have a different magic string (“PARE”), and an e
 The encryption is flexible - each column and the footer can encrypted with the same key, 
 with a different key, or not encrypted at all.
 
-The metadata structures (`FileMetaData`, `PageHeader`, `ColumnIndex`; and sometimes 
+The metadata structures (`FileMetaData`, `PageHeader`, `ColumnIndex`, `OffsetIndex`; and sometimes 
 `ColumnMetaData`, see below) are encrypted after Thrift serialization. For each structure, 
 the encryption buffer is comprised of an IV, ciphertext and tag, as described in the 
 Algorithms section. The length of the encryption buffer (a 4-byte little endian) is 
