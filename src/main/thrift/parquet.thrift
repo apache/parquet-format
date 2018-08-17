@@ -257,9 +257,11 @@ struct DecimalType {
 /** Time units for logical types */
 struct MilliSeconds {}
 struct MicroSeconds {}
+struct NanoSeconds {}
 union TimeUnit {
   1: MilliSeconds MILLIS
   2: MicroSeconds MICROS
+  3: NanoSeconds NANOS
 }
 
 /**
