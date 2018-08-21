@@ -256,7 +256,7 @@ The sort order used for `DATE` is signed.
 
 `TIME` is used for a logical time type without a date with millisecond or microsecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
-and precision (`MILLIS` or `MICROS`).
+and precision (`MILLIS` or `MICROS`, `NANOS`).
 
 `TIME` with precision `MILLIS` is used for millisecond precision.
 It must annotate an `int32` that stores the number of
@@ -265,6 +265,10 @@ milliseconds after midnight.
 `TIME` with precision `MICROS` is used for microsecond precision.
 It must annotate an `int64` that stores the number of
 microseconds after midnight.
+
+`TIME` with precision `NANOS` is used for nanosecond precision.
+It must annotate an `int64` that stores the number of
+nanoseconds after midnight.
 
 The sort order used for `TIME` is signed.
 
@@ -305,7 +309,7 @@ with precision `MICROS`. Like the logical type counterpart, it must annotate an 
 
 `TIMESTAMP` is used for a combined logical date and time type, with
 millisecond or microsecond precision. The type has two type parameters:
-UTC adjustment (`true` or `false`) and precision (`MILLIS` or `MICROS`).
+UTC adjustment (`true` or `false`) and precision (`MILLIS` or `MICROS`, `NANOS`).
 
 `TIMESTAMP` with precision `MILLIS` is used for millisecond precision.
 It must annotate an `int64` that stores the number of
@@ -314,6 +318,12 @@ milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
 `TIMESTAMP` with precision `MICROS` is used for microsecond precision.
 It must annotate an `int64` that stores the number of
 microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
+
+`TIMESTAMP` with precision `NANOS` is used for nanosecond precision.
+It must annotate an `int64` that stores the number of
+nanoseconds from the Unix epoch, 00:00:00.000000000 on 1 January 1970, UTC.
+Valid values for nanosecond precision are between
+00:12:43 21 September 1677 UTC and 23:47:16 11 April 2262 UTC.
 
 The sort order used for `TIMESTAMP` is signed.
 

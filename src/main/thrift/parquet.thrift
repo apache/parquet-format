@@ -277,7 +277,7 @@ struct TimestampType {
 /**
  * Time logical type annotation
  *
- * Allowed for physical types: INT32 (millis), INT64 (micros)
+ * Allowed for physical types: INT32 (millis), INT64 (micros, nanos)
  */
 struct TimeType {
   1: required bool isAdjustedToUTC
