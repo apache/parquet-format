@@ -119,8 +119,11 @@ The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` f
 be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
 length of `aad_metadata` is 256 bytes.
 
-Parquet-mr/-cpp writer implementation doesn't utilize the iv_prefix fields. However, parquet-mr/-cpp 
-reader implementation can process files with iv_prefix values if set by other writers.
+Parquet-mr/-cpp *writer* implementations use the RBG-based IV construction as defined in the NIST 
+SP 800-38D document for the GCM ciphers (section 8.2.2), and therefore don't set the iv_prefix fields. 
+However, the parquet-mr/-cpp *reader* implementations can process files with iv_prefix values, if 
+set by other writers that use the deterministic IV construction, defined in the section 8.2.1 in the 
+same document.
 
 
 ## File Format
