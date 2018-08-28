@@ -257,9 +257,11 @@ struct DecimalType {
 /** Time units for logical types */
 struct MilliSeconds {}
 struct MicroSeconds {}
+struct NanoSeconds {}
 union TimeUnit {
   1: MilliSeconds MILLIS
   2: MicroSeconds MICROS
+  3: NanoSeconds NANOS
 }
 
 /**
@@ -275,7 +277,7 @@ struct TimestampType {
 /**
  * Time logical type annotation
  *
- * Allowed for physical types: INT32 (millis), INT64 (micros)
+ * Allowed for physical types: INT32 (millis), INT64 (micros, nanos)
  */
 struct TimeType {
   1: required bool isAdjustedToUTC
