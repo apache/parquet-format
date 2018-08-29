@@ -220,8 +220,8 @@ public class Util {
     return protocol(new TIOStreamTransport(from));
   }
 
-  private static InterningProtocol protocol(TIOStreamTransport t) {
-    return new InterningProtocol(new TCompactProtocol(t));
+  private static TProtocol protocol(TIOStreamTransport t) {
+    return new TCompactProtocol(t);
   }
 
   private static <T extends TBase<?,?>> T read(InputStream from, T tbase) throws IOException {
