@@ -117,7 +117,7 @@ each ciphertext.
 
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
 be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
-length of `aad_metadata` is 256 bytes.
+length of `aad_metadata` is 512 bytes.
 
 Parquet-mr/-cpp *writer* implementations use the RBG-based IV construction as defined in the NIST 
 SP 800-38D document for the GCM ciphers (section 8.2.2), and therefore don't set the iv_prefix fields. 
@@ -149,7 +149,7 @@ headers.
 A `crypto_meta_data` field in set in each `ColumnChunk` in the encrypted columns. 
 `ColumnCryptoMetaData` is a union - the actual structure is chosen depending on whether the 
 column is encrypted with the footer key, or with a column-specific key. For the latter, 
-a key metadata can be specified, with a maximal length of 256. Key metadata is an free-form
+a key metadata can be specified, with a maximal length of 512. Key metadata is a free-form
 byte array that can be used by a reader to retrieve the column encryption key. 
 
 Parquet file footer, and its nested structures, contain sensitive information - ranging 
@@ -178,7 +178,7 @@ tamper-proof.
 
 A Thrift-serialized `FileCryptoMetaData` structure is written after the footer. It contains 
 information on the file encryption algorithm and on the footer (encrypted or not; offset in 
-the file; optional key metadata, with a maximal length of 256). Then 
+the file; optional key metadata, with a maximal length of 512). Then 
 the length of this structure is written, as a 4-byte little endian integer. Then the final 
 magic string.
 
@@ -190,6 +190,6 @@ and size of each row group. This can be done by running over a list of all colum
 in a row group and reading the relevant information from the column meta data - but only
 if a reader has access (keys) to all columns. Therefore, two new fields are added to the
 `RowGroup` structure - `file_offset` and `total_compressed_size` - that are set upon file
-writing, and let e.g. Spark to query a file even if keys to certain columns are not available
-('hidden columns'). Naturally, the query itself should not try to access the hidden column
-data.
+writing, and allow vectorized readers to query a file even if keys to certain columns are
+not available ('hidden columns'). Naturally, the query itself should not try to access the 
+hidden column data.
