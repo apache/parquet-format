@@ -21,7 +21,10 @@ package org.apache.parquet.format;
 
 /**
  * Convenience instances of logical type classes.
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 public class LogicalTypes {
   public static class TimeUnits {
     public static final TimeUnit MILLIS = TimeUnit.MILLIS(new MilliSeconds());

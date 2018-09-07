@@ -40,8 +40,10 @@ import org.apache.thrift.protocol.TSet;
  * receive thrift events of a given type
  *
  * @author Julien Le Dem
- *
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 abstract public class TypedConsumer {
 
   abstract public static class DoubleConsumer extends TypedConsumer {

@@ -42,8 +42,10 @@ import org.apache.parquet.format.event.TypedConsumer.StructConsumer;
  * Entry point for reading thrift in a streaming fashion
  *
  * @author Julien Le Dem
- *
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 public class Consumers {
 
   /**
