@@ -48,8 +48,8 @@ columns, and for the footer.
 7. Support multiple encryption algorithms, to account for different security and 
 performance requirements.
 8. Enable two modes for metadata protection:
- - full protection of file metadata
- - partial protection of file metadata, that allows old readers to access unencrypted 
+- full protection of file metadata
+- partial protection of file metadata, that allows old readers to access unencrypted 
  columns in an encrypted file.
 
 
@@ -130,10 +130,10 @@ same document.
 
 The encrypted Parquet files have a different extension - “.parquet.encrypted”.
 
-The encryption is flexible - each column and the footer can encrypted with the same key, 
+The encryption is flexible - each column and the footer can be encrypted with the same key, 
 with a different key, or not encrypted at all.
 
-The metadata structures (`FileMetaData`, `PageHeader`, `ColumnIndex`, `OffsetIndex`; and sometimes 
+The metadata structures (`PageHeader`, `ColumnIndex`, `OffsetIndex`; and sometimes `FileMetaData` and 
 `ColumnMetaData`, see below) are encrypted after Thrift serialization. For each structure, 
 the encryption buffer is comprised of an IV, ciphertext and tag, as described in the 
 Algorithms section. The length of the encryption buffer (a 4-byte little endian) is 
@@ -153,7 +153,7 @@ byte array that can be used by a reader to retrieve the column encryption key.
 
 Parquet file footer, and its nested structures, contain sensitive information - ranging 
 from a secret data (column statistics) to other information that can be exploited by an 
-attacker (e.g. schema, num_values, key_value_metadata, column encoding and crypto_meta_data). 
+attacker (e.g. schema, num_values, key_value_metadata, column data offset and size, encoding and crypto_meta_data). 
 This information is automatically protected when the footer and secret columns are encrypted 
 with the same key. In other cases - when column(s) and the footer are encrypted with 
 different keys; or column(s) are encrypted and the footer is not - an extra measure is 
@@ -166,8 +166,8 @@ it with a column-specific key, thus protecting the column stats and other metada
 ### Encrypted footer mode
 
 In files with sensitive column data, a good security practice is to encrypt not only the 
-secret columns, but also the file footer, with a separate footer key. This hides
-the file schema, number of rows, key-value properties, column names, column sort order, 
+secret columns, but also the file footer metadata, with a separate footer key. This hides
+the file schema / column names, number of rows, key-value properties, column sort order, 
 column data offset and size, list of encrypted columns and metadata of the column encryption keys. 
 It also makes the footer tamper-proof.
 
@@ -186,16 +186,29 @@ Only the `FileCryptoMetaData` is written as a plaintext, all other file parts ar
 
 ### Plaintext footer mode
 
-This mode allows old readers to access unencrypted columns in encrypted files - at a price of
-exposing the file schema, number of rows, key-value properties, column names, column sort order, 
-column data offset and size, list of encrypted columns and metadata of the column encryption keys. 
-The `optional ColumnMetaData meta_data` is set in the `ColumnChunk` structure for all columns, but 
-is stripped of the statistics for the sensitive (encrypted) columns. These statistics are 
-available for new readers with the column key - they fetch the split ColumnMetaData, and decrypt
-it to get all metadata values.
+This mode allows older Parquet versions (released before the encryption support) to access unencrypted 
+columns in encrypted files - at a price of exposing certain metadata fields in these files. It can be 
+useful during a transitional period in organizations 
+where some frameworks can't be upgraded to a new Parquet library for a while. Data writers will
+run with a new Parquet version, and produce encrypted files with a plaintext footer. Data readers, 
+working with a sensitive data, will also upgrade to a new Parquet library. But other readers that
+don't need the sensitive columns, can continue working with an older Parquet version. They will be 
+able to access plaintext columns in encrypted files. An older reader, trying to access a sensitive 
+column data in a ".parquet.encrypted" file with a plaintext footer, will get an  exception. More
+specifically, a Thrift parsing exception on an encrypted `PageHeader` structure. Again, using older
+Parquet readers for encrypted files is a temporary solution. After a transition period, with all 
+readers upgraded to a new Parquet library, a Hidden column exception will be thrown in this situation.
+Also, the writers should start then producing the files in an Encrypted footer mode.
 
-In this mode, the footer is written as usual, followed by its length (4-byte little endian integer)
-and a final magic string, "PAR1".
+In the plaintext footer mode, the `optional ColumnMetaData meta_data` is set in the `ColumnChunk` 
+structure for all columns, but is stripped of the statistics for the sensitive (encrypted) columns. 
+These statistics are available for new readers with the column key - they fetch the split ColumnMetaData, 
+and decrypt it to get all metadata values.
+
+An `encryption_algorithm` field is set at the FileMetaData structure. Then the footer is written as usual, 
+followed by its length (4-byte little endian integer) and a final magic string, "PAR1".
+
+
 
 ### New fields for vectorized readers
 
