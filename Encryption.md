@@ -47,6 +47,10 @@ columns, and for the footer.
 6. Work with all compression and encoding mechanisms supported in Parquet.
 7. Support multiple encryption algorithms, to account for different security and 
 performance requirements.
+8. Enable two modes for metadata protection:
+ - full protection of file metadata
+ - partial protection of file metadata, that allows old readers to access unencrypted 
+ columns in an encrypted file.
 
 
 ## Technical Approach
@@ -64,10 +68,6 @@ column encryption keys.
 
 The results of Thrift serialization of metadata structures are encrypted, before being 
 written to the output stream.
-
-A new Thrift structure, with a file crypto metadata,  is written after the (encrypted) 
-Parquet footer, at the end of the file. This structure is not encrypted. It provides 
-information about the footer encryption key and the algorithm used to encrypt the file.
 
 ## Encryption algorithms
 
@@ -128,8 +128,7 @@ same document.
 
 ## File Format
 
-The encrypted Parquet files have a different magic string (“PARE”), and an extension 
-(“parquet.encrypted”).
+The encrypted Parquet files have a different extension - “.parquet.encrypted”.
 
 The encryption is flexible - each column and the footer can encrypted with the same key, 
 with a different key, or not encrypted at all.
@@ -161,31 +160,46 @@ different keys; or column(s) are encrypted and the footer is not - an extra meas
 required to protect the column-specific information in the file footer. In these cases, 
 the column-specific information (kept in `ColumnMetaData` structures) is split from the 
 footer, by utilizing the existing `required i64 file_offset` parameter in the `ColumnChunk` 
-structure, and ignoring the `optional ColumnMetaData meta_data` parameter in the same 
 structure. This allows to serialize each `ColumnMetaData` structure separately, and encrypt 
 it with a column-specific key, thus protecting the column stats and other metadata. 
 
-The crypto metadata of columns is also protected, with the footer key, since it is set 
-in the `ColumnChunk` structures that are a part of the footer. For example, the footer information 
-on which columns are plaintext and which are encrypted, with what key, etc - is invisible 
-without a footer key. 
+### Encrypted footer mode
 
 In files with sensitive column data, a good security practice is to encrypt not only the 
-secret columns, but also the file footer, with a separate footer key. To recap, this hides
+secret columns, but also the file footer, with a separate footer key. This hides
 the file schema, number of rows, key-value properties, column names, column sort order, 
-list of encrypted columns and metadata of the column encryption keys. It also makes the footer 
-tamper-proof.
+column data offset and size, list of encrypted columns and metadata of the column encryption keys. 
+It also makes the footer tamper-proof.
+
+The columns encrypted with the same key as the footer, don't split the ColumnMetaData from the 
+ColumnChunks, leaving it at the original location, `optional ColumnMetaData meta_data`. This field
+is not set for columns enrypted with a column-specific key.
 
 A Thrift-serialized `FileCryptoMetaData` structure is written after the footer. It contains 
-information on the file encryption algorithm and on the footer (encrypted or not; offset in 
-the file; optional key metadata, with a maximal length of 512). Then 
-the length of this structure is written, as a 4-byte little endian integer. Then the final 
-magic string.
+information on the file encryption algorithm and on the footer (offset in 
+the file, and an optional key metadata, with a maximal length of 512). Then 
+the length of this structure is written, as a 4-byte little endian integer. Then a final 
+magic string, "PARE".
 
 Only the `FileCryptoMetaData` is written as a plaintext, all other file parts are protected
 (as needed) with appropriate keys.
 
-Apache Spark and other vectorized readers split a file by using the information on offset
+### Plaintext footer mode
+
+This mode allows old readers to access unencrypted columns in encrypted files - at a price of
+exposing the file schema, number of rows, key-value properties, column names, column sort order, 
+column data offset and size, list of encrypted columns and metadata of the column encryption keys. 
+The `optional ColumnMetaData meta_data` is set in the `ColumnChunk` structure for all columns, but 
+is stripped of the statistics for the sensitive (encrypted) columns. These statistics are 
+available for new readers with the column key - they fetch the split ColumnMetaData, and decrypt
+it to get all metadata values.
+
+In this mode, the footer is written as usual, followed by its length (4-byte little endian integer)
+and a final magic string, "PAR1".
+
+### New fields for vectorized readers
+
+Apache Spark and other vectorized readers slice a file by using the information on offset
 and size of each row group. This can be done by running over a list of all column chunks
 in a row group and reading the relevant information from the column meta data - but only
 if a reader has access (keys) to all columns. Therefore, two new fields are added to the
