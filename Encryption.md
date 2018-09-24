@@ -187,18 +187,17 @@ Only the `FileCryptoMetaData` is written as a plaintext, all other file parts ar
 ### Plaintext footer mode
 
 This mode allows older Parquet versions (released before the encryption support) to access unencrypted 
-columns in encrypted files - at a price of exposing certain metadata fields in these files. It can be 
-useful during a transitional period in organizations 
+columns in encrypted files - at a price of leaving certain metadata fields unprotected in these files 
+(not encrypted or tamper-proofed). The plaintext footer mode can be useful during a transitional period 
+in organizations 
 where some frameworks can't be upgraded to a new Parquet library for a while. Data writers will
-run with a new Parquet version, and produce encrypted files with a plaintext footer. Data readers, 
+upgrade and run with a new Parquet version, producing encrypted files in this mode. Data readers, 
 working with a sensitive data, will also upgrade to a new Parquet library. But other readers that
 don't need the sensitive columns, can continue working with an older Parquet version. They will be 
 able to access plaintext columns in encrypted files. An older reader, trying to access a sensitive 
 column data in a ".parquet.encrypted" file with a plaintext footer, will get an  exception. More
 specifically, a Thrift parsing exception on an encrypted `PageHeader` structure. Again, using older
-Parquet readers for encrypted files is a temporary solution. After a transition period, with all 
-readers upgraded to a new Parquet library, a Hidden column exception will be thrown in this situation.
-Also, the writers should start then producing the files in an Encrypted footer mode.
+Parquet readers for encrypted files is a temporary solution.
 
 In the plaintext footer mode, the `optional ColumnMetaData meta_data` is set in the `ColumnChunk` 
 structure for all columns, but is stripped of the statistics for the sensitive (encrypted) columns. 
