@@ -35,8 +35,10 @@ import org.apache.thrift.transport.TTransport;
  * TProtocol that interns the strings.
  *
  * @author Julien Le Dem
- *
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 public class InterningProtocol extends TProtocol {
 
   private final TProtocol delegate;

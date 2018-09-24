@@ -53,8 +53,10 @@ import org.apache.parquet.format.event.TypedConsumer.StringConsumer;
  * We use the TCompactProtocol to serialize metadata
  *
  * @author Julien Le Dem
- *
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 public class Util {
 
   public static void writeColumnIndex(ColumnIndex columnIndex, OutputStream to) throws IOException {

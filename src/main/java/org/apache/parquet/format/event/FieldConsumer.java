@@ -25,8 +25,10 @@ import org.apache.thrift.protocol.TProtocol;
  * To receive Thrift field events
  *
  * @author Julien Le Dem
- *
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
  */
+@Deprecated
 public interface FieldConsumer {
 
   /**

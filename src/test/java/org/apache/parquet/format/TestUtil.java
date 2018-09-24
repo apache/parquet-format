@@ -30,6 +30,11 @@ import java.io.ByteArrayOutputStream;
 import org.junit.Test;
 
 import org.apache.parquet.format.Util.DefaultFileMetaDataConsumer;
+/**
+ * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
+ *             removed from here
+ */
+@Deprecated
 public class TestUtil {
 
   @Test
