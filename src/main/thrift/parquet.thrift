@@ -860,6 +860,32 @@ struct ColumnIndex {
   5: optional list<i64> null_counts
 }
 
+struct AesGcmV1 {
+  /** Retrieval metadata of AAD used for encryption of pages and structures **/
+  1: optional binary aad_metadata
+
+  /** If file IVs are comprised of a fixed part, and variable parts
+   *  (e.g. counter), keep the fixed part here **/
+  2: optional binary iv_prefix
+ 
+}
+
+struct AesGcmCtrV1 {
+  /** Retrieval metadata of AAD used for encryption of structures **/
+  1: optional binary aad_metadata
+
+  /** If file IVs are comprised of a fixed part, and variable parts
+   *  (e.g. counter), keep the fixed part here **/
+  2: optional binary gcm_iv_prefix
+
+  3: optional binary ctr_iv_prefix
+}
+
+union EncryptionAlgorithm {
+  1: AesGcmV1 AES_GCM_V1
+  2: AesGcmCtrV1 AES_GCM_CTR_V1
+}
+
 /**
  * Description for file metadata
  */
@@ -902,46 +928,20 @@ struct FileMetaData {
    * The obsolete min and max fields are always sorted by signed comparison
    * regardless of column_orders.
    */
-  7: optional list<ColumnOrder> column_orders;
-}
-
-struct AesGcmV1 {
-  /** Retrieval metadata of AAD used for encryption of pages and structures **/
-  1: optional binary aad_metadata
-
-  /** If file IVs are comprised of a fixed part, and variable parts
-   *  (e.g. counter), keep the fixed part here **/
-  2: optional binary iv_prefix
- 
-}
-
-struct AesGcmCtrV1 {
-  /** Retrieval metadata of AAD used for encryption of structures **/
-  1: optional binary aad_metadata
-
-  /** If file IVs are comprised of a fixed part, and variable parts
-   *  (e.g. counter), keep the fixed part here **/
-  2: optional binary gcm_iv_prefix
-
-  3: optional binary ctr_iv_prefix
-}
-
-union EncryptionAlgorithm {
-  1: AesGcmV1 AES_GCM_V1
-  2: AesGcmCtrV1 AES_GCM_CTR_V1
+  7: optional list<ColumnOrder> column_orders
+  
+  /** Set in encrypted files with plaintext footer **/
+  8: optional EncryptionAlgorithm encryption_algorithm
 }
 
 struct FileCryptoMetaData {
   1: required EncryptionAlgorithm encryption_algorithm
-  
-  /** Parquet footer can be encrypted, or left as plaintext **/
-  2: required bool encrypted_footer
     
   /** Retrieval metadata of key used for encryption of footer, 
    *  and (possibly) columns **/
-  3: optional binary footer_key_metadata
+  2: optional binary footer_key_metadata
 
-  /** Offset of Parquet footer (encrypted, or plaintext) **/
-  4: required i64 footer_offset
+  /** Offset of encrypted Parquet footer **/
+  3: required i64 footer_offset
 }
 
