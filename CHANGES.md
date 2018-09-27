@@ -19,6 +19,22 @@
 
 # Parquet #
 
+### Version 2.6.0 ###
+
+#### Bug
+
+*   [PARQUET-1266](https://issues.apache.org/jira/browse/PARQUET-1266) - LogicalTypes union in parquet-format doesn't include UUID
+
+#### Improvement
+
+*   [PARQUET-1290](https://issues.apache.org/jira/browse/PARQUET-1290) - Clarify maximum run lengths for RLE encoding
+*   [PARQUET-1387](https://issues.apache.org/jira/browse/PARQUET-1387) - Nanosecond precision time and timestamp - parquet-format
+*   [PARQUET-1400](https://issues.apache.org/jira/browse/PARQUET-1400) - Deprecate parquet-mr related code in parquet-format
+
+#### Task
+
+*   [PARQUET-1429](https://issues.apache.org/jira/browse/PARQUET-1429) - Turn off DocLint on parquet-format
+
 ### Version 2.5.0 ###
 
 #### Bug
