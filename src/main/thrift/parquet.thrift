@@ -867,7 +867,6 @@ struct AesGcmV1 {
   /** If file IVs are comprised of a fixed part, and variable parts
    *  (e.g. counter), keep the fixed part here **/
   2: optional binary iv_prefix
- 
 }
 
 struct AesGcmCtrV1 {
