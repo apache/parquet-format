@@ -88,15 +88,16 @@
     <shade.prefix>shaded.parquet</shade.prefix>
     <thrift.executable>thrift</thrift.executable>
     <thrift.version>0.9.3</thrift.version>
+    <thrift-maven-plugin.version>0.10.0</thrift-maven-plugin.version>
   </properties>
 
   <build>
     <plugins>
       <!-- thrift -->
       <plugin>
-        <groupId>org.apache.thrift.tools</groupId>
-        <artifactId>maven-thrift-plugin</artifactId>
-        <version>0.1.11</version>
+        <groupId>org.apache.thrift</groupId>
+        <artifactId>thrift-maven-plugin</artifactId>
+        <version>${thrift-maven-plugin.version}</version>
         <configuration>
           <thriftSourceRoot>src/main/thrift</thriftSourceRoot>
           <thriftExecutable>${thrift.executable}</thriftExecutable>
