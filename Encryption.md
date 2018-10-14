@@ -48,8 +48,8 @@ columns, and for the footer.
 7. Support multiple encryption algorithms, to account for different security and 
 performance requirements.
 8. Enable two modes for metadata protection:
-- full protection of file metadata
-- partial protection of file metadata, that allows old readers to access unencrypted 
+   * full protection of file metadata
+   * partial protection of file metadata, that allows legacy readers to access unencrypted 
  columns in an encrypted file.
 
 
@@ -102,28 +102,19 @@ might go unnoticed.
 
 ### AES_GCM_V1
 All modules are encrypted with the AES-GCM cipher. The authentication tags (16 bytes) are 
-written after each ciphertext. The IVs (12 bytes) are either written before each ciphertext, 
-or split into two parts: a fixed part (n bytes) written in the `AesGcmV1` structure 
-(`iv_prefix` field), and a variable part (12-n bytes: e.g a counter) written before 
-each ciphertext.
+written after each ciphertext. The IVs (12 bytes) are written before each ciphertext.
 
 ### AES_GCM_CTR_V1
-Thrift modules are encrypted with the AES-GCM cipher, as described above. The optional iv_prefix
-is stored in `AesGcmCtrV1` structure as a `gcm_iv_prefix` field.
-The pages are encrypted with AES-CTR, where the IVs (16 bytes) are either written before each 
-ciphertext, or split into two parts: a fixed part (n bytes) written in the `AesGcmCtrV1` structure 
-(`ctr_iv_prefix` field), and a variable part (16-n bytes: e.g. a counter) written before 
-each ciphertext.
+Thrift modules are encrypted with the AES-GCM cipher, as described above. 
+The pages are encrypted with AES-CTR, where the IVs (16 bytes) are written before each 
+ciphertext.
 
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
 be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
 length of `aad_metadata` is 512 bytes.
 
-Parquet-mr/-cpp *writer* implementations use the RBG-based IV construction as defined in the NIST 
-SP 800-38D document for the GCM ciphers (section 8.2.2), and therefore don't set the iv_prefix fields. 
-However, the parquet-mr/-cpp *reader* implementations can process files with iv_prefix values, if 
-set by other writers that use the deterministic IV construction, defined in the section 8.2.1 in the 
-same document.
+Parquet-mr/-cpp implementations use the RBG-based IV construction as defined in the NIST 
+SP 800-38D document for the GCM ciphers (section 8.2.2).
 
 
 ## File Format
@@ -142,8 +133,8 @@ written to the output stream, followed by the buffer itself.
 The column pages (data and dictionary) are encrypted after compression. For each page, 
 the encryption buffer is comprised of an IV, ciphertext and (in case of AES_GCM_V1) of a 
 tag, as described in the Algorithms section. Only the buffer is written to the output 
-stream - not need to write the length of the buffer, since the length is kept in the page 
-headers.
+stream - not need to write the length of the buffer, since the length (size of the page after
+compression and encryption) is kept in the page headers.
 
 A `crypto_meta_data` field in set in each `ColumnChunk` in the encrypted columns. 
 `ColumnCryptoMetaData` is a union - the actual structure is chosen depending on whether the 
@@ -159,7 +150,7 @@ with the same key. In other cases - when column(s) and the footer are encrypted 
 different keys; or column(s) are encrypted and the footer is not - an extra measure is 
 required to protect the column-specific information in the file footer. In these cases, 
 the column-specific information (kept in `ColumnMetaData` structures) is split from the 
-footer, by utilizing the existing `required i64 file_offset` parameter in the `ColumnChunk` 
+footer, by utilizing the `required i64 file_offset` parameter in the `ColumnChunk` 
 structure. This allows to serialize each `ColumnMetaData` structure separately, and encrypt 
 it with a column-specific key, thus protecting the column stats and other metadata. 
 
@@ -184,9 +175,11 @@ magic string, "PARE".
 Only the `FileCryptoMetaData` is written as a plaintext, all other file parts are protected
 (as needed) with appropriate keys.
 
+ ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionEF.jpg)
+
 ### Plaintext footer mode
 
-This mode allows older Parquet versions (released before the encryption support) to access unencrypted 
+This mode allows legacy Parquet versions (released before the encryption support) to access unencrypted 
 columns in encrypted files - at a price of leaving certain metadata fields unprotected in these files 
 (not encrypted or tamper-proofed). The plaintext footer mode can be useful during a transitional period 
 in organizations 
@@ -194,27 +187,34 @@ where some frameworks can't be upgraded to a new Parquet library for a while. Da
 upgrade and run with a new Parquet version, producing encrypted files in this mode. Data readers, 
 working with a sensitive data, will also upgrade to a new Parquet library. But other readers that
 don't need the sensitive columns, can continue working with an older Parquet version. They will be 
-able to access plaintext columns in encrypted files. An older reader, trying to access a sensitive 
+able to access plaintext columns in encrypted files. A legacy reader, trying to access a sensitive 
 column data in a ".parquet.encrypted" file with a plaintext footer, will get an  exception. More
-specifically, a Thrift parsing exception on an encrypted `PageHeader` structure. Again, using older
+specifically, a Thrift parsing exception on an encrypted `PageHeader` structure. Again, using legacy
 Parquet readers for encrypted files is a temporary solution.
 
 In the plaintext footer mode, the `optional ColumnMetaData meta_data` is set in the `ColumnChunk` 
 structure for all columns, but is stripped of the statistics for the sensitive (encrypted) columns. 
 These statistics are available for new readers with the column key - they fetch the split ColumnMetaData, 
-and decrypt it to get all metadata values.
+and decrypt it to get all metadata values. The legacy readers are not aware of the split metadata, 
+they parse the embedded field as usual. While they can't read the data of the encrypted columns, they 
+read the metadata to exract the offset and size of the column data - required for input vectorization
+(see the next section).
 
 An `encryption_algorithm` field is set at the FileMetaData structure. Then the footer is written as usual, 
 followed by its length (4-byte little endian integer) and a final magic string, "PAR1".
 
+ ![File Layout: Plaintext footer](doc/images/FileLayoutEncryptionPF.jpg)
 
 
 ### New fields for vectorized readers
 
 Apache Spark and other vectorized readers slice a file by using the information on offset
-and size of each row group. This can be done by running over a list of all column chunks
-in a row group and reading the relevant information from the column meta data - but only
-if a reader has access (keys) to all columns. Therefore, two new fields are added to the
+and size of each row group. In the legacy readers, this is done by running over a list of all column chunks
+in a row group, reading the relevant information from the column metadata, adding up the size values
+and picking the offset of the first column as the row group offset. However, vectorization
+needs only a row group metadata, not metadata of individual columns. Also, in files written in an
+encrypted footer mode, the column metadata is not available to readers without the column key. Therefore, 
+two new fields are added to the
 `RowGroup` structure - `file_offset` and `total_compressed_size` - that are set upon file
 writing, and allow vectorized readers to query a file even if keys to certain columns are
 not available ('hidden columns'). Naturally, the query itself should not try to access the 
