@@ -51,6 +51,8 @@ performance requirements.
    * full protection of file metadata
    * partial protection of file metadata, that allows legacy readers to access unencrypted 
  columns in an encrypted file.
+9. Miminize overhead of encryption: in terms of size of encrypted files, and throughput
+of write/read operations.
 
 
 ## Technical Approach
@@ -99,6 +101,13 @@ the bulk of the data faster, while still verifying the metadata integrity and ma
 the file had not been replaced with a wrong version. However, tampering with the page data 
 might go unnoticed. 
 
+The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
+be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
+length of `aad_metadata` is 512 bytes.
+
+Parquet-mr/-cpp implementations use the RBG-based IV construction as defined in the NIST 
+SP 800-38D document for the GCM ciphers (section 8.2.2).
+
 
 ### AES_GCM_V1
 All modules are encrypted with the AES-GCM cipher. The authentication tags (16 bytes) are 
@@ -108,13 +117,6 @@ written after each ciphertext. The IVs (12 bytes) are written before each cipher
 Thrift modules are encrypted with the AES-GCM cipher, as described above. 
 The pages are encrypted with AES-CTR, where the IVs (16 bytes) are written before each 
 ciphertext.
-
-The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
-be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
-length of `aad_metadata` is 512 bytes.
-
-Parquet-mr/-cpp implementations use the RBG-based IV construction as defined in the NIST 
-SP 800-38D document for the GCM ciphers (section 8.2.2).
 
 
 ## File Format
@@ -219,3 +221,14 @@ two new fields are added to the
 writing, and allow vectorized readers to query a file even if keys to certain columns are
 not available ('hidden columns'). Naturally, the query itself should not try to access the 
 hidden column data.
+
+## Encryption overhead
+
+The size overhead of Parquet modular encryption is negligible, since the most of the encryption 
+operations are performed on pages (the minimal unit of Parquet data storage and compression). The
+overhead order of magnitude is adding ~ 1 byte per each 10,000 bytes of original data.
+
+The throughput overhead of Parquet modular encryption depends on whether AES enciphering is done
+in software or hardware. In both cases, performing encryption on full pages (~1MB buffers) instead of
+on much smaller individual data values causes AES to work at its maximal speed. Preliminary tests
+show Parquet modular encryption throughput overhead to be up to a few percents in Java 9 workloads.
