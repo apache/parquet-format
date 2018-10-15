@@ -114,8 +114,8 @@ chunks they are interested in.  The columns chunks should then be read sequentia
  ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
 
 ## Metadata
-There are three types of metadata: file metadata, column (chunk) metadata and page
-header metadata.  All thrift structures are serialized using the TCompactProtocol.
+There are four types of metadata: file metadata, column (chunk) metadata, page
+header metadata and crypto metadata. All thrift structures are serialized using the TCompactProtocol.
 
  ![Metadata diagram](https://github.com/apache/parquet-format/raw/master/doc/images/FileFormat.gif)
 
@@ -216,6 +216,18 @@ a reader could recover partially written files.
 The format is explicitly designed to separate the metadata from the data.  This
 allows splitting columns into multiple files, as well as having a single metadata
 file reference multiple parquet files.
+
+## Encryption
+Parquet files, containing sensitive information, can be protected by the modular
+encryption mechanism, that encrypts and authenticates the file data and metadata - 
+while allowing for a regular Parquet functionality (columnar projection, 
+predicate pushdown, encoding and compression). The mechanism also enables column access 
+control, via support for encryption of different columns with different keys.
+Each Parquet module (footer, page headers, pages, column indexes, column metadata) is 
+encrypted separately. Then it is possible to fetch and decrypt the footer, find the 
+offset of a required page, fetch it and decrypt the data. 
+See [Encryption.md](Encryption.md) for details.
+
 
 ## Configurations
 - Row group size: Larger row groups allow for larger column chunks which makes it
