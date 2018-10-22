@@ -561,7 +561,7 @@ struct PageHeader {
   /** Uncompressed page size in bytes (not including this header) **/
   2: required i32 uncompressed_page_size
 
-  /** Compressed page size in bytes (not including this header) **/
+  /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
   /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
@@ -638,7 +638,8 @@ struct ColumnMetaData {
   /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed pages in this column chunk (including the headers) **/
+  /** total byte size of all compressed, and potentially encrypted, pages 
+   *  in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
   /** Optional key/value metadata **/
@@ -730,7 +731,8 @@ struct RowGroup {
    * in this row group **/
   5: optional i64 file_offset
 
-  /** Total byte size of all compressed column data in this row group **/
+  /** Total byte size of all compressed (and potentially encrypted) column data 
+   *  in this row group **/
   6: optional i64 total_compressed_size
 }
 
@@ -929,11 +931,20 @@ struct FileMetaData {
    */
   7: optional list<ColumnOrder> column_orders
   
-  /** Set in encrypted files with plaintext footer **/
+  /** 
+   * Set in encrypted files with plaintext footer.
+   * Files with encrypted footer store algorithm id
+   * in FileCryptoMetaData structure.
+   */
   8: optional EncryptionAlgorithm encryption_algorithm
 }
 
+/** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
+  /** 
+   * Files with plaintext footer store algorithm id
+   * inside footer (FileMetaData structure)
+   */
   1: required EncryptionAlgorithm encryption_algorithm
     
   /** Retrieval metadata of key used for encryption of footer, 
