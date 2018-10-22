@@ -932,8 +932,8 @@ struct FileMetaData {
   7: optional list<ColumnOrder> column_orders
   
   /** 
-   * Set in encrypted files with plaintext footer.
-   * Files with encrypted footer store algorithm id
+   * Encryption algorithm. Note that this field is only used for files
+   * with plaintext footer. Files with encrypted footer store the algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
@@ -942,8 +942,9 @@ struct FileMetaData {
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
   /** 
-   * Files with plaintext footer store algorithm id
-   * inside footer (FileMetaData structure)
+   * Encryption algorithm. Note that this field is only used for files
+   * with encrypted footer. Files with plaintext footer store the algorithm id
+   * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
     
