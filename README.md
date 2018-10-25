@@ -224,8 +224,8 @@ while allowing for a regular Parquet functionality (columnar projection,
 predicate pushdown, encoding and compression). The mechanism also enables column access 
 control, via support for encryption of different columns with different keys.
 Each Parquet module (footer, page headers, pages, column indexes, column metadata) is 
-encrypted separately. Then it is possible to fetch and decrypt the footer, find the 
-offset of a required page, fetch it and decrypt the data. 
+encrypted separately -making it possible to fetch and decrypt the footer, find the 
+offset of required pages, fetch them and decrypt the data. 
 See [Encryption.md](Encryption.md) for details.
 
 
