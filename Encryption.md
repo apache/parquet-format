@@ -139,7 +139,12 @@ union EncryptionAlgorithm {
 
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
 be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
-length of `aad_metadata` is 512 bytes.
+length of `aad_metadata` is 512 bytes. Typically, readers would know the file AAD without relying
+on this field, using instead a method adopted by the organization. For example, the AAD can be the name of 
+the file - if constructed with a timestamp or version number, the AAD will allow readers to make sure they
+work with a correct file version. If organization works with a number of different 
+AAD construction methods, the `aad_metadata` can contain the method ID. In any case, the AAD string itself
+must not be kept in this field - a reader reliance on this AAD will defy the cipher authentication purpose.
 
 
 ## File Format
@@ -191,7 +196,7 @@ struct ColumnChunk {
 
 The `path_in_schema` field in  `EncryptionWithColumnKey` structure is needed because the 
 column name (path) is kept inside the encrypted `ColumnMetaData`. The column name can be used 
-for explicit passing of decryption key for this column, without calling a key retrieval callback. 
+for explicit passing of a decryption key for this column, without calling a key retrieval callback. 
 
 ### Encryption key metadata
 A wide variety of services and tools for management of encryption keys exist in the industry 
@@ -209,15 +214,15 @@ service. Instead, Parquet provides a developer with a simple interface (key_meta
 array, and a key retrieval callback) that can be utilized for implementation of any key 
 management scheme. For example, the key_metadata can keep a serialized 
 
-   * String ID of Data encryption key (for key retrieval from KMS)
-   * Wrapped Data key, and string ID of Master key.  Data key is generated randomly and 
-   wrapped either remotely in a KMS, or locally after retrieving Master key from KMS. 
-   Wrapping format depends on KMS and can be a JSON string, or a base64 encoded byte array 
-   in case of local wrapping.
-   * Short ID (counter) of key inside Parquet data file. Data key is wrapped with Master 
-   key using one of options described above – but stored separately, outside data file, 
-   and will be retrieved using the counter and file path.
-   * Any of three above, plus string ID of KMS instance (in case there are many)
+   * String ID of a Data encryption key (for key retrieval from KMS).
+   * Wrapped Data key, and string ID of a Master key.  The Data key is generated randomly and 
+   wrapped either remotely in a KMS, or locally after retrieving the Master key from KMS. 
+   Wrapping format depends on the KMS and can be a JSON string, or a base64 encoded byte array 
+   in a case of local wrapping.
+   * Short ID (counter) of a key inside the Parquet data file. The Data key is wrapped with a Master 
+   key using one of the options described above – but the resulting key material is stored separately, 
+   outside the data file, and will be retrieved using the counter and file path.
+   * Any of the three above, plus a string ID of the KMS instance (in case there are many).
    * Random string (useful for creation of footer keys in organizations not willing to 
    authenticate and connect all readers to a KMS. The footer key is generated as F(key_metadata), 
    where F is an algorithm unknown outside organization. These keys are less secure than 
