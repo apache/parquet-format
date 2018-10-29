@@ -138,13 +138,13 @@ union EncryptionAlgorithm {
 ```
 
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
-be used by a reader to retrieve the AAD string used for file encryption. The maximal allowed
+be used by a reader to retrieve the file AAD string used for file enciphering. The maximal allowed
 length of `aad_metadata` is 512 bytes. Typically, readers would know the file AAD without relying
 on this field, using instead a method adopted by the organization. For example, the AAD can be the name of 
 the file - if constructed with a timestamp or version number, the AAD will allow readers to make sure they
 work with a correct file version. If organization works with a number of different 
-AAD construction methods, the `aad_metadata` can contain the method ID. In any case, the AAD string itself
-must not be kept in this field - a reader reliance on this AAD will defy the cipher authentication purpose.
+AAD construction methods, the `aad_metadata` can contain the method ID; otherwise, the `aad_metadata` can
+be empty.
 
 
 ## File Format
@@ -158,11 +158,31 @@ the encryption buffer is comprised of an IV, ciphertext and tag, as described in
 Algorithms section. The length of the encryption buffer (a 4-byte little endian) is 
 written to the output stream, followed by the buffer itself.
 
+|length (4 bytes) | IV (12 bytes) | ciphertext (`length` bytes) | tag (16 bytes) |
+|-----------------|---------------|-----------------------------|----------------|
+
 The column pages (data and dictionary) are encrypted after compression. For each page, 
 the encryption buffer is comprised of an IV (nonce), ciphertext and (in case of AES_GCM_V1) of a 
 tag, as described in the Algorithms section. Only the buffer is written to the output 
 stream - no need to write the length of the buffer, since the length (page size after
 compression and encryption) is kept in the page headers.
+
+| IV (12 bytes) | ciphertext (`page_size` bytes) | tag (16 bytes) |
+|---------------|--------------------------------|----------------|
+
+or 
+
+| IV (16 bytes) | ciphertext (`page_size` bytes) | 
+|---------------|--------------------------------|
+
+Sometimes, a number of encrypted columns have their file offset either directly visible or 
+possible to infer from other metadata. This might be exploited for an exotic
+attack on file integrity (such as swapping dictionary pages of two columns). While these
+attacks succeed under rare conditions and in any case don't harm data confidentiality - 
+they can be prevented by using the offset as a part of the GCM AAD formation. Therefore,
+the `PageHeader` structures and the pages (in case of AES_GCM_V1) are enciphered using an AAD built by
+direct concatination of two parts: the column offset in the file (8 bytes, little endian) 
+and the user-specified file AAD (if provided; see the previous section). 
 
 A `crypto_meta_data` field is set in each `ColumnChunk` in the encrypted columns. 
 `ColumnCryptoMetaData` is a union - the actual structure is chosen depending on whether the 
@@ -228,6 +248,9 @@ management scheme. For example, the key_metadata can keep a serialized
    where F is an algorithm unknown outside organization. These keys are less secure than 
    KMS-managed keys, but better than using no keys at all in plaintext footers, see a discussion below).
 
+Key metadata can also be empty (not set) - in case the keys are fully managed by the caller code, and 
+passed explicitly to Parquet for the footer and each encrypted column.
+
 ### Protection of column metadata
 
 The Parquet file footer, and its nested structures, contain sensitive information - ranging 
@@ -257,6 +280,10 @@ struct ColumnChunk {
 }
 ```
 
+The separated `ColumnMetaData` structures are enciphered using an AAD built by
+direct concatination of two parts: the `file_offset` value (8 bytes, little endian) 
+and the user-specified file AAD (if provided).
+
 ### Encrypted footer mode
 
 In files with sensitive column data, a good security practice is to encrypt not only the 
@@ -275,7 +302,10 @@ the file, and an optional key metadata, with a maximal length of 512). Then
 the length of this structure is written as a 4-byte little endian integer, followed by a final 
 magic string, "PARE".
 The same magic bytes are written at the beginning of the file (offset 0).
-Parquet readers start file parsing by reading and checking the magic string. Therefore, the encrypted footer mode uses a new magic string ("PARE") in order to immediately inform legacy readers (expecting ‘PAR1’ bytes) that they can’t parse this file.
+Parquet readers start file parsing by reading and checking the magic string. Therefore, the 
+encrypted footer mode uses a new magic string ("PARE") in order to  instruct new readers to look 
+for a file crypto metadata at the end of the file instead of a footer - and also to immediately inform 
+legacy readers (expecting ‘PAR1’ bytes) that they can’t parse this file.
 
 ```c
 /** Crypto metadata for files with encrypted footer **/
