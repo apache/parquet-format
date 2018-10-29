@@ -181,7 +181,7 @@ attack on file integrity (such as swapping dictionary pages of two columns). Whi
 attacks succeed under rare conditions and in any case don't harm data confidentiality - 
 they can be prevented by using the offset as a part of the GCM AAD formation. Therefore,
 the `PageHeader` structures and the pages (in case of AES_GCM_V1) are enciphered using an AAD built by
-direct concatination of two parts: the column offset in the file (8 bytes, little endian) 
+direct concatenation of two parts: the column offset in the file (8 bytes, little endian) 
 and the user-specified file AAD (if provided; see the previous section). 
 
 A `crypto_meta_data` field is set in each `ColumnChunk` in the encrypted columns. 
@@ -281,7 +281,7 @@ struct ColumnChunk {
 ```
 
 The separated `ColumnMetaData` structures are enciphered using an AAD built by
-direct concatination of two parts: the `file_offset` value (8 bytes, little endian) 
+direct concatenation of two parts: the `file_offset` value (8 bytes, little endian) 
 and the user-specified file AAD (if provided).
 
 ### Encrypted footer mode
