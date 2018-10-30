@@ -87,7 +87,7 @@ of the data combined with an optional AAD (“additional authenticated data”).
 authentication allows to make sure the data has not been tampered with. An AAD is a free 
 text to be signed, together with the data. The user can, for example, pass the file name 
 with its version (or creation timestamp) as the AAD, to verify that the file has not been 
-replaced with an older version.
+replaced with an older version (see next subsection).
 
 Sometimes, a hardware acceleration of AES is unavailable (e.g. in Java 8). Then AES crypto 
 operations are implemented in software, and can be somewhat slow, becoming a performance 
@@ -109,25 +109,27 @@ construction as defined in the NIST SP 800-38D document for the GCM ciphers (sec
 
 
 ### AES_GCM_V1
-All modules are encrypted by an AES-GCM cipher, without padding. The authentication tags (16 bytes) are 
-written after each ciphertext. The IVs are written before each ciphertext. The IV length is 12 
+All modules are encrypted by an AES-GCM cipher, without padding. Unique IVs are generated and 
+written before each ciphertext. The IV length is 12 
 bytes (96 bits), which is generally considered to be the optimal size of GCM IVs.  The NIST 
 specification requires a “random field” to fill all 12 bytes and an arbitrary “free field” to be empty for 
-this IV length (see section 8.2.2).
+this IV length (see section 8.2.2). 
+
+The authentication tags (16 bytes) are written after each ciphertext.
 
 ### AES_GCM_CTR_V1
 Thrift modules are encrypted with AES-GCM, as described above. The pages are encrypted by an AES-CTR
-cipher without padding. The nonces are written before each ciphertext, with the nonce length of 16 bytes 
+cipher without padding. The nonces are generated and written before each ciphertext, with the nonce length of 16 bytes 
 (128 bits). At least 12 bytes out of 16 are constructed with an RBG.
 
 ```c
 struct AesGcmV1 {
-  /** Retrieval metadata of AAD used for encryption of pages and structures **/
+  /** Retrieval metadata of AAD prefix used for encryption of pages and structures **/
   1: optional binary aad_metadata
 }
 
 struct AesGcmCtrV1 {
-  /** Retrieval metadata of AAD used for encryption of structures **/
+  /** Retrieval metadata of AAD prefix used for encryption of structures **/
   1: optional binary aad_metadata
 }
 
@@ -137,14 +139,56 @@ union EncryptionAlgorithm {
 }
 ```
 
+### AAD (Additional Authenticated Data)
+
+The AES GCM cipher in the basic mode protects against byte replacement inside a ciphertext, 
+but can't prevent replacement of one ciphertext with another (encrypted with the same key). 
+This can be solved by the AAD mode, using different AADs for different ciphertexts. Parquet 
+modular encryption uses the AAD mode to protect against swapping ciphertext modules inside a 
+file, between files - or against swapping full files (for example, replacement of a file with an 
+old version). Obviously, the AAD must reflect the identity of a file and of the modules inside 
+the file. 
+
+Parquet constructs a module AAD from two components: an optional AAD prefix - a string provided 
+by the user for the file, and an AAD suffix, built internally for each encrypted module inside 
+the file. The AAD prefix should reflect the target identity that helps to detect file swapping - 
+for example, table name and version or date / timestamp (e.g., "employees_23_05_2018"). The 
+AAD suffix reflects the internal identity of modules inside the file, which for example prevents 
+replacement of column pages in row group 0 by pages from the same column in row group 1. The module 
+AAD is a direct concatenation of the prefix and suffix parts. 
+
+#### AAD prefix
+
+A file writer passes an AAD prefix string upon file creation, that helps to differentate it from other
+files and datasets. The reader should know this string apriori, or should be able to retrieve and verify
+it, using a convention accepted in the organization.
+For example, if a convention is to use the table name and date as the AAD prefix, the
+writer of a May 23 version of employee table will use "employee_23_05_2018" as an AAD 
+prefix (and as the file name). The reader that needs to process the May 23 table, knows the AAD must be 
+"employee_23_05_2018", without relying on the name of the encrypted file.
+
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
-be used by a reader to retrieve the file AAD string used for file enciphering. The maximal allowed
-length of `aad_metadata` is 512 bytes. Typically, readers would know the file AAD without relying
-on this field, using instead a method adopted by the organization. For example, the AAD can be the name of 
-the file - if constructed with a timestamp or version number, the AAD will allow readers to make sure they
-work with a correct file version. If organization works with a number of different 
-AAD construction methods, the `aad_metadata` can contain the method ID; otherwise, the `aad_metadata` can
-be empty.
+be used by a reader to retrieve the AAD prefix string used for file enciphering. The maximal allowed
+length of `aad_metadata` is 512 bytes. If organization works with a number of different 
+AAD construction methods, the `aad_metadata` can contain the method details. For example, the `aad_metadata` 
+can be "MM_DD_YY" - then the reader will know the AAD prefix is "employee_05_23_18".
+
+Alternatively, the `aad_metadata` can contain the AAD prefix itself. In this case, the reader must be able
+to verify its validity. For example, if the AAD prefix stored in `aad_metadata` is "employee_23May2018", 
+the reader should know it is fine, but if the `aad_metadata` stores "employee_23May2016" - the version is wrong.
+
+### AAD suffix
+
+Sometimes, a number of encrypted columns have their file offset either directly visible or 
+possible to infer from other metadata. This might be exploited for 
+attacks on file integrity (such as replacement of column pages in row group 0 by pages from the same 
+column in row group 1.). While these attacks succeed under rare conditions and in any case don't harm data 
+confidentiality - they can be prevented by using the column and row group identity as a part of the GCM AAD 
+formation. Therefore, the `PageHeader` structures and the pages (in case of AES_GCM_V1) are enciphered using 
+an AAD suffix built by direct concatenation of two parts: the row group offset in the file (8 bytes, little endian) 
+and the column name (for nested columns, a concatenated path with "." separator).
+All other column-specific structures (`ColumnIndex`, `OffsetIndex`; and sometimes  
+`ColumnMetaData`, see below) are enciphered using the same AAD suffix.
 
 
 ## File Format
@@ -175,14 +219,6 @@ or
 | IV (16 bytes) | ciphertext (`page_size` bytes) | 
 |---------------|--------------------------------|
 
-Sometimes, a number of encrypted columns have their file offset either directly visible or 
-possible to infer from other metadata. This might be exploited for an exotic
-attack on file integrity (such as swapping dictionary pages of two columns). While these
-attacks succeed under rare conditions and in any case don't harm data confidentiality - 
-they can be prevented by using the offset as a part of the GCM AAD formation. Therefore,
-the `PageHeader` structures and the pages (in case of AES_GCM_V1) are enciphered using an AAD built by
-direct concatenation of two parts: the column offset in the file (8 bytes, little endian) 
-and the user-specified file AAD (if provided; see the previous section). 
 
 A `crypto_meta_data` field is set in each `ColumnChunk` in the encrypted columns. 
 `ColumnCryptoMetaData` is a union - the actual structure is chosen depending on whether the 
@@ -280,10 +316,6 @@ struct ColumnChunk {
 }
 ```
 
-The separated `ColumnMetaData` structures are enciphered using an AAD built by
-direct concatenation of two parts: the `file_offset` value (8 bytes, little endian) 
-and the user-specified file AAD (if provided).
-
 ### Encrypted footer mode
 
 In files with sensitive column data, a good security practice is to encrypt not only the 
@@ -304,7 +336,7 @@ magic string, "PARE".
 The same magic bytes are written at the beginning of the file (offset 0).
 Parquet readers start file parsing by reading and checking the magic string. Therefore, the 
 encrypted footer mode uses a new magic string ("PARE") in order to  instruct new readers to look 
-for a file crypto metadata at the end of the file instead of a footer - and also to immediately inform 
+for a file crypto metadata at the end of the file - and also to immediately inform 
 legacy readers (expecting ‘PAR1’ bytes) that they can’t parse this file.
 
 ```c
@@ -357,7 +389,8 @@ read the metadata to extract the offset and size of the column data - required f
 An `encryption_algorithm` field is set at the FileMetaData structure. Then the footer is written as usual, 
 followed by its length (4-byte little endian integer) and a final magic string, "PAR1".
 The same magic string is written at the beginning of the file (offset 0). 
-The magic bytes for plaintext footer mode are ‘PAR1’ to allow older readers to read projections of the file that do not include encrypted columns.
+The magic bytes for plaintext footer mode are ‘PAR1’ to allow older readers to read projections of the 
+file that do not include encrypted columns.
 
 ```c
 struct FileMetaData {
