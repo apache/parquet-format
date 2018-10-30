@@ -903,8 +903,9 @@ struct FileMetaData {
 
   /**
    * Sort order used for the min_value and max_value fields of each column in
-   * this file. Each sort order corresponds to one column, determined by its
-   * position in the list, matching the position of the column in the schema.
+   * this file. Sort orders are listed in the order matching the columns in the
+   * schema. The indexes are not necessary the same though, because only leaf
+   * nodes of the schema are represented in the list of sort orders.
    *
    * Without column_orders, the meaning of the min_value and max_value fields is
    * undefined. To ensure well-defined behaviour, if min_value and max_value are
