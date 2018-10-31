@@ -87,7 +87,7 @@ of the data combined with an optional AAD (“additional authenticated data”).
 authentication allows to make sure the data has not been tampered with. An AAD is a free 
 text to be signed, together with the data. The user can, for example, pass the file name 
 with its version (or creation timestamp) as the AAD, to verify that the file has not been 
-replaced with an older version (see next subsection).
+replaced with an older version (see below).
 
 Sometimes, a hardware acceleration of AES is unavailable (e.g. in Java 8). Then AES crypto 
 operations are implemented in software, and can be somewhat slow, becoming a performance 
@@ -139,7 +139,7 @@ union EncryptionAlgorithm {
 }
 ```
 
-### AAD (Additional Authenticated Data)
+### Additional Authenticated Data
 
 The AES GCM cipher in the basic mode protects against byte replacement inside a ciphertext, 
 but can't prevent replacement of one ciphertext with another (encrypted with the same key). 
@@ -159,36 +159,37 @@ AAD is a direct concatenation of the prefix and suffix parts.
 
 #### AAD prefix
 
-A file writer passes an AAD prefix string upon file creation, that helps to differentate it from other
+A file writer passes an AAD prefix string upon file creation, that allows to differentate it from other
 files and datasets. The reader should know this string apriori, or should be able to retrieve and verify
 it, using a convention accepted in the organization.
-For example, if a convention is to use the table name and date as the AAD prefix, the
-writer of a May 23 version of employee table will use "employee_23_05_2018" as an AAD 
+For example, if the convention is to use a table name and date as the AAD prefix, a 
+writer of a May 23 version of an employee table will use "employees_23_05_2018" as an AAD 
 prefix (and as the file name). The reader that needs to process the May 23 table, knows the AAD must be 
-"employee_23_05_2018", without relying on the name of the encrypted file.
+"employees_23_05_2018", without relying on the name of the encrypted file.
 
 The `AesGcmV1` and `AesGcmCtrV1` structures contain an optional `aad_metadata` field that can 
 be used by a reader to retrieve the AAD prefix string used for file enciphering. The maximal allowed
 length of `aad_metadata` is 512 bytes. If organization works with a number of different 
 AAD construction methods, the `aad_metadata` can contain the method details. For example, the `aad_metadata` 
-can be "MM_DD_YY" - then the reader will know the AAD prefix is "employee_05_23_18".
+can be "MM_DD_YY" - then the reader will know the AAD prefix is "employees_05_23_18".
 
 Alternatively, the `aad_metadata` can contain the AAD prefix itself. In this case, the reader must be able
-to verify its validity. For example, if the AAD prefix stored in `aad_metadata` is "employee_23May2018", 
-the reader should know it is fine, but if the `aad_metadata` stores "employee_23May2016" - the version is wrong.
+to verify its validity. For example, if the AAD prefix stored in `aad_metadata` is "employees_23May2018", 
+the reader should know it is fine, but if the `aad_metadata` stores "employees_23May2016" - the version is wrong.
 
-### AAD suffix
+#### AAD suffix
 
 Sometimes, a number of encrypted columns have their file offset either directly visible or 
 possible to infer from other metadata. This might be exploited for 
 attacks on file integrity (such as replacement of column pages in row group 0 by pages from the same 
-column in row group 1.). While these attacks succeed under rare conditions and in any case don't harm data 
-confidentiality - they can be prevented by using the column and row group identity as a part of the GCM AAD 
+column in row group 1). While these attacks succeed under rare conditions and in any case don't harm data 
+confidentiality - they can be prevented by using the column and row group identity as a part of GCM AAD 
 formation. Therefore, the `PageHeader` structures and the pages (in case of AES_GCM_V1) are enciphered using 
 an AAD suffix built by direct concatenation of two parts: the row group offset in the file (8 bytes, little endian) 
-and the column name (for nested columns, a concatenated path with "." separator).
-All other column-specific structures (`ColumnIndex`, `OffsetIndex`; and sometimes  
-`ColumnMetaData`, see below) are enciphered using the same AAD suffix.
+and the column name (for nested columns, a concatenated path with "." separator) serialized with the UTF-8 charset.
+All other column-specific structures (`ColumnIndex`, `OffsetIndex`; and sometimes `ColumnMetaData`, see below) 
+are enciphered using the same AAD suffix. The footer, if encrypted (see below), uses only the AAD prefix part, since 
+there are no other footers in the file and an AAD suffix is not needed.
 
 
 ## File Format
@@ -251,8 +252,9 @@ struct ColumnChunk {
 ```
 
 The `path_in_schema` field in  `EncryptionWithColumnKey` structure is needed because the 
-column name (path) is kept inside the encrypted `ColumnMetaData`. The column name can be used 
-for explicit passing of a decryption key for this column, without calling a key retrieval callback. 
+column name (path) is kept inside the encrypted `ColumnMetaData`. The column name is required 
+to build the AAD for decryption of the `ColumnMetaData` (see above). Also, the column name can 
+be used for explicit passing of a decryption key for this column, without calling a key retrieval callback.
 
 ### Encryption key metadata
 A wide variety of services and tools for management of encryption keys exist in the industry 
@@ -284,8 +286,8 @@ management scheme. For example, the key_metadata can keep a serialized
    where F is an algorithm unknown outside organization. These keys are less secure than 
    KMS-managed keys, but better than using no keys at all in plaintext footers, see a discussion below).
 
-Key metadata can also be empty (not set) - in case the keys are fully managed by the caller code, and 
-passed explicitly to Parquet for the footer and each encrypted column.
+Key metadata can also be empty (not set) - in a case the encryption keys are fully managed by the 
+caller code, and passed explicitly to Parquet for the footer and each encrypted column.
 
 ### Protection of column metadata
 
@@ -322,7 +324,7 @@ In files with sensitive column data, a good security practice is to encrypt not 
 secret columns, but also the file footer metadata with a separate footer key. This hides
 the file schema / column names, number of rows, key-value properties, column sort order, 
 column data offset and size, list of encrypted columns and metadata of the column encryption keys. 
-It also makes the footer tamper-proof.
+It also makes the footer tamper-proof and helps to prevent module replacement attacks.
 
 The columns encrypted with the same key as the footer don't separate the ColumnMetaData from the 
 ColumnChunks, leaving it at the original location, `optional ColumnMetaData meta_data`. This field
@@ -335,7 +337,7 @@ the length of this structure is written as a 4-byte little endian integer, follo
 magic string, "PARE".
 The same magic bytes are written at the beginning of the file (offset 0).
 Parquet readers start file parsing by reading and checking the magic string. Therefore, the 
-encrypted footer mode uses a new magic string ("PARE") in order to  instruct new readers to look 
+encrypted footer mode uses a new magic string ("PARE") in order to  instruct readers to look 
 for a file crypto metadata at the end of the file - and also to immediately inform 
 legacy readers (expecting ‘PAR1’ bytes) that they can’t parse this file.
 
