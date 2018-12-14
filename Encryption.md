@@ -24,13 +24,13 @@ mechanism that encrypts and authenticates the file data and metadata - while all
 for a regular Parquet functionality (columnar projection, predicate pushdown, encoding 
 and compression). 
 
-## 1. Problem Statement
+## 1 Problem Statement
 Existing data protection solutions (such as flat encryption of files, in-storage encryption, 
 or use of an encrypting storage client) can be applied to Parquet files, but have various 
 security or performance issues. An encryption mechanism, integrated in the Parquet format, 
 allows for an optimal combination of data security, processing speed and encryption granularity.
 
-## 2. Goals
+## 2 Goals
 1. Protect Parquet data and metadata by encryption, while enabling selective reads 
 (columnar projection, predicate push-down).
 2. Implement "client-side" encryption/decryption (storage client). The storage server 
@@ -51,7 +51,7 @@ columns in an encrypted file.
 of write/read operations.
 
 
-## 3. Technical Approach
+## 3 Technical Approach
 Parquet files are comprised of separately serialized components: pages, page headers, column 
 indexes, offset indexes, a footer. Parquet encryption mechanism denotes them as “modules” 
 and encrypts each module separately – making it possible to fetch and decrypt the footer, 
@@ -73,22 +73,21 @@ The file footer can be either encrypted or left as a plaintext. In an encrypted 
 a new Thrift structure with file crypto metadata is added to the file. This metadata provides 
 information about the file encryption algorithm and the footer encryption key. 
 
-In a plaintext footer mode, the contents of the `FileMetaData` structure is visible, but it can 
-be optionally signed with a footer key in order to verify its integrity. The `FileMetaData` keeps
-the file encryption algorithm, the footer signing key description and a flag indicating whether 
-a footer signature is added to the file.
+In a plaintext footer mode, the contents of the footer structure is visible and signed 
+in order to verify its integrity. New footer fields keep an
+information about the file encryption algorithm and the footer signing key.
 
 For encrypted columns, the following modules are always encrypted, with the same column key: 
-pages and  `PageHeader`'s (both dictionary and data), `ColumnIndex`'s, `OffsetIndex`'s.  If the 
-column key is different from the footer encryption key, the `ColumnMetaData` structure is serialized 
-separately and encrypted with the column key. In this case, the `ColumnMetaData` is also considered to be 
-a module.  
+pages and  page headers (both dictionary and data), column indexes, offset indexes.  If the 
+column key is different from the footer encryption key, the column metadata is serialized 
+separately and encrypted with the column key. In this case, the column metadata is also 
+considered to be a module.  
 
 There are two module types: data modules (pages) and Thrift modules (all Thrift structures that 
 are serialized separately).
 
 
-## 4. Encryption Algorithms and Keys
+## 4 Encryption Algorithms and Keys
 Parquet encryption algorithms are based on the standard AES ciphers for symmetric encryption. 
 AES is supported in Intel and other CPUs with hardware acceleration of crypto operations 
 (“AES-NI”) - that can be leveraged, for example, by Java programs (automatically via HotSpot), 
@@ -98,70 +97,61 @@ or C++ programs (via EVP-* functions in OpenSSL). Parquet supports all standard 
 Initially, two algorithms have been implemented, one based on a GCM mode of AES, and the 
 other on a combination of GCM and CTR modes.
 
+### 4.1 AES modes
+
+#### 4.1.1 AES GCM
 AES GCM is an authenticated encryption. Besides the data confidentiality (encryption), it 
 supports two levels of integrity verification (authentication): of the data (default), 
 and of the data combined with an optional AAD (“additional authenticated data”). The 
-default authentication allows to make sure the data has not been tampered with. An AAD 
-is a free text to be signed, together with the data. The user can, for example, pass the 
+authentication allows to make sure the data has not been tampered with. An AAD 
+is a free text to be authenticated, together with the data. The user can, for example, pass the 
 file name with its version (or creation timestamp) as an AAD input, to verify that the 
 file has not been replaced with an older version. The details on how Parquet creates 
 and uses AADs are provided in the section 4.4.
 
-Sometimes, a hardware acceleration of AES is unavailable (e.g. in Java 8). Then AES crypto 
-operations are implemented in software, and can be somewhat slow, becoming a performance 
-bottleneck in certain workloads. AES CTR is a regular (not authenticated) cipher. It is 
-faster than GCM cipher, since it doesn’t perform integrity verification and doesn’t 
-calculate the authentication tag. Actually, GCM is a combination of CTR cipher and an 
-authentication layer  called GMAC. For applications running without AES acceleration 
+#### 4.1.2 AES CTR
+AES CTR is a regular (not authenticated) cipher. It is faster than the GCM cipher, since it 
+doesn’t perform integrity verification and doesn’t calculate an authentication tag. 
+Actually, GCM is a combination of the CTR cipher and an 
+authentication layer called GMAC. For applications running without AES acceleration 
 and willing to compromise on content verification, CTR cipher can provide a boost in 
-Parquet write/read throughput. The second Parquet algorithm encrypts the data content 
-(pages) with CTR, and the metadata (Thrift structures) with GCM. This allows to encrypt/decrypt 
-the bulk of the data faster, while still verifying the metadata integrity and making 
-sure the file has not been replaced with a wrong version. However, tampering with the 
-page data might go unnoticed.
+encryption/decryption throughput.
 
-The initialization vectors (IVs) in GCM and CTR ciphers must be unique for each encrypted 
-stream. The CTR IVs are comprised of two parts: a unique nonce (“number used once”) and 
-an initial counter field; both must be passed to the CTR cipher upon stream initialization. 
-The GCM mode creates a CTR cipher internally, and passes an IV comprised of a nonce (passed to 
-the GCM cipher upon stream initialization) and an initial counter field constructed internally 
-by the GCM cipher according to the GCM specification (NIST SP 800-38D).
+
+#### 4.1.3 Nonces and IVs
+GCM and CTR ciphers require a unique vector to be provided for each encrypted stream. 
+In this document, the unique input to GCM encryption is called nonce (“number used once”).
+The unique input to CTR encryption is called IV ("initialization vector"), and is comprised of two 
+parts: a nonce and an initial counter field. 
+
 Parquet encryption uses the RBG-based (random bit generator) nonce construction as defined in 
-the NIST SP 800-38D document, section 8.2.2. Notice: NIST SP 800-38D uses a term “IV” for what 
-is called “nonce” in the Parquet encryption design.
-
-An input to AES CTR encryption is an encryption key, a 16-byte IV and a plaintext. The output
-is a ciphertext with the length equal to that of plaintext (for non-padding encryption).
-
-An input to AES GCM encryption is an encryption key, a 12-byte nonce and a plaintext. The output
-is a ciphertext with the length equal to that of plaintext (for non-padding encryption), and 
-a 16-byte authentication tag used to verify the ciphertext integrity.
+the section 8.2.2 of the NIST SP 800-38D document. For each encrypted module, Parquet generates a 
+unique nonce with a length of 12 bytes (96 bits). Notice: the NIST 
+specification uses a term “IV” for what is called “nonce” in the Parquet encryption design.
 
 
-### 4.1 AES_GCM_V1 encryption algorithm
+### 4.2 Parquet encryption algorithms
+
+#### 4.2.1 AES_GCM_V1
 This Parquet algorithm encrypts all modules by the GCM cipher, without padding. The AES GCM cipher
 must be implemented by a cryptographic provider according to the NIST SP 800-38D specification. 
 
-Unique nonces are generated for each ciphertext. The nonce length is 12 bytes (96 bits). The NIST 
-specification requires a “random field” to fill all 12 bytes and an arbitrary “free field” 
-to be empty for this nonce length (section 8.2.2). Parquet uses the option 1 for RGB implementation - 
-"The random field shall .. consist of an output string of r(i) bits from an approved RBG with a 
-sufficient security strength". That is, a fresh random byte array must be generated for each nonce - 
-as opposed to the option 2 in the same spec - "or the result of applying the r(i)–bit incrementing 
-function to the random field of the preceding <nonce> for the given key"
+In Parquet, an input to the GCM cipher is an encryption key, a 12-byte nonce, a plaintext and an 
+AAD. The output is a ciphertext with the length equal to that of plaintext, and a 16-byte authentication 
+tag used to verify the ciphertext and AAD integrity.
 
 
-### 4.2 AES_GCM_CTR_V1 encryption algorithm
-In this Parquet algorithm, all Thrift modules are encrypted with the GCM cipher, as described above. 
-
-The pages are encrypted by the CTR cipher without padding. The AES CTR cipher
+#### 4.2.2 AES_GCM_CTR_V1
+In this Parquet algorithm, all Thrift modules are encrypted with the GCM cipher, as described 
+above, but the pages are encrypted by the CTR cipher without padding. This allows to encrypt/decrypt 
+the bulk of the data faster, while still verifying the metadata integrity and making 
+sure the file has not been replaced with a wrong version. However, tampering with the 
+page data might go unnoticed. The AES CTR cipher
 must be implemented by a cryptographic provider according to the NIST SP 800-38A specification. 
 
-Unique nonces are generated for each ciphertext, with the nonce length of 12 bytes. All 12 
-bytes are constructed with an RBG option 1 as described for the AES_GCM_V1 algorithm. The data 
-module encryption and decryption is performed with a 16 byte IV comprised of the nonce and a 4-byte 
-initial counter field. The first 31 bits of the initial counter field are set to 0, the last bit 
-is set to 1. 
+In Parquet, an input to the CTR cipher is an encryption key, a 16-byte IV and a plaintext. IVs are comprised of 
+a 12-byte nonce and a 4-byte initial counter field. The first 31 bits of the initial counter field are set 
+to 0, the last bit is set to 1. The output is a ciphertext with the length equal to that of plaintext.
 
 ### 4.3 Key metadata
 A wide variety of services and tools for management of encryption keys exist in the 
@@ -169,105 +159,82 @@ industry today. Public clouds offer different key management services (KMS), and
 organizational IT systems either build proprietary key managers in-house or adopt open source 
 tools for on-premises deployment. Besides the diversity of management tools, there are many 
 ways to generate and handle the keys themselves (generate Data keys inside KMS – or locally 
-upon data encryption; use Data keys only, or use Master keys to encrypt/wrap the Data keys; 
-store the wrapped key material inside the data file, or at a separate location; etc). There 
+upon data encryption; use Data keys only, or use Master keys to encrypt the Data keys; 
+store the encrypted key material inside the data file, or at a separate location; etc). There 
 is also a large variety of authorization and certification methods, required to control the 
 access to encryption keys.
 
 Parquet is not limited to a single KMS, key generation/wrapping method, or authorization service. 
 Instead, Parquet provides a developer with a simple interface that can be utilized for implementation 
-of any key management scheme. For each column or footer key, a file writing code can pass an 
-arbitrary `key_metadata` byte array that will be stored in the file. A file reading code can pass a 
-key retrieval callback, that will invoked on the key_metadata byte array in order to recover the
-encryption (or signature) key. For example, the key_metadata can keep a serialized
+of any key management scheme. For each column or footer key, a file writer can generate and pass an 
+arbitrary `key_metadata` byte array that will be stored in the file. This field is made available to 
+file readers to enable recovery of the key. For example, the key_metadata 
+can keep a serialized
 
-   * String ID of a Data encryption key (for direct key retrieval from a KMS).
-   * Wrapped Data key, and string ID of a Master key. The Data key is generated randomly and 
-   wrapped either remotely in a KMS, or locally after retrieving the Master key from KMS. Wrapping 
-   format depends on the KMS and can be a JSON string, or a base64 encoded byte array in a case of 
-   local wrapping.
-   * Short ID (counter) of a key inside the Parquet data file. The Data key is wrapped with a 
+   * String ID of a Data key. This enables direct retrieval of the Data key from a KMS.
+   * Encrypted Data key, and string ID of a Master key. The Data key is generated randomly and 
+   encrypted with a Master key either remotely in a KMS, or locally after retrieving the Master key from a KMS.
+   Master key rotation requires modification of the data file footer.
+   * Short ID (counter) of a Data key inside the Parquet data file. The Data key is encrypted with a 
    Master key using one of the options described above – but the resulting key material is stored 
    separately, outside the data file, and will be retrieved using the counter and file path.
-   * Any of the three above, plus a string ID of the KMS instance (in case there are many).
-   * Random string - useful for creation of footer keys in organizations not willing to authenticate 
-   and connect all readers to a KMS. The footer key is generated as F(key_metadata), where F is an 
-   algorithm unknown outside the organization. These keys are less secure than KMS-managed keys, but 
-   better than using no keys at all in plaintext and unsigned footers (discussed in the sections 5.2 
-   and 5.3.)
+   Master key rotation doesn't require modification of the data file.
    
 Key metadata can also be empty - in a case the encryption keys are fully managed by the caller 
-code, and passed explicitly to Parquet for the footer and each encrypted column.
+code, and passed explicitly to Parquet readers for the file footer and each encrypted column.
 
 ### 4.4 Additional Authenticated Data
-The AES GCM cipher in the basic mode protects against byte replacement inside a ciphertext, 
-but can't prevent replacement of one ciphertext with another (encrypted with the same key). 
-This can be solved by the AAD mode, using different AADs for different ciphertexts. Parquet 
-modular encryption uses the AAD mode to protect against swapping ciphertext modules inside 
-a file, between files - or against swapping full files (for example, replacement of a file 
-with an old version). Obviously, the AAD must reflect the identity of a file and of the modules 
-inside the file.
+The AES GCM cipher protects against byte replacement inside a ciphertext - but, without an AAD, 
+it can't prevent replacement of one ciphertext with another (encrypted with the same key). 
+Parquet modular encryption leverages AADs to protect against swapping ciphertext modules (encrypted 
+with AES GCM) inside a file or between files. Parquet can also protect against swapping full 
+files - for example, replacement of a file with an old version, or replacement of one table 
+partition with another. AADs are built to reflects the identity of a file and of the modules 
+inside the file. 
 
-Parquet constructs a module AAD from two components: an optional AAD_Prefix - a string provided 
-by the user for the file, and an AAD_Suffix, built internally for each GCM-encrypted module 
+Parquet constructs a module AAD from two components: an optional AAD prefix - a string provided 
+by the user for the file, and an AAD suffix, built internally for each GCM-encrypted module 
 inside the file. The AAD prefix should reflect the target identity that helps to detect file 
-swapping (simple example - table name with a date and partition, e.g., "employees_23_05_2018.part0"). 
+swapping (a simple example - table name with a date and partition, e.g. "employees_23May2018.part0"). 
 The AAD suffix reflects the internal identity of modules inside the file, which for example 
 prevents replacement of column pages in row group 0 by pages from the same column in row 
-group 1 (when columns are encrypted with the CGM cipher). The module AAD is a direct concatenation 
-of the prefix and suffix parts.
+group 1. The module AAD is a direct concatenation of the prefix and suffix parts. 
 
-#### 4.4.1 AAD_Prefix
-A file writer passes an optional AAD_Prefix string upon file creation, that allows to differentiate 
-it from other files. The reader should know this string apriori, or should be able to 
-retrieve and verify it, using a convention accepted in the organization. An optional `aad_metadata` 
-byte array can be specified in a file - to help a reader retrieve the AAD 
-prefix string used for file enciphering. The aad_metadata  field can be empty, since readers might 
-know apriori a right AAD_Prefix for each file. Alternatively, the aad_metadata  can contain hints 
-that help readers to get the right AAD prefix. Yet another option is to keep the AAD_Prefix itself 
-inside the aad_metadata field – in that case, the readers must be able to verify it independently, 
-since this field is not protected in a storage, and can be changed or filled by an attacker.
+#### 4.4.1 AAD prefix
+File swapping can be prevented by an AAD prefix string, that uniquely identifies the file and 
+allows to differentiate it e.g. from older versions of the file or from other partition files in the same 
+data set (table). This string is optionally passed by a writer upon file creation. If provided,
+the AAD prefix is stored in an `aad_prefix` field in the file, and is made available to the readers. 
+This field is not encrypted. If a user is concerned about keeping the file identity inside the file, 
+the writer code can explicitly request Parquet not to store the AAD prefix. Then the aad_prefix field 
+will be empty, AAD prefixes must be fully managed by the caller code and supplied explictly to Parquet 
+readers for each file.
 
-Here go a number of examples of AAD_Prefix creation and management in an organization:
+The protection against swapping full files is optional. It is not enabled by default because 
+it requires the writers to generate and supply an AAD prefix.
 
-   * An organization uses a convention is to build an AAD_Prefix from the table name/ID, date and 
-   a partition . For example, a writer of a May 23 version of an employee table will use 
-   "employees_23_05_2018.partN" as an AAD prefix (and as the file name) for each table file. 
-   The reader that needs to process the employee table, a May 23 version, knows the AAD must be 
-   "employees_23_05_2018.partN" 
-   in each corresponding table file. This approach doesn’t use the aad_metadata field.
-   * A similar convention, but the date format (and other details) can be variable. Then the 
-   format is kept in the aad_metadata field, for example as "MM_DD_YY.partitionN". The reader will 
-   know the AAD prefixes are "employees_05_23_18.partition0" etc.
-   * The aad_metadata field contains the AAD prefix itself. In this case, the reader must be able 
-   to verify its validity. For example, if the AAD prefix stored in aad_metadata is "employees_23May2018.part0001", 
-   the reader should know it is fine, but if the aad_metadata stores "employees_23May2016.part0001" - 
-   the version is wrong.
-   * The AAD_Prefix is generated as a random string. Together with a file name, it is sent by the file 
-   writer to a trusted metadata service, deployed in the organization. The reader, that needs to parse a 
-   certain version of a table, authenticates the service and gets the list of table files and their AAD prefixes.
-   * Frameworks above Parquet create table integrity tools that manage the file AAD prefixes. For example, 
-   a framework table writer can create a signature file that contains the table ID, file list/number and 
-   optional AAD prefixes. The AAD prefixes can be either explicit (eg random) or derived from 
-   the table ID and file name/number. The signature file is signed with a secret key (private or symmetric), and 
-   stored next to the table files, or in another location known to the readers. The 
-   readers get the public or symmetric key, verify the signature file and get the AAD prefixes for the table files 
-   (potentially, along with file names/paths).
+A reader of a file created with an AAD prefix, should be able to verify the prefix (file identity)
+by comparing it with e.g. the target table name, using a convention accepted in the organization.
+Readers of data sets, comprised of multiple partition files, can verify data set integrity by 
+checking the number of files and the AAD prefix of each file. For example, a reader that needs to 
+process the employee table, a May 23 version, knows the AAD must be "employees_23May2018.partN" in 
+each corresponding table file. If a file AAD prefix is "employees_23May2018.part0", the reader 
+will know it is fine, but if the prefix is "employees_23May2016.part0" or "contractors_23May2018.part0" - 
+the file is wrong. The reader should also know the number of table partitions and verify availability 
+of all partition files (prefixes) from 0 to N-1.
+
    
-#### 4.4.2 AAD_Suffix
-File integrity can be disrupted by module swapping inside the file - such as replacement 
-of column pages in row group 0 by pages from the same column in row group 1. Also, if an encryption 
-key is re-used in multiple files and the user has not provided a unique AAD_Prefix for each file – an 
-attacker can swap modules between the files. While these attacks succeed under rare conditions and in 
-any case don't harm data confidentiality - they can be prevented by using an internally generated file 
-and module identity as a part of GCM AAD formation in Parquet. 
+#### 4.4.2 AAD suffix
+The suffix part of a module AAD protects against module swapping inside a file. It also protects against 
+module swapping between files  - in situations when an encryption key is re-used in multiple files and the 
+user has not provided a unique AAD prefix for each file. 
 
-The AAD_Suffix is built by direct concatenation of the following parts: 
-1.	[All modules] random byte array (file identifier): variable length
-2.	[All modules] module type: 1 byte
-3.	[All modules except footer] row group ordinal: 2 byte short (little endian)
-4.	[All modules except footer] column ordinal: 2 byte short (little endian)
-5.	[Data page and header only]: page ordinal: 2 byte short (little endian)
+Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenation of the following parts: 
+1.	[All modules] internal file identifier - a random byte array generated for each file (implementation-defined length)
+2.	[All modules] module type (1 byte)
+3.	[All modules except footer] row group ordinal (2 byte short, little endian)
+4.	[All modules except footer] column ordinal (2 byte short, little endian)
+5.	[Data page and header only] page ordinal (2 byte short, little endian)
 
 The following module types are defined:  
 
@@ -281,57 +248,33 @@ The following module types are defined:
    * OffsetIndex (7)
 
 
-|                      |File ID     | Module type | Row group ordinal | Column ordinal | Page ordinal|
-|----------------------|------------|-------------|-------------------|----------------|-------------|
-| Footer               |     V      |    V (0)    |         X         |       X        |      X      |
-| ColumnMetaData       |     V      |    V (1)    |         V         |       V        |      X      |
-| Data Page            |     V      |    V (2)    |         V         |       V        |      V      |
-| Dictionary Page      |     V      |    V (3)    |         V         |       V        |      X      |
-| Data PageHeader      |     V      |    V (4)    |         V         |       V        |      V      |
-| Dictionary PageHeader|     V      |    V (5)    |         V         |       V        |      X      |
-| ColumnIndex          |     V      |    V (6)    |         V         |       V        |      X      |
-| OffsetIndex          |     V      |    V (7)    |         V         |       V        |      X      |
+|                      | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal|
+|----------------------|------------------|-------------|-------------------|----------------|-------------|
+| Footer               |       yes        |   yes (0)   |        no         |      no        |     no      |
+| ColumnMetaData       |       yes        |   yes (1)   |        yes        |      yes       |     no      |
+| Data Page            |       yes        |   yes (2)   |        yes        |      yes       |     yes     |
+| Dictionary Page      |       yes        |   yes (3)   |        yes        |      yes       |     no      |
+| Data PageHeader      |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
+| Dictionary PageHeader|       yes        |   yes (5)   |        yes        |      yes       |     no      |
+| ColumnIndex          |       yes        |   yes (6)   |        yes        |      yes       |     no      |
+| OffsetIndex          |       yes        |   yes (7)   |        yes        |      yes       |     no      |
 
 
 
-## 5. File Format
-Parquet file encryption algorithm is specified in a union of the following Thrift structures:
+## 5 File Format
 
-```c
-struct AesGcmV1 {
-  /** Retrieval metadata of AAD prefix **/
-  1: optional binary aad_metadata
-
-  /** Unique file identifier part of AAD suffix **/
-  2: optional binary aad_file_unique
-}
-
-struct AesGcmCtrV1 {
-  /** Retrieval metadata of AAD prefix **/
-  1: optional binary aad_metadata
-
-  /** Unique file identifier part of AAD suffix **/
-  2: optional binary aad_file_unique
-}
-
-union EncryptionAlgorithm {
-  1: AesGcmV1 AES_GCM_V1
-  2: AesGcmCtrV1 AES_GCM_CTR_V1
-}
-```
- 
-
-The Thrift modules are encrypted after serialization, using the GCM cipher. For each module, the encryption 
-buffer is comprised of a nonce, ciphertext and tag, described in the Algorithms section. The column pages 
-(data and dictionary) are encrypted after compression. With the AES_GCM_V1 algorithm, a page encryption 
-buffer is comprised of a nonce, ciphertext and tag. The length of the encryption buffer 
-(a 4-byte little endian) is written to the output stream, followed by the buffer itself.
+### 5.1 Encrypted module serialization
+The Thrift modules are encrypted after serialization, using the GCM cipher. With the AES_GCM_V1 algorithm, 
+the column pages are also encrypted with AES GCM, after compression. For each module, the GCM encryption 
+buffer is comprised of a nonce, ciphertext and tag, described in the Algorithms section. The length of 
+the encryption buffer (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
 |length (4 bytes) | nonce (12 bytes) | ciphertext (length-28 bytes) | tag (16 bytes) |
 |-----------------|------------------|------------------------------|----------------|
 
 
-With the AES_GCM_CTR_V1 algorithm, a page encryption buffer is comprised of a nonce and ciphertext, 
+With the AES_GCM_CTR_V1 algorithm, the column pages are encrypted with AES CTR, after page compression.
+For each page, the CTR encryption buffer is comprised of a nonce and ciphertext, 
 described in the Algorithms section. The length of the encryption buffer 
 (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
@@ -339,7 +282,41 @@ described in the Algorithms section. The length of the encryption buffer
 |-----------------|------------------|------------------------------|
 
 
-A `crypto_meta_data` field is set in each ColumnChunk in the encrypted columns. ColumnCryptoMetaData 
+### 5.2 Crypto structures
+Parquet file encryption algorithm is specified in a union of the following Thrift structures:
+
+```c
+struct AesGcmV1 {
+  /** AAD prefix **/
+  1: optional binary aad_prefix
+
+  /** Unique file identifier part of AAD suffix **/
+  2: optional binary aad_file_unique
+  
+  /** In files encrypted with AAD prefix without storing it,
+   * readers must supply the prefix **/
+  3: optional bool supply_aad_prefix
+}
+
+struct AesGcmCtrV1 {
+  /** AAD prefix **/
+  1: optional binary aad_prefix
+
+  /** Unique file identifier part of AAD suffix **/
+  2: optional binary aad_file_unique
+  
+  /** In files encrypted with AAD prefix without storing it,
+   * readers must supply the prefix **/
+  3: optional bool supply_aad_prefix
+}
+
+union EncryptionAlgorithm {
+  1: AesGcmV1 AES_GCM_V1
+  2: AesGcmCtrV1 AES_GCM_CTR_V1
+}
+```
+
+A `crypto_metadata` field is set in each ColumnChunk in the encrypted columns. ColumnCryptoMetaData 
 is a union - the actual structure is chosen depending on whether the column is encrypted with the 
 footer key, or with a column-specific key. For the latter, a key metadata can be specified.
 
@@ -351,8 +328,8 @@ struct EncryptionWithColumnKey {
   /** Column path in schema **/
   1: required list<string> path_in_schema
   
-  /** Retrieval metadata of the column-specific key **/
-  2: optional binary column_key_metadata
+  /** Retrieval metadata of column encryption key **/
+  2: optional binary key_metadata
 }
 
 union ColumnCryptoMetaData {
@@ -363,11 +340,11 @@ union ColumnCryptoMetaData {
 struct ColumnChunk {
 ...
   /** Crypto metadata of encrypted columns **/
-  8: optional ColumnCryptoMetaData crypto_meta_data
+  8: optional ColumnCryptoMetaData crypto_metadata
 }
 ```
 
-The row group ordinal, required for AAD_Suffix calculation, is set in the RowGroup structure:
+The row group ordinal, required for AAD suffix calculation, is set in the RowGroup structure:
 
 ```c
 struct RowGroup {
@@ -377,18 +354,19 @@ struct RowGroup {
 }
 ```
 
-### 5.1 Protection of column metadata
+### 5.3 Protection of sensitive metadata
 The Parquet file footer, and its nested structures, contain sensitive information - ranging 
 from a secret data (column statistics) to other information that can be exploited by an 
 attacker (e.g. schema, num_values, key_value_metadata, encoding 
-and crypto_meta_data). This information is automatically protected when the footer and 
+and crypto_metadata). This information is automatically protected when the footer and 
 secret columns are encrypted with the same key. In other cases - when column(s) and the 
 footer are encrypted with different keys; or column(s) are encrypted and the footer is not, 
 an extra measure is required to protect the column-specific information in the file footer. 
 In these cases, the `ColumnMetaData` structures are Thrift-serialized separately and encrypted 
- with the AES GCM cipher and a column-specific key, thus protecting the column stats and 
- other metadata. The encryption buffer is kept in an `optional binary encrypted_column_metadata` 
- field in the `ColumnChunk`.
+with a column-specific key, thus protecting the column stats and 
+other metadata. The column metadata module is encrypted with the GCM cipher, serialized 
+according to the section 5.1 instructions and stored in an `optional binary encrypted_column_metadata` 
+field in the `ColumnChunk`.
 
 ```c
 struct ColumnChunk {
@@ -397,24 +375,26 @@ struct ColumnChunk {
   /** Column metadata for this chunk.. **/
   3: optional ColumnMetaData meta_data
 ..
-
+  /** Crypto metadata of encrypted columns **/
+  8: optional ColumnCryptoMetaData crypto_metadata
+  
   /** Encrypted column metadata for this chunk **/
   9: optional binary encrypted_column_metadata
 }
 ```
 
 
-### 5.2 Encrypted footer mode
+### 5.4 Encrypted footer mode
 In files with sensitive column data, a good security practice is to encrypt not only the 
 secret columns, but also the file footer metadata. This hides the file schema, 
 number of rows, key-value properties, column sort order, names of the encrypted columns  
 and metadata of the column encryption keys. 
 
-The columns encrypted with the same key as the footer leave the column metadata at the original 
+The columns encrypted with the same key as the footer must leave the column metadata at the original 
 location, `optional ColumnMetaData meta_data` in the `ColumnChunk` structure.  
 This field is not set for columns encrypted with a column-specific key - instead, the `ColumnMetaData`
 is Thrift-serialized, encrypted with the column key and written to the `encrypted_column_metadata` 
-field in the `ColumnChunk` structure, as described in the section 5.1.
+field in the `ColumnChunk` structure, as described in the section 5.3.
 
 A Thrift-serialized `FileCryptoMetaData` structure is written before the encrypted footer. 
 It contains information on the file encryption algorithm and on the footer key metadata. Then 
@@ -430,24 +410,22 @@ bytes) that they can’t parse this file.
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
   /** 
-   * Encryption algorithm. Note that this field is only used for files
-   * with encrypted footer. Files with plaintext footer store the algorithm id
+   * Encryption algorithm. This field is only used for files
+   * with encrypted footer. Files with plaintext footer store algorithm id
    * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
     
   /** Retrieval metadata of key used for encryption of footer, 
    *  and (possibly) columns **/
-  2: optional binary footer_key_metadata
+  2: optional binary key_metadata
 }
 ```
 
-<!-- 
  ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionEF.jpg)
-   -->
  
  
-### 5.3 Plaintext footer mode
+### 5.5 Plaintext footer mode
 This mode allows legacy Parquet versions (released before the encryption support) to access 
 unencrypted columns in encrypted files - at a price of leaving certain metadata fields 
 unprotected in these files. 
@@ -465,16 +443,16 @@ structure. Again, using legacy Parquet readers for encrypted files is a temporar
 In the plaintext footer mode, the `optional ColumnMetaData meta_data` is set in the `ColumnChunk`
 structure for all columns, but is stripped of the statistics for the sensitive (encrypted) 
 columns. These statistics are available for new readers with the column key - they decrypt 
-the `encrypted_column_metadata` field, described in the section 5.1, and parse it to get statistics 
+the `encrypted_column_metadata` field, described in the section 5.3, and parse it to get statistics 
 and all other column metadata values. The legacy readers are not aware of the encrypted metadata field; 
-they parse the regular (plaintext) field as usual. While they can't read the data of the encrypted 
-columns, they read the metadata to extract the offset and size of the column data - required for 
-input vectorization (see the section 5.4).
+they parse the regular (plaintext) field as usual. While they can't read the data of encrypted 
+columns, they read their metadata to extract the offset and size of encrypted column data, 
+required for column chunk vectorization.
 
-The plaintext footer can be signed with a footer key in order to prevent tampering with the 
+The plaintext footer is signed in order to prevent tampering with the 
 `FileMetaData` contents. The footer signing is done by encrypting the serialized `FileMetaData` 
 structure with the 
-AES GCM algorithm - using the footer key, and an AAD constructed according to the instructions 
+AES GCM algorithm - using a footer signing key, and an AAD constructed according to the instructions 
 of the section 4.4. Only the nonce and GCM tag are stored in the file – as a 28-byte 
 fixed-length array, written right after  the footer itself. The ciphertext is not stored, 
 because it is not required for footer integrity verification by readers.
@@ -489,74 +467,39 @@ The plaintext footer mode sets the following fields in the the FileMetaData stru
 struct FileMetaData {
 ...
   /** 
-   * Encryption algorithm. Note that this field is set only in encrypted files
-   * with plaintext footer. Files with encrypted footer store the algorithm id
+   * Encryption algorithm. This field is set only in encrypted files
+   * with plaintext footer. Files with encrypted footer store algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
 
   /** 
-   * Set only for encrypted files with a plaintext footer. 
-   * true if footer signature is written in the file. 
-   */
-  9: optional bool signed_footer
-
-  /** 
    * Retrieval metadata of key used for signing the footer. 
-   * Set only for encrypted files with a plaintext and signed footer. 
+   * Used only in encrypted files with plaintext footer. 
    */ 
-  10: optional binary footer_signing_key_metadata
+  9: optional binary footer_signing_key_metadata
 }
 ```
  
 The `FileMetaData` structure is Thrift-serialized and written to the output stream.
-
-The plaintext footer and an optional signature are followed by a 4-byte little endian integer 
-that contains either the footer length - or a combined length of the footer and its 28-byte 
-signature, if the footer is signed. A final magic string, "PAR1", is written at the end of the 
+The 28-byte footer signature is written after the plaintext footer, followed by a 4-byte little endian integer 
+that contains the combined length of the footer and its signature. A final magic string, 
+"PAR1", is written at the end of the 
 file. The same magic string is written at the beginning of the file (offset 0). The magic bytes 
 for plaintext footer mode are ‘PAR1’ to allow legacy readers to read projections of the file 
 that do not include encrypted columns.
 
-<!-- 
  ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionPF.jpg)
-   -->
-
- 
-### 5.4 New fields for vectorized readers
-Apache Spark and other vectorized readers slice a file by using information on the offset 
-and size of each row group. In the legacy readers, this is done by running over a list of 
-all column chunks in a row group, reading the relevant information from the column metadata, 
-adding up the size values and picking the offset of the first column as the row group offset. 
-However, vectorization needs only a row group metadata, and not the metadata of individual 
-columns. Also, in files written in an encrypted footer mode, the column metadata is not 
-available to readers without the column key. Therefore, two new fields are added to the 
-`RowGroup` structure - `file_offset` and `total_compressed_size` that are set upon file writing, 
-and allow vectorized readers to query a file even if keys to certain columns are not 
-available ('hidden columns'). Naturally, the query itself should not try to access the 
-hidden column data.
-
-```c
-struct RowGroup {
-...
-  /** Byte offset from beginning of file to first page (data or dictionary)
-   * in this row group **/
-  5: optional i64 file_offset
-
-  /** Total byte size of all compressed (and potentially encrypted) column data 
-   *  in this row group **/
-  6: optional i64 total_compressed_size
-}
-```
 
 ## 6. Encryption Overhead
 The size overhead of Parquet modular encryption is negligible, since most of the encryption 
 operations are performed on pages (the minimal unit of Parquet data storage and compression). 
-The overhead order of magnitude is adding 1 byte per each ~30,000 bytes of original compressed 
-data.
+The overhead order of magnitude is adding 1 byte per each ~30,000 bytes of original  
+data - calculated by comparing the page encryption overhead (nonce + tag + length = 32 bytes) 
+to the default page size (1 MB). This is a rough estimation, and can change with the encryption
+algorithm (no 16-byte tag in AES_GCM_CTR_V1) and with page configuration or data encoding/compression.
 
 The throughput overhead of Parquet modular encryption depends on whether AES enciphering is 
 done in software or hardware. In both cases, performing encryption on full pages (~1MB buffers) 
 instead of on much smaller individual data values causes AES to work at its maximal speed. 
-Preliminary tests show Parquet modular encryption throughput overhead to be up to a few 
-percents in Java 9 workloads.
+
