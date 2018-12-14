@@ -97,7 +97,7 @@ or C++ programs (via EVP-* functions in OpenSSL). Parquet supports all standard 
 Initially, two algorithms have been implemented, one based on a GCM mode of AES, and the 
 other on a combination of GCM and CTR modes.
 
-### 4.1 AES modes
+### 4.1 AES modes used in Parquet
 
 #### 4.1.1 AES GCM
 AES GCM is an authenticated encryption. Besides the data confidentiality (encryption), it 
@@ -114,8 +114,8 @@ AES CTR is a regular (not authenticated) cipher. It is faster than the GCM ciphe
 doesn’t perform integrity verification and doesn’t calculate an authentication tag. 
 Actually, GCM is a combination of the CTR cipher and an 
 authentication layer called GMAC. For applications running without AES acceleration 
-and willing to compromise on content verification, CTR cipher can provide a boost in 
-encryption/decryption throughput.
+(e.g. on Java versions before Java 9) and willing to compromise on content verification, 
+CTR cipher can provide a boost in encryption/decryption throughput.
 
 
 #### 4.1.3 Nonces and IVs
@@ -207,11 +207,11 @@ data set (table). This string is optionally passed by a writer upon file creatio
 the AAD prefix is stored in an `aad_prefix` field in the file, and is made available to the readers. 
 This field is not encrypted. If a user is concerned about keeping the file identity inside the file, 
 the writer code can explicitly request Parquet not to store the AAD prefix. Then the aad_prefix field 
-will be empty, AAD prefixes must be fully managed by the caller code and supplied explictly to Parquet 
+will be empty; AAD prefixes must be fully managed by the caller code and supplied explictly to Parquet 
 readers for each file.
 
 The protection against swapping full files is optional. It is not enabled by default because 
-it requires the writers to generate and supply an AAD prefix.
+it requires the writers to generate and pass an AAD prefix.
 
 A reader of a file created with an AAD prefix, should be able to verify the prefix (file identity)
 by comparing it with e.g. the target table name, using a convention accepted in the organization.
@@ -227,7 +227,7 @@ of all partition files (prefixes) from 0 to N-1.
 #### 4.4.2 AAD suffix
 The suffix part of a module AAD protects against module swapping inside a file. It also protects against 
 module swapping between files  - in situations when an encryption key is re-used in multiple files and the 
-user has not provided a unique AAD prefix for each file. 
+writer has not provided a unique AAD prefix for each file. 
 
 Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenation of the following parts: 
 1.	[All modules] internal file identifier - a random byte array generated for each file (implementation-defined length)
@@ -264,8 +264,8 @@ The following module types are defined:
 ## 5 File Format
 
 ### 5.1 Encrypted module serialization
-The Thrift modules are encrypted after serialization, using the GCM cipher. With the AES_GCM_V1 algorithm, 
-the column pages are also encrypted with AES GCM, after compression. For each module, the GCM encryption 
+The Thrift modules are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
+the column pages (data modules) are also encrypted with AES GCM. For each module, the GCM encryption 
 buffer is comprised of a nonce, ciphertext and tag, described in the Algorithms section. The length of 
 the encryption buffer (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
@@ -273,7 +273,7 @@ the encryption buffer (a 4-byte little endian) is written to the output stream, 
 |-----------------|------------------|------------------------------|----------------|
 
 
-With the AES_GCM_CTR_V1 algorithm, the column pages are encrypted with AES CTR, after page compression.
+In the AES_GCM_CTR_V1 algorithm, the column pages are encrypted with AES CTR.
 For each page, the CTR encryption buffer is comprised of a nonce and ciphertext, 
 described in the Algorithms section. The length of the encryption buffer 
 (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
@@ -387,11 +387,11 @@ struct ColumnChunk {
 ### 5.4 Encrypted footer mode
 In files with sensitive column data, a good security practice is to encrypt not only the 
 secret columns, but also the file footer metadata. This hides the file schema, 
-number of rows, key-value properties, column sort order, names of the encrypted columns  
+number of rows, key-value properties, column sort order, names of the encrypted columns 
 and metadata of the column encryption keys. 
 
 The columns encrypted with the same key as the footer must leave the column metadata at the original 
-location, `optional ColumnMetaData meta_data` in the `ColumnChunk` structure.  
+location, `optional ColumnMetaData meta_data` in the `ColumnChunk` structure. 
 This field is not set for columns encrypted with a column-specific key - instead, the `ColumnMetaData`
 is Thrift-serialized, encrypted with the column key and written to the `encrypted_column_metadata` 
 field in the `ColumnChunk` structure, as described in the section 5.3.
@@ -494,7 +494,7 @@ that do not include encrypted columns.
 ## 6. Encryption Overhead
 The size overhead of Parquet modular encryption is negligible, since most of the encryption 
 operations are performed on pages (the minimal unit of Parquet data storage and compression). 
-The overhead order of magnitude is adding 1 byte per each ~30,000 bytes of original  
+The overhead order of magnitude is adding 1 byte per each ~30,000 bytes of original 
 data - calculated by comparing the page encryption overhead (nonce + tag + length = 32 bytes) 
 to the default page size (1 MB). This is a rough estimation, and can change with the encryption
 algorithm (no 16-byte tag in AES_GCM_CTR_V1) and with page configuration or data encoding/compression.
