@@ -217,7 +217,8 @@ A reader of a file created with an AAD prefix, should be able to verify the pref
 by comparing it with e.g. the target table name, using a convention accepted in the organization.
 Readers of data sets, comprised of multiple partition files, can verify data set integrity by 
 checking the number of files and the AAD prefix of each file. For example, a reader that needs to 
-process the employee table, a May 23 version, knows the AAD must be "employees_23May2018.partN" in 
+process the employee table, a May 23 version, knows (via the convention) that 
+the AAD prefix must be "employees_23May2018.partN" in 
 each corresponding table file. If a file AAD prefix is "employees_23May2018.part0", the reader 
 will know it is fine, but if the prefix is "employees_23May2016.part0" or "contractors_23May2018.part0" - 
 the file is wrong. The reader should also know the number of table partitions and verify availability 
@@ -316,9 +317,25 @@ union EncryptionAlgorithm {
 }
 ```
 
+If a writer provides an AAD prefix, it will be used for enciphering the file and stored in the 
+`aad_prefix` field. However, the writer can request Parquet not to store the prefix in the file. In 
+this case, the `aad_prefix` field will not be set, and the `supply_aad_prefix` field will be set 
+to _true_ to inform readers they must supply the AAD prefix for this file in order to be able to 
+decrypt it.
+
+The row group ordinal, required for AAD suffix calculation, is set in the RowGroup structure:
+
+```c
+struct RowGroup {
+...
+  /** Row group ordinal in the file **/
+  7: optional i16 ordinal
+}
+```
+
 A `crypto_metadata` field is set in each ColumnChunk in the encrypted columns. ColumnCryptoMetaData 
 is a union - the actual structure is chosen depending on whether the column is encrypted with the 
-footer key, or with a column-specific key. For the latter, a key metadata can be specified.
+footer encryption key, or with a column-specific key. For the latter, a key metadata can be specified.
 
 ```c
 struct EncryptionWithFooterKey {
@@ -344,15 +361,6 @@ struct ColumnChunk {
 }
 ```
 
-The row group ordinal, required for AAD suffix calculation, is set in the RowGroup structure:
-
-```c
-struct RowGroup {
-...
-  /** Row group ordinal in the file **/
-  7: optional i16 ordinal
-}
-```
 
 ### 5.3 Protection of sensitive metadata
 The Parquet file footer, and its nested structures, contain sensitive information - ranging 
@@ -422,7 +430,7 @@ struct FileCryptoMetaData {
 }
 ```
 
- ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionEF.jpg)
+ ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionEF.png)
  
  
 ### 5.5 Plaintext footer mode
@@ -489,7 +497,7 @@ file. The same magic string is written at the beginning of the file (offset 0). 
 for plaintext footer mode are ‘PAR1’ to allow legacy readers to read projections of the file 
 that do not include encrypted columns.
 
- ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionPF.jpg)
+ ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionPF.png)
 
 ## 6. Encryption Overhead
 The size overhead of Parquet modular encryption is negligible, since most of the encryption 

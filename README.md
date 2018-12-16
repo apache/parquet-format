@@ -221,10 +221,10 @@ file reference multiple parquet files.
 Parquet files, containing sensitive information, can be protected by the modular
 encryption mechanism, that encrypts and authenticates the file data and metadata - 
 while allowing for a regular Parquet functionality (columnar projection, 
-predicate pushdown, encoding and compression). The mechanism also enables column access 
-control, via support for encryption of different columns with different keys.
+predicate pushdown, encoding and compression). The mechanism supports encryption 
+of different columns with different keys.
 Each Parquet module (footer, page headers, pages, column indexes, column metadata) is 
-encrypted separately -making it possible to fetch and decrypt the footer, find the 
+encrypted separately - making it possible to fetch and decrypt the footer, find the 
 offset of required pages, fetch them and decrypt the data. 
 See [Encryption.md](Encryption.md) for details.
 
