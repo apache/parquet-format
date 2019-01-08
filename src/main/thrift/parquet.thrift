@@ -326,8 +326,15 @@ union LogicalType {
   4:  EnumType ENUM           // use ConvertedType ENUM
   5:  DecimalType DECIMAL     // use ConvertedType DECIMAL
   6:  DateType DATE           // use ConvertedType DATE
-  7:  TimeType TIME           // use ConvertedType TIME_MICROS or TIME_MILLIS
-  8:  TimestampType TIMESTAMP // use ConvertedType TIMESTAMP_MICROS or TIMESTAMP_MILLIS
+
+  // use ConvertedType TIME_MICROS for TIME(isAdjustedToUTC = true, unit = MICROS)
+  // use ConvertedType TIME_MILLIS for TIME(isAdjustedToUTC = true, unit = MILLIS)
+  7:  TimeType TIME
+
+  // use ConvertedType TIMESTAMP_MICROS for TIMESTAMP(isAdjustedToUTC = true, unit = MICROS)
+  // use ConvertedType TIMESTAMP_MILLIS for TIMESTAMP(isAdjustedToUTC = true, unit = MILLIS)
+  8:  TimestampType TIMESTAMP
+
   // 9: reserved for INTERVAL
   10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
   11: NullType UNKNOWN        // no compatible ConvertedType
