@@ -274,11 +274,13 @@ The sort order used for `TIME` is signed.
 
 #### Deprecated time ConvertedType
 
-`TIME_MILLIS` is the deprecated ConvertedType counterpart of `TIME` logical type
-with precision `MILLIS`. Like the logical type counterpart, it must annotate an `int32`
+`TIME_MILLIS` is the deprecated ConvertedType counterpart of a `TIME` logical
+type that is UTC normalized and has `MILLIS` precision. Like the logical type
+counterpart, it must annotate an `int32`.
 
-`TIME_MICROS` is the deprecated ConvertedType counterpart of `TIME` logical type
-with precision `MICROS`. Like the logical type counterpart, it must annotate an `int64`
+`TIME_MICROS` is the deprecated ConvertedType counterpart of a `TIME` logical
+type that is UTC normalized and has `MICROS` precision. Like the logical type
+counterpart, it must annotate an `int64`.
 
 *Backward compatibility:*
 
@@ -295,13 +297,31 @@ with precision `MICROS`. Like the logical type counterpart, it must annotate an 
         <th>ConvertedType</th>
     </tr>
     <tr>
-        <td rowspan="2" colspan="2">TimeType</td>
+        <td rowspan="6">TimeType</td>
+        <td rowspan="3">isAdjustedToUTC = true</td>
         <td>unit = MILLIS</td>
         <td>TIME_MILLIS</td>
     </tr>
     <tr>
         <td>unit = MICROS</td>
         <td>TIME_MICROS</td>
+    </tr>
+    <tr>
+        <td>unit = NANOS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td rowspan="3">isAdjustedToUTC = false</td>
+        <td>unit = MILLIS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>unit = MICROS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>unit = NANOS</td>
+        <td>-</td>
     </tr>
 </table>
 
@@ -329,11 +349,13 @@ The sort order used for `TIMESTAMP` is signed.
 
 #### Deprecated timestamp ConvertedType
 
-`TIMESTAMP_MILLIS` is the deprecated ConvertedType counterpart of `TIMESTAMP` logical type
-with precision `MILLIS`. Like the logical type counterpart, it must annotate an `int64`
+`TIMESTAMP_MILLIS` is the deprecated ConvertedType counterpart of a `TIMESTAMP`
+logical type that is UTC normalized and has `MILLIS` precision. Like the logical
+type counterpart, it must annotate an `int64`.
 
-`TIMESTAMP_MICROS` is the deprecated ConvertedType counterpart of `TIMESTAMP` logical type
-with precision `MICROS`. Like the logical type counterpart, it must annotate an `int64`
+`TIMESTAMP_MICROS` is the deprecated ConvertedType counterpart of a `TIMESTAMP`
+logical type that is UTC normalized and has `MICROS` precision. Like the logical
+type counterpart, it must annotate an `int64`.
 
 *Backward compatibility:*
 
@@ -350,13 +372,31 @@ with precision `MICROS`. Like the logical type counterpart, it must annotate an 
         <th>ConvertedType</th>
     </tr>
     <tr>
-        <td rowspan="2" colspan="2">TimestampType</td>
+        <td rowspan="6">TimestampType</td>
+        <td rowspan="3">isAdjustedToUTC = true</td>
         <td>unit = MILLIS</td>
         <td>TIMESTAMP_MILLIS</td>
     </tr>
     <tr>
         <td>unit = MICROS</td>
         <td>TIMESTAMP_MICROS</td>
+    </tr>
+    <tr>
+        <td>unit = NANOS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td rowspan="3">isAdjustedToUTC = false</td>
+        <td>unit = MILLIS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>unit = MICROS</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>unit = NANOS</td>
+        <td>-</td>
     </tr>
 </table>
 
