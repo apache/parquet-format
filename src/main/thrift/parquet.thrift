@@ -604,8 +604,13 @@ struct PageHeader {
   /** Compressed page size in bytes (not including this header) **/
   3: required i32 compressed_page_size
 
-  /** 32bit crc for the data below. This allows for disabling checksumming in HDFS
-   *  if only a few pages needs to be read
+  /** The 32bit CRC for the page, to be be calculated as follows:
+   * - Using the standard CRC32 algorithm
+   * - On the data only, i.e. this header should not be included
+   * - On the compressed version of the data (unless no compression scheme is
+   *   specified for the page)
+   * If enabled, this allows for disabling checksumming in HDFS if only a few
+   * pages need to be read.
    **/
   4: optional i32 crc
 
