@@ -195,7 +195,9 @@ the reasoning behind adding these to the format.
 
 ## Checksumming
 Data pages can be individually checksummed.  This allows disabling of checksums at the
-HDFS file level, to better support single row lookups.
+HDFS file level, to better support single row lookups. Data page checksums are calculated
+using the standard CRC32 algorithm on the compressed data of a page (not including the
+page header itself).
 
 ## Error recovery
 If the file metadata is corrupt, the file is lost.  If the column metadata is corrupt,
