@@ -155,39 +155,40 @@ Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov
 
-Delta encoding consists of a header followed by blocks of delta encoded values binary packed. Each block is made of miniblocks, each of them binary packed with its own bit width. When there are not enough values to encode a full block we pad with zeros (added to the frame of reference).
+Delta encoding consists of a header followed by blocks of delta encoded values binary packed. Each block is made of miniblocks, each of them binary packed with its own bit width.
+
 The header is defined as follows:
 ```
 <block size in values> <number of miniblocks in a block> <total value count> <first value>
 ```
- * the block size is a multiple of 128 stored as VLQ int
- * the miniblock count per block is a diviser of the block size stored as VLQ int the number of values in the miniblock is a multiple of 32.
- * the total value count is stored as a VLQ int
- * the first value is stored as a zigzag VLQ int
+ * the block size is a multiple of 128; it is stored as a ULEB128 int
+ * the miniblock count per block is a divisor of the block size such that their quotient, the number of values in a miniblock, is a multiple of 32; it is stored as a ULEB128 int
+ * the total value count is stored as a ULEB128 int
+ * the first value is stored as a zigzag ULEB128 int
 
 Each block contains
 ```
 <min delta> <list of bitwidths of miniblocks> <miniblocks>
 ```
- * the min delta is a VLQ int (we compute a minimum as we need positive integers for bit packing)
+ * the min delta is a zigzag ULEB128 int (we compute a minimum as we need positive integers for bit packing)
  * the bitwidth of each block is stored as a byte
  * each miniblock is a list of bit packed ints according to the bit width stored at the begining of the block
 
-Having multiple blocks allows us to escape values and restart from a new base value.
+To encode a block, we will:
 
-To encode each delta block, we will:
+1. Compute the differences between consecutive elements. For the first element in the block, use the last element in the previous block or, in the case of the first block, use the first value of the whole sequence, stored in the header.
 
-1. Compute the deltas
+2. Compute the frame of reference (the minimum of the deltas in the block). Subtract this min delta from all deltas in the block. This guarantees that all values are non-negative.
 
-2. Encode the first value as zigzag VLQ int
+3. Encode the frame of reference (min delta) as a zigzag ULEB128 int followed by the bit widths of the miniblocks and the delta values (minus the min delta) bit packed per miniblock.
 
-3. For each block, compute the frame of reference(minimum of the deltas) for the deltas. This guarantees
-all deltas are positive.
+Having multiple blocks allows us to adapt to changes in the data by changing the frame of reference (the min delta) which can result in smaller values after the subtraction which, again, means we can store them with a lower bit width.
 
-4. encode the frame of reference delta as VLQ int followed by the delta values (minus the minimum) encoded as bit packed per miniblock.
+If there are not enough values to fill the last miniblock, we pad the miniblock so that its length is always the number of values in a full miniblock multiplied by the bit width. The values of the padding bits are unspecified.
 
-Steps 2 and 3 are skipped if the number of values in the block is 1.
+If, in the last block, less than ```<number of miniblocks in a block>``` miniblocks are needed to store the values, the bytes storing the bit widths of the unneeded miniblocks are still present, but their values are unspecified. There are no additional padding bytes for the miniblock bodies though, as if their bit widths were 0. The reader knows when to stop reading by keeping track of the number of values read.
 
+The following examples use 8 as the block size to keep the examples short, but in real cases it would be invalid.
 #### Example 1
 1, 2, 3, 4, 5
 
@@ -226,7 +227,7 @@ The encoded data is
 
 #### Characteristics
 This encoding is similar to the [RLE/bit-packing](#RLE) encoding. However the [RLE/bit-packing](#RLE) encoding is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
-The delta encoding algorithm described above stores a bit width per mini block and is less sensitive to variations in the size of encoded integers. It is also somewhat doing RLE encoding as a block containing all the same values will be bit packed to a zero bit width thus being only a header.
+The delta encoding algorithm described above stores a bit width per miniblock and is less sensitive to variations in the size of encoded integers. It is also somewhat doing RLE encoding as a block containing all the same values will be bit packed to a zero bit width thus being only a header.
 
 ### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
 
