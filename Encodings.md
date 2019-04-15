@@ -153,7 +153,9 @@ repetition and definition levels.
 ### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
 
-This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov
+This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov.
+
+In delta encoding we make use of variable length integers for storing various numbers (not the deltas themselves). For unsigned values, we use ULEB128, which is the unsigned version of LEB128 ([https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128]). For signed values, we use zigzag encoding ([https://developers.google.com/protocol-buffers/docs/encoding#signed-integers]) to map negative values to positive ones and apply ULEB128 on the result.
 
 Delta encoding consists of a header followed by blocks of delta encoded values binary packed. Each block is made of miniblocks, each of them binary packed with its own bit width.
 
