@@ -186,9 +186,9 @@ To encode a block, we will:
 
 Having multiple blocks allows us to adapt to changes in the data by changing the frame of reference (the min delta) which can result in smaller values after the subtraction which, again, means we can store them with a lower bit width.
 
-If there are not enough values to fill the last miniblock, we pad the miniblock so that its length is always the number of values in a full miniblock multiplied by the bit width. The values of the padding bits are unspecified.
+If there are not enough values to fill the last miniblock, we pad the miniblock so that its length is always the number of values in a full miniblock multiplied by the bit width. The values of the padding bits should be zero, but readers must accept paddings consisting of arbitrary bits as well.
 
-If, in the last block, less than ```<number of miniblocks in a block>``` miniblocks are needed to store the values, the bytes storing the bit widths of the unneeded miniblocks are still present, but their values are unspecified. There are no additional padding bytes for the miniblock bodies though, as if their bit widths were 0. The reader knows when to stop reading by keeping track of the number of values read.
+If, in the last block, less than ```<number of miniblocks in a block>``` miniblocks are needed to store the values, the bytes storing the bit widths of the unneeded miniblocks are still present, their value should be zero, but readers must accept arbitrary values as well. There are no additional padding bytes for the miniblock bodies though, as if their bit widths were 0 (regardless of the actual byte values). The reader knows when to stop reading by keeping track of the number of values read.
 
 The following examples use 8 as the block size to keep the examples short, but in real cases it would be invalid.
 #### Example 1
