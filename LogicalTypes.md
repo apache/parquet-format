@@ -327,23 +327,118 @@ counterpart, it must annotate an `int64`.
 
 ### TIMESTAMP
 
-`TIMESTAMP` is used for a combined logical date and time type, with
-millisecond or microsecond precision. The type has two type parameters:
-UTC adjustment (`true` or `false`) and precision (`MILLIS` or `MICROS`, `NANOS`).
+In data annotated with the `TIMESTAMP` logical type, each value is a single
+`int64` number that can be decoded into year, month, day, hour, minute, second
+and subsecond fields using calculations detailed below. Please note that a value
+defined this way does not necessarily correspond to a single instant on the
+time-line and such interpertations are allowed on purpose.
 
-`TIMESTAMP` with precision `MILLIS` is used for millisecond precision.
-It must annotate an `int64` that stores the number of
-milliseconds from the Unix epoch, 00:00:00.000 on 1 January 1970, UTC.
+The `TIMESTAMP` type has two type parameters:
+- `isAdjustedToUTC` must be either `true` or `false`.
+- `precision` must be one of `MILLIS`, `MICROS` or `NANOS`. This list is subject
+  to potential expansion in the future. Upon reading, unknown `precision`-s must
+  be handled as unsupported features (rather than as errors in the data files).
 
-`TIMESTAMP` with precision `MICROS` is used for microsecond precision.
-It must annotate an `int64` that stores the number of
-microseconds from the Unix epoch, 00:00:00.000000 on 1 January 1970, UTC.
+#### Instant semantics (timestamps normalized to UTC)
 
-`TIMESTAMP` with precision `NANOS` is used for nanosecond precision.
-It must annotate an `int64` that stores the number of
-nanoseconds from the Unix epoch, 00:00:00.000000000 on 1 January 1970, UTC.
-Valid values for nanosecond precision are between
-00:12:43 21 September 1677 UTC and 23:47:16 11 April 2262 UTC.
+A `TIMESTAMP` with `isAdjustedToUTC=true` is defined as the number of
+milliseconds, microseconds or nanoseconds (depending on the `precision`
+parameter being `MILLIS`, `MICROS` or `NANOS`, respectively) elapsed since the
+Unix epoch, 1970-01-01 00:00:00 UTC. Each such value unambiguously identifies a
+single instant on the time-line.
+
+For example, in a `TIMESTAMP(isAdjustedToUTC=true, precision=MILLIS)`, the
+number 172800000 corresponds to 1970-01-03 00:00:00 UTC, because it is equal to
+2 * 24 * 60 * 60 * 1000, therefore it is exactly two days from the reference
+point, the Unix epoch. In Java, this calculation can be achieved by calling
+`Instant.ofEpochMilli(172800000)`.
+
+As a slightly more complicated example, if one wants to store 1970-01-03
+00:00:00 (UTC+01:00) as a `TIMESTAMP(isAdjustedToUTC=true, precision=MILLIS)`,
+first the time zone offset has to be dealt with. By normalizing the timestamp to
+UTC, we calculate what time in UTC corresponds to the same instant: 1970-01-02
+23:00:00 UTC. This is 1 day and 23 hours after the epoch, therefore it can be
+encoded as the number (24 + 23) * 60 * 60 * 1000 = 169200000.
+
+Please note that time zone information gets lost in this process. Upon reading a
+value back, we can only reconstruct the instant, but not the original
+representation. In practice, such timestamps are typically displayed to users in
+their local time zones, therefore they may be displayed differently depending on
+the execution environment.
+
+#### Local semantics (timestamps not normalized to UTC)
+
+A `TIMESTAMP` with `isAdjustedToUTC=false` represents year, month, day, hour,
+minute, second and subsecond fields in a local timezone, _regadless of what
+specific time zone is considered local_. This means that such timestamps should
+always be displayed the same way, regardless of the local time zone in effect.
+On the other hand, without additional information such as an offset or
+time-zone, these values do not identify instants on the time-line unambigously,
+because the corresponding instants would depend on the local time zone.
+
+Using a single number to represent a local timestamp is a lot less intuitive
+than for instants. One must use a local timestamp as the reference point and
+calculate the elapsed time between the actual timestamp and the reference point.
+The problem is that the result may depend on the local time zone, for example
+because there may have been a daylight saving time change between the two
+timestamps.
+
+The solution to this problem is to use a simplification that makes the result
+easy to calculate and independent of the timezone. Treating every day as
+consisting of exactly 86400 seconds and ignoring DST changes altogether allows
+us to unambiguously represent a local timestamp as a difference from a reference
+local timestamp. We define the reference local timestamp to be 1970-01-01
+00:00:00 (note the lack of UTC at the end, as this is not an instant). This way
+the encoding of local timestamp values becomes very similar to the encoding of
+instant values. For example, in a `TIMESTAMP(isAdjustedToUTC=false,
+precision=MILLIS)`, the number 172800000 corresponds to 1970-01-03 00:00:00
+(note the lack of UTC at the end), because it is exactly two days from the
+reference point (172800000 = 2 * 24 * 60 * 60 * 1000).
+
+Another way to get to the same definition is to treat the local timestamp value
+_as if_ it were in UTC and store it as an instant. For example, if we treat the
+local timestamp 1970-01-03 00:00:00 _as if_ it were the instant 1970-01-03
+00:00:00 UTC, we can store it as 172800000. When reading 172800000 back, we can
+reconstruct the instant 1970-01-03 00:00:00 UTC and convert it to a local
+timestamp _as if_ we were in the UTC time zone, resulting in 1970-01-03
+00:00:00. In Java, this can be achieved by calling
+`LocalDateTime.ofEpochSecond(172800, 0, ZoneOffset.UTC)`.
+
+Please note that while from a practical point of view this second definition is
+equivalent to the first one, from a theoretical point of view only the first
+definition can be considered correct, the second one just "incidentally" leads
+to the same results. Nevertheless, this second definition is worth mentioning as
+well, because it is relatively widespread and it can lead to confusion,
+especially due to its usage of UTC in the calculations. One can stumble upon
+code, comments and specifications ambiguously stating that a timestamp "is
+stored in UTC". In some contexts, it means that it is _normalized_ to UTC and
+acts as an instant. In some other contexts though, it means the exact opposite,
+namely that the timestamp is stored _as if_ it were in UTC and acts as a
+local timestamp in reality.
+
+#### Common considerations
+
+Every possible `int64` number represents a valid timestamp, but depending on the
+precision, the corresponding year may be outside of the practical everyday
+limits and implementations may choose to only support a limited range.
+
+On the other hand, not every combination of year, month, day, hour, minute,
+second and subsecond values can be encoded into an `int64`. Most notably:
+
+- An arbitrary combination of timestamp fields can not be encoded as a single
+  number if the values for some of the fields are outside of their normal range
+  (where the "normal range" corresponds to everyday usage). For example, neither
+  of the following can be represented in a timestamp:
+  - hour = -1
+  - hour = 25
+  - minute = 61
+  - month = 13
+  - day = 29, month = 2, year = any non-leap year
+- Due to the range of the `int64` type, timestamps using the `NANOS` precision
+  can only represent values between 1677-09-21 00:12:43 and 2262-04-11 23:47:16.
+  Values outside of this range can not be represented with the `NANOS`
+  precision. (Other precisions have similar limits but those are outside of the
+  domain for practical everyday usage.)
 
 The sort order used for `TIMESTAMP` is signed.
 
