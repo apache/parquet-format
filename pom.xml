@@ -32,7 +32,7 @@
   <packaging>jar</packaging>
 
   <name>Apache Parquet Format</name>
-  <url>http://parquet.apache.org/</url>
+  <url>https://parquet.apache.org/</url>
   <description>Parquet is a columnar storage format that supports nested data. This provides all generated metadata code.</description>
 
   <scm>
@@ -47,7 +47,7 @@
          in dependency-reduced-pom.xml so that it passes the rat check. -->
     <license>
       <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
 
