@@ -52,7 +52,6 @@ import org.apache.parquet.format.event.TypedConsumer.StringConsumer;
  * Utility to read/write metadata
  * We use the TCompactProtocol to serialize metadata
  *
- * @author Julien Le Dem
  * @deprecated java code moved to the parquet-mr project: See org.apache.parquet:parquet-format-structures; Will be
  *             removed from here
  */
@@ -109,9 +108,6 @@ public class Util {
 
   /**
    * To read metadata in a streaming fashion.
-   *
-   * @author Julien Le Dem
-   *
    */
   public static abstract class FileMetaDataConsumer {
     abstract public void setVersion(int version);
@@ -124,9 +120,6 @@ public class Util {
 
   /**
    * Simple default consumer that sets the fields
-   *
-   * @author Julien Le Dem
-   *
    */
   public static final class DefaultFileMetaDataConsumer extends FileMetaDataConsumer {
     private final FileMetaData md;
