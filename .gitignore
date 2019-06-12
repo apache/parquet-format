@@ -20,3 +20,6 @@ target
 dependency-reduced-pom.xml
 .classpath
 .project
+
+# IDE stuff
+.idea/
