@@ -6,10 +6,6 @@ Make sure you have checked _all_ steps below.
   - https://issues.apache.org/jira/browse/PARQUET-XXX
   - In case you are adding a dependency, check if the license complies with the [ASF 3rd Party License Policy](https://www.apache.org/legal/resolved.html#category-x).
 
-### Tests
-
-- [ ] My PR adds the following unit tests __OR__ does not need testing for this extremely good reason:
-
 ### Commits
 
 - [ ] My commits all reference Jira issues in their subject lines. In addition, my commits follow the guidelines from "[How to write a good git commit message](http://chris.beams.io/posts/git-commit/)":
