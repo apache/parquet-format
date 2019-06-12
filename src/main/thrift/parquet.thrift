@@ -579,7 +579,7 @@ struct Murmur3Hash {}
  **/
 union BloomFilterHash {
   /** Murmur3 Hash Strategy. **/
-  1: Murmur3Hash MURMUR3HASH;
+  1: Murmur3Hash MURMUR3;
 }
 /**
   * Bloom filter header is stored at beginning of Bloom filter data of each column
