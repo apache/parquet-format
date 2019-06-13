@@ -572,14 +572,14 @@ union BloomFilterAlgorithm {
 /** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
  * repo by Austin Appleby.
  **/
-struct Murmur3 {}
+struct Murmur3Hash {}
 /** 
  * The hash function used in Bloom filter. This function takes the hash of a column value
  * using plain encoding.
  **/
 union BloomFilterHash {
   /** Murmur3 Hash Strategy. **/
-  1: Murmur3 MURMUR3;
+  1: Murmur3Hash MURMUR3;
 }
 /**
   * Bloom filter header is stored at beginning of Bloom filter data of each column
