@@ -25,14 +25,9 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq protobuf-compiler
   - sudo apt-get install -qq libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
-  # Compile and install Apache Thrift, install the 5+ version of Gradle to support JDK11
   - wget -qO- https://archive.apache.org/dist/thrift/0.12.0/thrift-0.12.0.tar.gz | tar zxf -
   - cd thrift-0.12.0/
-  - wget https://services.gradle.org/distributions/gradle-5.1.1-bin.zip
-  - unzip gradle-5.1.1-bin.zip
-  - mv -f gradle-5.1.1/lib/gradle-wrapper-5.1.1.jar lib/java/gradle/wrapper/gradle-wrapper.jar
-  - export GRADLE_HOME=`pwd`/gradle-5.1.1
   - chmod +x ./configure
-  - ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-php --without-nodejs
+  - ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-php --without-nodejs --without-java
   - sudo make install
   - cd ..
