@@ -16,14 +16,18 @@
 # under the License.
 
 language: java
+
+jdk:
+  - openjdk8
+  - openjdk11
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq protobuf-compiler
   - sudo apt-get install -qq libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
-  - wget -nv https://archive.apache.org/dist/thrift/0.12.0/thrift-0.12.0.tar.gz
-  - tar zxf thrift-0.12.0.tar.gz
-  - cd thrift-0.12.0
+  - wget -qO- https://archive.apache.org/dist/thrift/0.12.0/thrift-0.12.0.tar.gz | tar zxf -
+  - cd thrift-0.12.0/
   - chmod +x ./configure
-  - ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-php --without-nodejs
+  - ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-php --without-nodejs --without-java
   - sudo make install
   - cd ..
