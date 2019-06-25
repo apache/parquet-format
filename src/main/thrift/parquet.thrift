@@ -569,10 +569,17 @@ union BloomFilterAlgorithm {
   /** Block-based Bloom filter. **/
   1: SplitBlockAlgorithm BLOCK;
 }
+
 /** Hash strategy type annotation. It uses Murmur3Hash_x64_128 from the original SMHasher
  * repo by Austin Appleby.
  **/
 struct Murmur3Hash {}
+
+/** Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash
+ * algorithm. It uses 64 bits version of xxHash. 
+ **/
+struct XxHash {}
+
 /** 
  * The hash function used in Bloom filter. This function takes the hash of a column value
  * using plain encoding.
