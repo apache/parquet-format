@@ -46,7 +46,7 @@ The `parquet-compatibility` project contains compatibility tests that can be use
 
 ## Building
 
-Java resources can be build using `mvn package`. The current stable version should always be available from Maven Central.
+Java resources can be built using `mvn package`. The current stable version should always be available from Maven Central.
 
 C++ thrift resources can be generated via make.
 
