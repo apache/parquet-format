@@ -87,11 +87,11 @@ void Mask(uint32_t key, uint32_t mask[8]) {
 ```
 
 #### Hash Function
-The function used to hash values in the initial implementation is MurmurHash3[4], using
-the least-significant 64 bits of the 128-bit version of the function on the x86-64
-platform. Note that the function produces different values on different architectures, so
-implementors must be careful to use the version specific to x86-64. That function can be
-emulated on different platforms without difficulty.
+The function used to hash values in the initial implementation is xxHash[4], using
+the least-significant 64 bits version of the function on the x86-64 platform. Note that
+the function produces different values on different architectures, so implementors must
+be careful to use the version specific to x86-64. That function can be emulated on
+different platforms without difficulty.
 
 #### Build a Bloom filter
 The fact that exactly eight bits are checked during each lookup means that these filters
@@ -116,5 +116,5 @@ hash function.
 1. [Bloom filter introduction at Wiki](https://en.wikipedia.org/wiki/Bloom_filter)
 2. [Cache-, Hash- and Space-Efficient Bloom Filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf)
 3. [A Reliable Randomized Algorithm for the Closest-Pair Problem](http://www.diku.dk/~jyrki/Paper/CP-11.4.1997.ps)
-4. [Murmur Hash at Wiki](https://en.wikipedia.org/wiki/MurmurHash)
+4. [xxHash](https://cyan4973.github.io/xxHash/)
 5. [Network Applications of Bloom Filters: A Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf)
