@@ -33,6 +33,11 @@ overapproximates a set. It can respond to membership queries with either "defini
 "probably yes", where the probability of false positives is configured when the filter is
 initialized. Bloom filters do not have false negatives.
 
+A Bloom filter typically contains a bit array of `m` bits, `k` different hash functions,
+and `n` elements inserted. Each of hash functions maps or hashes some set element to one of the
+`m` array positions, generating a uniform random distribution. To add an element, feed it to each
+of the `k` hash functions to get `k` array positions. Set the bits at all these positions to 1. 
+
 Because Bloom filters are small compared to dictionaries, they can be used for predicate
 pushdown even in columns with high cardinality and when space is at a premium.
 
@@ -62,7 +67,7 @@ filter technique, as described in section 2.1 of [Network Applications of Bloom 
 A Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf). Instead of having one
 array of size `m` shared among all the hash functions, each hash function has a range of `m/k`
 consecutive bit locations disjoint from all the others. The total number of bits is still
-<em>m</em>, but the bits are divided equally among the `k` hash functions. This approach
+`m`, but the bits are divided equally among the `k` hash functions. This approach
 can be useful for implementation reasons, for example, dividing the bits among the hash functions
 may make parallelization of array accesses easier and take utilization of SSE. As for Parquet's
 implementation, it divides the 256 bits in each block up into eight contiguous 32-bit lanes and
@@ -73,7 +78,8 @@ In the initial algorithm, the most significant 32 bits from the hash value are u
 index to select a block from bitset. The lower 32 bits of the hash value, along with eight
 constant salt values, are used to compute the bit to set in each lane of the block. The
 salt and lower 32 bits are combined using the
-[multiply-shift](http://www.diku.dk/~jyrki/Paper/CP-11.4.1997.ps) hash function:
+[Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing)
+hash function:
 
 ```c
 // 8 SALT values used to compute bit pattern
@@ -113,7 +119,7 @@ To calculate the size the filter should be for another false positive rate `p`, 
 following formula. The output is in bits per distinct element:
 
 ```c
--8 / log(1 - pow(p, 1.0 / 8));
+c = -8 / log(1 - pow(p, 1.0 / 8))
 ```
 
 In the real scenario, the size of the Bloom filter and the false positive rate may vary from
