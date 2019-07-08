@@ -76,10 +76,14 @@ sets or checks one bit in each lane.
 #### Algorithm
 In the initial algorithm, the most significant 32 bits from the hash value are used as the
 index to select a block from bitset. The lower 32 bits of the hash value, along with eight
-constant salt values, are used to compute the bit to set in each lane of the block. The
-salt and lower 32 bits are combined using the
-[Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing)
-hash function:
+constant salt values, are used to compute the bit to set in each lane of the block.
+The salt values are used to construct following different hash functions as described in
+[Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
+
+hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
+
+Since the target hash value is `[0, 31]`, so we right shift `y = 27` bits. As a result, eight
+hash values, which are indexes of the tiny bloom filter, are generated.
 
 ```c
 // 8 SALT values used to compute bit pattern
