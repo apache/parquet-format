@@ -133,12 +133,61 @@ to default row group size. It is also recommended to expose the ability for sett
 parameters to end users.
 
 #### File Format
-The Bloom filter data of a column, which contains the size of the filter in bytes, the algorithm,
-the hash function and the Bloom filter bitset, is stored near the footer. The Bloom filter data
-offset is stored in column chunk metadata.
+The Bloom filter data of a column chunk, which contains the size of the filter in bytes, the
+algorithm, the hash function and the Bloom filter bitset, is stored near the footer. The Bloom
+filter data offset is stored in column chunk metadata. Here are Bloom filter definitions in
+thrift:
+
+```
+/** Block-based algorithm type annotation. **/
+struct SplitBlockAlgorithm {}
+/** The algorithm used in Bloom filter. **/
+union BloomFilterAlgorithm {
+  /** Block-based Bloom filter. **/
+  1: SplitBlockAlgorithm BLOCK;
+}
+
+/** Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash
+ * algorithm. It uses 64 bits version of xxHash. 
+ **/
+struct XxHash {}
+
+/** 
+ * The hash function used in Bloom filter. This function takes the hash of a column value
+ * using plain encoding.
+ **/
+union BloomFilterHash {
+  /** xxHash Strategy. **/
+  1: XxHash XXHASH;
+}
+
+/**
+  * Bloom filter header is stored at beginning of Bloom filter data of each column
+  * and followed by its bitset.
+  **/
+struct BloomFilterPageHeader {
+  /** The size of bitset in bytes **/
+  1: required i32 numBytes;
+  /** The algorithm for setting bits. **/
+  2: required BloomFilterAlgorithm algorithm;
+  /** The hash function used for Bloom filter. **/
+  3: required BloomFilterHash hash;
+}
+
+struct ColumnMetaData {
+  ...
+  /** Byte offset from beginning of file to Bloom filter data. **/
+  14: optional i64 bloom_filter_offset;
+}
+
+```
 
 #### Encryption
-The Bloom filter offset is stored in column chunk metadata which will be encrypted with the column
-key when encryption is enabled. The Bloom filter data itself should also be encrypted with column
-key as well if encryption is enabled.
+In the case of columns with sensitive data, the Bloom filter exposes a subset of sensitive
+information such as the presence of value. Therefore the Bloom filter of columns with sensitive
+data should be encrypted with the column key, and the Bloom filter of other (not sensitive) columns
+do not need to be encrypted.
+
+Bloom filters are stored similarly to pages, with a page header `BloomFilterPageHeader` and a page
+of bitset. So they will be encrypted in the same way as encrypting pages. 
 
