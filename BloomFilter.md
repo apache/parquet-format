@@ -109,9 +109,8 @@ void Mask(uint32_t key, uint32_t mask[8]) {
 #### Hash Function
 The function used to hash values in the initial implementation is
 [xxHash](https://cyan4973.github.io/xxHash/), using the least-significant 64 bits version of the
-function on the x86-64 platform. Note that the function produces different values on different
-architectures, so implementors must be careful to use the version specific to x86-64. That function
-can be emulated on different platforms without difficulty.
+function on the x86-64 platform. Note that a given variant, such as XXHash64, shall produces same
+output irrespective of the cpu/os used, though different variants may produce different values.
 
 #### Build a Bloom filter
 The fact that exactly eight bits are checked during each lookup means that these filters
