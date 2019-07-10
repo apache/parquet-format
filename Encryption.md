@@ -53,7 +53,7 @@ of write/read operations.
 
 ## 3 Technical Approach
 Parquet files are comprised of separately serialized components: pages, page headers, column 
-indexes, offset indexes, a footer. Parquet encryption mechanism denotes them as “modules” 
+indexes, offset indexes, bloom filter header and bitset, the footer. Parquet encryption mechanism denotes them as “modules” 
 and encrypts each module separately – making it possible to fetch and decrypt the footer, 
 find the offset of required pages, fetch the pages and decrypt the data. In this document, 
 the term “footer” always refers to the regular Parquet footer - the `FileMetaData` structure, 
