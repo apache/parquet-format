@@ -187,6 +187,13 @@ information such as the presence of value. Therefore the Bloom filter of columns
 data should be encrypted with the column key, and the Bloom filter of other (not sensitive) columns
 do not need to be encrypted.
 
-Bloom filters are stored similarly to pages, with a page header `BloomFilterPageHeader` and a page
-of bitset. So they will be encrypted in the same way as encrypting pages. 
+Bloom filters have two serializable modules - the PageHeader thrift structure (with its internal
+fields, including the BloomFilterPageHeader `bloom_filter_page_header`), and the Bitset. The header
+structure is serialized by Thrift, and written to file output stream; it is followed by the
+serialized Bitset.
 
+For Bloom filters in sensitive columns, each of the two modules will be encrypted after
+serialization, and then written to the file. The encryption will be performed using the AES GCM
+cipher, with the same column key, but with different AAD module types - "BloomFilter Header" (8)
+and "BloomFilter Bitset" (9). The length of the encrypted buffer is written before the buffer, as
+described in the Parquet encryption specification.
