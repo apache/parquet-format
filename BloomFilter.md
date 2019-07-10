@@ -28,10 +28,15 @@ distinct values, writers sometimes choose not to add dictionaries because of the
 space they occupy. This leaves columns with large cardinalities and widely separated min
 and max without support for predicate pushdown.
 
-A Bloom filter[1] is a compact data structure that overapproximates a set. It can respond
-to membership queries with either "definitely no" or "probably yes", where the probability
-of false positives is configured when the filter is initialized. Bloom filters do not have
-false negatives.
+A [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) is a compact data structure that
+overapproximates a set. It can respond to membership queries with either "definitely no" or
+"probably yes", where the probability of false positives is configured when the filter is
+initialized. Bloom filters do not have false negatives.
+
+A Bloom filter typically contains a bit array of `m` bits, `k` different hash functions,
+and `n` elements inserted. Each of hash functions maps or hashes some set element to one of the
+`m` array positions, generating a uniform random distribution. To add an element, feed it to each
+of the `k` hash functions to get `k` array positions. Set the bits at all these positions to 1. 
 
 Because Bloom filters are small compared to dictionaries, they can be used for predicate
 pushdown even in columns with high cardinality and when space is at a premium.
@@ -47,23 +52,38 @@ pushdown even in columns with high cardinality and when space is at a premium.
 The initial Bloom filter algorithm in Parquet is implemented using a combination of two
 Bloom filter techniques.
 
-First, the block Bloom filter algorithm from Putze et al.'s "Cache-, Hash- and
-Space-Efficient Bloom filters"[2] is used. This divides a filter into many tiny Bloom
-filters, each one of which is called a "block". In Parquet's initial implementation, each
-block is 256 bits. When inserting or finding a value, part of the hash of that value is
-used to index into the array of blocks and pick a single one. This single block is then
-used for the remaining part of the operation.
+First, the block Bloom filter algorithm from Putze et al.'s [Cache-, Hash- and Space-Efficient
+Bloom filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf) is used.
+The block Bloom filter consists of a sequence of small Bloom filters, each of which can fit
+into one cache-line. For best performance, those small Bloom filters are loaded into memory
+cache-line-aligned. For each potential element, the first hash value selects the Bloom filter block
+to be used. Additional hash values are then used to set or test bits as usual, but only inside
+this one block. As for Parquet's initial implementation, each block is 256 bits. When inserting or
+finding value, the first hash of that value is used to index into the array of blocks and pick a
+single one. This single block is then used for the remaining part of the operation.
 
-Second, within each block, this implementation uses the folklore split Bloom filter
-technique, as described in section 2.1 of "Network Applications of Bloom Filters: A
-Survey"[5]. This divides the 256 bits in each block up into eight contiguous 32-bit lanes
-and sets or checks one bit in each lane.
+Second, the remaining part of the operation within the single block uses the folklore split Bloom
+filter technique, as described in section 2.1 of [Network Applications of Bloom Filters:
+A Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf). Instead of having one
+array of size `m` shared among all the hash functions, each hash function has a range of `m/k`
+consecutive bit locations disjoint from all the others. The total number of bits is still
+`m`, but the bits are divided equally among the `k` hash functions. This approach
+can be useful for implementation reasons, for example, dividing the bits among the hash functions
+may make parallelization of array accesses easier and take utilization of SSE. As for Parquet's
+implementation, it divides the 256 bits in each block up into eight contiguous 32-bit lanes and
+sets or checks one bit in each lane.
 
 #### Algorithm
 In the initial algorithm, the most significant 32 bits from the hash value are used as the
 index to select a block from bitset. The lower 32 bits of the hash value, along with eight
-constant salt values, are used to compute the bit to set in each lane of the block. The
-salt and lower 32 bits are combined using the multiply-shift[3] hash function:
+constant salt values, are used to compute the bit to set in each lane of the block.
+The salt values are used to construct following different hash functions as described in
+[Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
+
+hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
+
+Since the target hash value is `[0, 31]`, so we right shift `y = 27` bits. As a result, eight
+hash values, which are indexes of the tiny bloom filter, are generated.
 
 ```c
 // 8 SALT values used to compute bit pattern
@@ -87,11 +107,10 @@ void Mask(uint32_t key, uint32_t mask[8]) {
 ```
 
 #### Hash Function
-The function used to hash values in the initial implementation is xxHash[4], using
-the least-significant 64 bits version of the function on the x86-64 platform. Note that
-the function produces different values on different architectures, so implementors must
-be careful to use the version specific to x86-64. That function can be emulated on
-different platforms without difficulty.
+The function used to hash values in the initial implementation is
+[xxHash](https://cyan4973.github.io/xxHash/), using the least-significant 64 bits version of the
+function on the x86-64 platform. Note that a given variant, such as XXHash64, shall produces same
+output irrespective of the cpu/os used, though different variants may produce different values.
 
 #### Build a Bloom filter
 The fact that exactly eight bits are checked during each lookup means that these filters
@@ -103,18 +122,78 @@ To calculate the size the filter should be for another false positive rate `p`, 
 following formula. The output is in bits per distinct element:
 
 ```c
--8 / log(1 - pow(p, 1.0 / 8));
+c = -8 / log(1 - pow(p, 1.0 / 8))
 ```
 
-#### File Format
-The Bloom filter data of a column is stored at the beginning of its column chunk in the
-row group. The column chunk metadata contains the Bloom filter offset. The Bloom filter is
-stored with a header containing the size of the filter in bytes, the algorithm, and the
-hash function.
+In the real scenario, the size of the Bloom filter and the false positive rate may vary from
+different implementations. It is recommended to set false positive to 1% so that a Bloom filter
+with 1.2MB size can contain one million distinct values, which should satisfy most cases according
+to default row group size. It is also recommended to expose the ability for setting these
+parameters to end users.
 
-### Reference
-1. [Bloom filter introduction at Wiki](https://en.wikipedia.org/wiki/Bloom_filter)
-2. [Cache-, Hash- and Space-Efficient Bloom Filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf)
-3. [A Reliable Randomized Algorithm for the Closest-Pair Problem](http://www.diku.dk/~jyrki/Paper/CP-11.4.1997.ps)
-4. [xxHash](https://cyan4973.github.io/xxHash/)
-5. [Network Applications of Bloom Filters: A Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf)
+#### File Format
+The Bloom filter data of a column chunk, which contains the size of the filter in bytes, the
+algorithm, the hash function and the Bloom filter bitset, is stored near the footer. The Bloom
+filter data offset is stored in column chunk metadata. Here are Bloom filter definitions in
+thrift:
+
+```
+/** Block-based algorithm type annotation. **/
+struct SplitBlockAlgorithm {}
+/** The algorithm used in Bloom filter. **/
+union BloomFilterAlgorithm {
+  /** Block-based Bloom filter. **/
+  1: SplitBlockAlgorithm BLOCK;
+}
+
+/** Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash
+ * algorithm. It uses 64 bits version of xxHash. 
+ **/
+struct XxHash {}
+
+/** 
+ * The hash function used in Bloom filter. This function takes the hash of a column value
+ * using plain encoding.
+ **/
+union BloomFilterHash {
+  /** xxHash Strategy. **/
+  1: XxHash XXHASH;
+}
+
+/**
+  * Bloom filter header is stored at beginning of Bloom filter data of each column
+  * and followed by its bitset.
+  **/
+struct BloomFilterPageHeader {
+  /** The size of bitset in bytes **/
+  1: required i32 numBytes;
+  /** The algorithm for setting bits. **/
+  2: required BloomFilterAlgorithm algorithm;
+  /** The hash function used for Bloom filter. **/
+  3: required BloomFilterHash hash;
+}
+
+struct ColumnMetaData {
+  ...
+  /** Byte offset from beginning of file to Bloom filter data. **/
+  14: optional i64 bloom_filter_offset;
+}
+
+```
+
+#### Encryption
+In the case of columns with sensitive data, the Bloom filter exposes a subset of sensitive
+information such as the presence of value. Therefore the Bloom filter of columns with sensitive
+data should be encrypted with the column key, and the Bloom filter of other (not sensitive) columns
+do not need to be encrypted.
+
+Bloom filters have two serializable modules - the PageHeader thrift structure (with its internal
+fields, including the BloomFilterPageHeader `bloom_filter_page_header`), and the Bitset. The header
+structure is serialized by Thrift, and written to file output stream; it is followed by the
+serialized Bitset.
+
+For Bloom filters in sensitive columns, each of the two modules will be encrypted after
+serialization, and then written to the file. The encryption will be performed using the AES GCM
+cipher, with the same column key, but with different AAD module types - "BloomFilter Header" (8)
+and "BloomFilter Bitset" (9). The length of the encrypted buffer is written before the buffer, as
+described in the Parquet encryption specification.
