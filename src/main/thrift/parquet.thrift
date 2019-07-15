@@ -482,7 +482,6 @@ enum PageType {
   INDEX_PAGE = 1;
   DICTIONARY_PAGE = 2;
   DATA_PAGE_V2 = 3;
-  BLOOM_FILTER_PAGE = 4;
 }
 
 /**
