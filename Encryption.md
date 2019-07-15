@@ -53,7 +53,8 @@ of write/read operations.
 
 ## 3 Technical Approach
 Parquet files are comprised of separately serialized components: pages, page headers, column 
-indexes, offset indexes, a footer. Parquet encryption mechanism denotes them as “modules” 
+indexes, offset indexes, bloom filter headers and bitsets, the footer. Parquet encryption 
+mechanism denotes them as “modules” 
 and encrypts each module separately – making it possible to fetch and decrypt the footer, 
 find the offset of required pages, fetch the pages and decrypt the data. In this document, 
 the term “footer” always refers to the regular Parquet footer - the `FileMetaData` structure, 
@@ -78,14 +79,11 @@ in order to verify its integrity. New footer fields keep an
 information about the file encryption algorithm and the footer signing key.
 
 For encrypted columns, the following modules are always encrypted, with the same column key: 
-pages and  page headers (both dictionary and data), column indexes, offset indexes.  If the 
+pages and  page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
+headers and bitsets.  If the 
 column key is different from the footer encryption key, the column metadata is serialized 
 separately and encrypted with the column key. In this case, the column metadata is also 
 considered to be a module.  
-
-There are two module types: data modules (pages) and Thrift modules (all Thrift structures that 
-are serialized separately).
-
 
 ## 4 Encryption Algorithms and Keys
 Parquet encryption algorithms are based on the standard AES ciphers for symmetric encryption. 
@@ -142,8 +140,8 @@ tag used to verify the ciphertext and AAD integrity.
 
 
 #### 4.2.2 AES_GCM_CTR_V1
-In this Parquet algorithm, all Thrift modules are encrypted with the GCM cipher, as described 
-above, but the pages are encrypted by the CTR cipher without padding. This allows to encrypt/decrypt 
+In this Parquet algorithm, all modules except pages are encrypted with the GCM cipher, as described 
+above. The pages are encrypted by the CTR cipher without padding. This allows to encrypt/decrypt 
 the bulk of the data faster, while still verifying the metadata integrity and making 
 sure the file has not been replaced with a wrong version. However, tampering with the 
 page data might go unnoticed. The AES CTR cipher
@@ -247,6 +245,8 @@ The following module types are defined:
    * Dictionary PageHeader (5)
    * ColumnIndex (6)
    * OffsetIndex (7)
+   * BloomFilter Header (8)
+   * BloomFilter Bitset (9)
 
 
 |                      | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal|
@@ -259,14 +259,16 @@ The following module types are defined:
 | Dictionary PageHeader|       yes        |   yes (5)   |        yes        |      yes       |     no      |
 | ColumnIndex          |       yes        |   yes (6)   |        yes        |      yes       |     no      |
 | OffsetIndex          |       yes        |   yes (7)   |        yes        |      yes       |     no      |
+| BloomFilter Header   |       yes        |   yes (8)   |        yes        |      yes       |     no      |
+| BloomFilter Bitset   |       yes        |   yes (9)   |        yes        |      yes       |     no      |
 
 
 
 ## 5 File Format
 
 ### 5.1 Encrypted module serialization
-The Thrift modules are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
-the column pages (data modules) are also encrypted with AES GCM. For each module, the GCM encryption 
+All modules, except column pages, are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
+the column pages are also encrypted with AES GCM. For each module, the GCM encryption 
 buffer is comprised of a nonce, ciphertext and tag, described in the Algorithms section. The length of 
 the encryption buffer (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
