@@ -587,7 +587,7 @@ union BloomFilterHash {
   * Bloom filter header is stored at beginning of Bloom filter data of each column
   * and followed by its bitset.
   **/
-struct BloomFilterPageHeader {
+struct BloomFilterHeader {
   /** The size of bitset in bytes **/
   1: required i32 numBytes;
   /** The algorithm for setting bits. **/
@@ -637,7 +637,6 @@ struct PageHeader {
   6: optional IndexPageHeader index_page_header;
   7: optional DictionaryPageHeader dictionary_page_header;
   8: optional DataPageHeaderV2 data_page_header_v2;
-  9: optional BloomFilterPageHeader bloom_filter_page_header;
 }
 
 /**
