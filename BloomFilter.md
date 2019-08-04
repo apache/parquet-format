@@ -74,16 +74,24 @@ implementation, it divides the 256 bits in each block up into eight contiguous 3
 sets or checks one bit in each lane.
 
 #### Algorithm
-In the initial algorithm, the most significant 32 bits from the hash value are used as the
-index to select a block from bitset. The lower 32 bits of the hash value, along with eight
-constant salt values, are used to compute the bit to set in each lane of the block.
-The salt values are used to construct following different hash functions as described in
+The algorithm requires two prerequisite conditions:
+
+1. The number of bits in the bitset of a multi-block Bloom filter `m` must be a power of 2. So it
+needs round up operation in the specific implementation.
+
+2. The number of blocks `n`, which is equal to `m/256`, must be a power of 2. 
+
+
+##### Lookup in a block
+As mentioned above, the least 32 bits of the first [hash](#Hash Function) value `l` along with the salt
+values are used to compute the bit to set in each lane of the block. It constructs
+eight different hash functions as described in
 [Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
 
-hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
+hash<sub>i</sub>(x) = salt<sub>i</sub> * l >> w
 
-Since the target hash value is `[0, 31]`, so we right shift `y = 27` bits. As a result, eight
-hash values, which are indexes of the tiny bloom filter, are generated.
+Since the target hash value is `[0, 31]`, so it right shift `w = 27` bits. As a result, eight
+hash values are generated as indexes of the bit to set in each lane of the block respectively.
 
 ```c
 // 8 SALT values used to compute bit pattern
@@ -91,7 +99,7 @@ static const uint32_t SALT[8] = {0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b728
   0x705495c7U, 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U};
 
 // key: the lower 32 bits of hash result
-// mask: the output bit pattern for a tiny Bloom filter
+// mask: the output bit pattern for a block
 void Mask(uint32_t key, uint32_t mask[8]) {
   for (int i = 0; i < 8; ++i) {
     mask[i] = key * SALT[i];
@@ -105,12 +113,18 @@ void Mask(uint32_t key, uint32_t mask[8]) {
 }
 
 ```
+##### Lookup in the multi-block Bloom filter
+The most significant 32 bits from the first hash value `h` and the number of blocks `n` of a multi-block Bloom filter
+are used to select a block within the multi-block Bloom filter.
+
+    index = h & (n - 1)
+
 
 #### Hash Function
 The function used to hash values in the initial implementation is
 [xxHash](https://cyan4973.github.io/xxHash/), using the function XXH64 with a
-seed of 0 and [following the specification version
-0.1.1](https://github.com/Cyan4973/xxHash/blob/v0.7.0/doc/xxhash_spec.md).
+seed of 0 and following the [specification](https://github.com/Cyan4973/xxHash/blob/v0.7.0/doc/xxhash_spec.md) 
+version 0.1.1.
 
 #### Build a Bloom filter
 The fact that exactly eight bits are checked during each lookup means that these filters
@@ -132,10 +146,11 @@ to default row group size. It is also recommended to expose the ability for sett
 parameters to end users.
 
 #### File Format
-The Bloom filter data of a column chunk, which contains the size of the filter in bytes, the
-algorithm, the hash function and the Bloom filter bitset, is stored near the footer. The Bloom
-filter data offset is stored in column chunk metadata. Here are Bloom filter definitions in
-thrift:
+Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block Bloom
+filter contains a header of Bloom filter, which must includes the size of the filter in bytes, the algorithm,
+the hash function, and the Bloom filter bitset. The offset in column chunk metadata points to the start of
+Bloom filter header. 
+Here are Bloom filter definitions in thrift:
 
 ```
 /** Block-based algorithm type annotation. **/
@@ -180,6 +195,9 @@ struct ColumnMetaData {
 }
 
 ```
+
+The Bloom filter data is stored right after pages indexes, the file layout is look like:
+ ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter.png)
 
 #### Encryption
 In the case of columns with sensitive data, the Bloom filter exposes a subset of sensitive
