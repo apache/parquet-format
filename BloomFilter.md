@@ -54,7 +54,7 @@ Bloom filter techniques.
 
 First, the block Bloom filter algorithm from Putze et al.'s [Cache-, Hash- and Space-Efficient
 Bloom filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf) is used.
-The block Bloom filter consists of a sequence of small Bloom filters, each of which can fit
+The block Bloom filter consists of a sequence of small Bloom filters say blocks, each of which can fit
 into one cache-line. For best performance, those small Bloom filters are loaded into memory
 cache-line-aligned. For each potential element, the first hash value selects the Bloom filter block
 to be used. Additional hash values are then used to set or test bits as usual, but only inside
@@ -74,23 +74,23 @@ implementation, it divides the 256 bits in each block up into eight contiguous 3
 sets or checks one bit in each lane.
 
 #### Algorithm
-The algorithm requires two prerequisite conditions:
+The algorithm requires two prerequisites:
 
-1. The number of bits in the bitset of a multi-block Bloom filter `m` must be a power of 2. So it
-needs round up operation in the specific implementation.
+1. The number of bits `m` of a multi-block Bloom filter bitset must be a power of 2. Therefore, it
+may needs round up/down operations in the specific implementation.
 
 2. The number of blocks `n`, which is equal to `m/256`, must be a power of 2. 
 
 
 ##### Lookup in a block
-As mentioned above, the least 32 bits of the first [hash](#Hash Function) value `l` along with the salt
+As mentioned above, the least 32 bits of the first [hash](#Hash-Function) value `x` along with the salt
 values are used to compute the bit to set in each lane of the block. It constructs
 eight different hash functions as described in
 [Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
 
-hash<sub>i</sub>(x) = salt<sub>i</sub> * l >> w
+hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
 
-Since the target hash value is `[0, 31]`, so it right shift `w = 27` bits. As a result, eight
+It right shift `y = 27` bits since the target hash value is `[0, 31]`. As a result, eight
 hash values are generated as indexes of the bit to set in each lane of the block respectively.
 
 ```c
