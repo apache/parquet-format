@@ -133,9 +133,9 @@ parameters to end users.
 
 #### File Format
 Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block Bloom
-filter contains a header of Bloom filter, which must includes the size of the filter in bytes, the algorithm,
+filter contains the header of one Bloom filter, which must include the size of the filter in bytes, the algorithm,
 the hash function, and the Bloom filter bitset. The offset in column chunk metadata points to the start of
-Bloom filter header. 
+the Bloom filter header. 
 Here are Bloom filter definitions in thrift:
 
 ```
@@ -182,7 +182,7 @@ struct ColumnMetaData {
 
 ```
 
-The Bloom filter data is stored right after pages indexes, the file layout is look like:
+The Bloom filter data is stored right after the pages indexes, and the file layout looks like:
  ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter.png)
 
 #### Encryption
