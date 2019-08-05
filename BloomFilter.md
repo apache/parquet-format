@@ -136,7 +136,7 @@ Each multi-block Bloom filter is required to work for only one column chunk. The
 filter contains the header of one Bloom filter, which must include the size of the filter in bytes, the algorithm,
 the hash function, and the Bloom filter bitset. The offset in column chunk metadata points to the start of
 the Bloom filter header. 
-Here are Bloom filter definitions in thrift:
+Here are the Bloom filter definitions in thrift:
 
 ```
 /** Block-based algorithm type annotation. **/
@@ -182,7 +182,7 @@ struct ColumnMetaData {
 
 ```
 
-The Bloom filter data is stored right after the pages indexes, and the file layout looks like:
+The Bloom filter data is stored right after the page indexes, and the file layout looks like:
  ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter.png)
 
 #### Encryption
