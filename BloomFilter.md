@@ -33,11 +33,6 @@ overapproximates a set. It can respond to membership queries with either "defini
 "probably yes", where the probability of false positives is configured when the filter is
 initialized. Bloom filters do not have false negatives.
 
-A Bloom filter typically contains a bit array of `m` bits, `k` different hash functions,
-and `n` elements inserted. Each of hash functions maps or hashes some set element to one of the
-`m` array positions, generating a uniform random distribution. To add an element, feed it to each
-of the `k` hash functions to get `k` array positions. Set the bits at all these positions to 1. 
-
 Because Bloom filters are small compared to dictionaries, they can be used for predicate
 pushdown even in columns with high cardinality and when space is at a premium.
 
@@ -49,87 +44,195 @@ pushdown even in columns with high cardinality and when space is at a premium.
   filters attached or when executing non-selective queries.
 
 ### Technical Approach
-The initial Bloom filter algorithm in Parquet is implemented using a combination of two
-Bloom filter techniques.
 
-First, the block Bloom filter algorithm from Putze et al.'s [Cache-, Hash- and Space-Efficient
-Bloom filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf) is used.
-The block Bloom filter consists of a sequence of small Bloom filters, each of which can fit
-into one cache-line. For best performance, those small Bloom filters are loaded into memory
-cache-line-aligned. For each potential element, the first hash value selects the Bloom filter block
-to be used. Additional hash values are then used to set or test bits as usual, but only inside
-this one block. As for Parquet's initial implementation, each block is 256 bits. When inserting or
-finding value, the first hash of that value is used to index into the array of blocks and pick a
-single one. This single block is then used for the remaining part of the operation.
+The section describes split block Bloom filters, which is the first
+(and, at time of writing, only) Bloom filter representation supported
+in Parquet.
 
-Second, the remaining part of the operation within the single block uses the folklore split Bloom
-filter technique, as described in section 2.1 of [Network Applications of Bloom Filters:
-A Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf). Instead of having one
-array of size `m` shared among all the hash functions, each hash function has a range of `m/k`
-consecutive bit locations disjoint from all the others. The total number of bits is still
-`m`, but the bits are divided equally among the `k` hash functions. This approach
-can be useful for implementation reasons, for example, dividing the bits among the hash functions
-may make parallelization of array accesses easier and take utilization of SSE. As for Parquet's
-implementation, it divides the 256 bits in each block up into eight contiguous 32-bit lanes and
-sets or checks one bit in each lane.
+First we will describe a "block". This is the main component split
+block Bloom filters are composed of.
 
-#### Algorithm
-In the initial algorithm, the most significant 32 bits from the hash value are used as the
-index to select a block from bitset. The lower 32 bits of the hash value, along with eight
-constant salt values, are used to compute the bit to set in each lane of the block.
-The salt values are used to construct following different hash functions as described in
-[Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
+Each block is 256 bits, broken up into eight contiguous "words", each
+consisting of 32 bits. Each word is thought of as an array of bits;
+each bit is either "set" or "not set".
 
-hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
+When initialized, a block is "empty", which means each of the eight
+component words has no bits set. In addition to initialization, a
+block supports two other operations: `block_insert` and
+`block_check`. Both take a single unsigned 32-bit integer as input;
+`block_insert` returns no value, but modifies the block, while
+`block_check` returns a boolean. The semantics of `block_check` are
+that it must return `true` if `block_insert` was previously called on
+the block with the same argument, and otherwise it returns `false`
+with high probability. For more details of the probability, see below.
 
-Since the target hash value is `[0, 31]`, so we right shift `y = 27` bits. As a result, eight
-hash values, which are indexes of the tiny bloom filter, are generated.
+The operations `block_insert` and `block_check` depend on some
+auxiliary artifacts. First, there is a sequence of eight odd unsigned
+32-bit integer constants called the `salt`. Second, there is a method
+called `mask` that takes as its argument a single unsigned 32-bit
+integer and returns a block in which each word has exactly one bit
+set.
 
-```c
-// 8 SALT values used to compute bit pattern
-static const uint32_t SALT[8] = {0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b7289dU,
-  0x705495c7U, 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U};
+```
+unsigned int32 salt[8] = {0x47b6137bU, 0x44974d91U, 0x8824ad5bU,
+                          0xa2b7289dU, 0x705495c7U, 0x2df1424bU,
+                          0x9efc4947U, 0x5c6bfb31U}
 
-// key: the lower 32 bits of hash result
-// mask: the output bit pattern for a tiny Bloom filter
-void Mask(uint32_t key, uint32_t mask[8]) {
-  for (int i = 0; i < 8; ++i) {
-    mask[i] = key * SALT[i];
+block mask(unsigned int32 x) {
+  block result
+  for i in [0..7] {
+    unsigned int32 y = x * salt[i]
+    result.getWord(i).setBit(y >> 27)
   }
-  for (int i = 0; i < 8; ++i) {
-    mask[i] = mask[i] >> 27;
-  }
-  for (int i = 0; i < 8; ++i) {
-    mask[i] = UINT32_C(1) << mask[i];
+  return result
+}
+```
+
+Since there are eight words in the block and eight integers in the
+salt, there is a correspondence between them. To set a bit in the nth
+word of the block, `mask` first multiplies its argument by the nth
+integer in the `salt`, keeping only the least significant 32 bits of
+the 64-bit product, then divides that 32-bit unsigned integer by 2 to
+the 27th power, denoted above using the C language's right shift
+operator "`>>`". The resulting integer is between 0 and 31,
+inclusive. That integer is the bit that gets set in the word in the
+block.
+
+From the `mask` operation, `block_insert` is defined as setting every
+bit in the block that was also set in the result from mask. Similarly,
+`block_check` returns `true` when every bit that is set in the result
+of `mask` is also set in the block.
+
+```
+void block_insert(block b, unsigned int32 x) {
+  block masked = mask(x)
+  for i in [0..7] {
+    for j in [0..31] {
+      if (masked.getWord(i).isSet(j)) {
+        b.getWord(i).setBit(j)
+      }
+    }
   }
 }
-
 ```
 
-#### Hash Function
-The function used to hash values in the initial implementation is
-[xxHash](https://cyan4973.github.io/xxHash/), using the function XXH64 with a
-seed of 0 and [following the specification version
+```
+boolean block_check(block b, unsigned int32 x) {
+  block masked = mask(x)
+  for i in [0..7] {
+    for j in [0..31] {
+      if (masked.getWord(i).isSet(j)) {
+        if (not b.getWord(i).setBit(j)) {
+          return false
+        }
+      }
+    }
+  }
+  return true
+}
+```
+
+The reader will note that a block, as defined here, is actually a
+special kind of Bloom filter. Specifically it is a "split" Bloom
+filter, as described in section 2.1 of [Network Applications of Bloom
+Filters: A
+Survey](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf). The
+use of multiplication by an odd constant and then shifting right is a
+method of hashing integers as described in section 2.2 of
+Dietzfelbinger et al.'s [A reliable randomized algorithm for the
+closest-pair
+problem](http://hjemmesider.diku.dk/~jyrki/Paper/CP-11.4.1997.pdf).
+
+This closes the definition of a block and the operations on it.
+
+Now that a block is defined, we can describe Parquet's split block
+Bloom filters. A split block Bloom filter (henceforth "SBBF") is
+composed of `z` blocks, where `z` is a power of two greater than or
+equal to one and less than 2 to the 27th power. When an SBBF is
+initialized, each block in it is initialized, which means each bit in
+each word in each block in the SBBF is unset.
+
+In addition to initialization, an SBBF supports an operation called
+`filter_insert` and one called `filter_check`. Each takes as an
+argument a 64-bit unsigned integer; `filter_check` returns a boolean
+and `filter_insert` does not return a value, but does modify the SBBF.
+
+The `filter_insert` operation first uses the most significant 32 bits
+of its argument, modulo the number of blocks, to select a block to
+operate on. It then uses the least significant 32 bits of the argument
+to `filter_insert` as an argument to `block_insert` called on that
+block.
+
+The `filter_check` operation uses the same method as `filter_insert`
+to select a block to operate on, then uses the least significant 32
+bits of its argument as an argument to `block_check` called on that
+block, returning the result.
+
+In the pseudocode below, the modulus operator is represented with the C
+language's "`%`" operator. The "`>>`" operator is used to denote the
+conversion of an unsigned 64-bit integer to an unsigned 32-bit integer
+containing only the most significant 32 bits, and C's cast operator
+"`(unsigned int32)`" is used to denote the conversion of an unsigned
+64-bit integer to an unsigned 32-bit integer containing only the least
+significant 32 bits.
+
+```
+void filter_insert(SBBF filter, unsigned int64 x) {
+  block b = filter.getBlock((x >> 32) % filter.numberOfBlocks());
+  block_insert(b, (unsigned int32)x)
+}
+```
+
+```
+boolean filter_check(SBBF filter, unsigned int64 x) {
+  block b = filter.getBlock((x >> 32) % filter.numberOfBlocks());
+  return block_check(b, (unsigned int32)x)
+}
+```
+
+The use of blocks is from Putze et al.'s [Cache-, Hash- and
+Space-Efficient Bloom
+filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf)
+
+To use an SBBF for values of arbitrary Parquet types, we apply a hash
+function to that value - at the time of writing,
+[xxHash](https://cyan4973.github.io/xxHash/), using the function XXH64
+with a seed of 0 and [following the specification version
 0.1.1](https://github.com/Cyan4973/xxHash/blob/v0.7.0/doc/xxhash_spec.md).
 
-#### Build a Bloom filter
-The fact that exactly eight bits are checked during each lookup means that these filters
-are most space efficient when used with an expected false positive rate of about
-0.5%. This is achieved when there are about 11.54 bits for every distinct value inserted
-into the filter.
+#### Sizing an SBBF
 
-To calculate the size the filter should be for another false positive rate `p`, use the
-following formula. The output is in bits per distinct element:
+The `check` operation in SBBFs can return `true` for an argument that
+was never inserted into the SBBF. These are called "false
+positives". The "false positive probabilty" is the probability that
+any given hash value that was never `insert`ed into the SBBF will
+cause `check` to return `true` (a false positive). There is not a
+simple closed-form calculation of this probability, but here is an
+example:
 
-```c
-c = -8 / log(1 - pow(p, 1.0 / 8))
-```
+A filter that uses 1024 blocks and has had 26,214 hash values
+`insert`ed will have a false positive probabilty of around 1.26%. Each
+of those 1024 blocks occupies 256 bits of space, so the total space
+usage is 262,144. That means that the ratio of bits of space to hash
+values is 10-to-1. Adding more hash values increases the denominator
+and lowers the ratio, which increases the false positive
+probability. For instance, inserting twice as many hash values
+(52,428) decreases the ratio of bits of space per hash value inserted
+to 5-to-1 and increases the false positive probability to
+18%. Inserting half as many hash values (13,107) increases the ratio
+of bits of space per hash value inserted to 20-to-1 and decreases the
+false positive probability to 0.04%.
 
-In the real scenario, the size of the Bloom filter and the false positive rate may vary from
-different implementations. It is recommended to set false positive to 1% so that a Bloom filter
-with 1.2MB size can contain one million distinct values, which should satisfy most cases according
-to default row group size. It is also recommended to expose the ability for setting these
-parameters to end users.
+Here are some sample values of the ratios needed to achieve certain
+false positive rates:
+
+| Bits of space per `insert` | False positive probability |
+| -------------------------- | -------------------------- |
+|                        6.0 | 10 %                       |
+|                       10.5 |  1 %                       |
+|                       16.9 |  0.1 %                     |
+|                       26.4 |  0.01 %                    |
+|                       41   |  0.001 %                   |
 
 #### File Format
 The Bloom filter data of a column chunk, which contains the size of the filter in bytes, the
