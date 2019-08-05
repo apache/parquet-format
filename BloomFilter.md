@@ -54,7 +54,7 @@ Bloom filter techniques.
 
 First, the block Bloom filter algorithm from Putze et al.'s [Cache-, Hash- and Space-Efficient
 Bloom filters](http://algo2.iti.kit.edu/documents/cacheefficientbloomfilters-jea.pdf) is used.
-The block Bloom filter consists of a sequence of small Bloom filters say blocks, each of which can fit
+The block Bloom filter consists of a sequence of small Bloom filters, each of which can fit
 into one cache-line. For best performance, those small Bloom filters are loaded into memory
 cache-line-aligned. For each potential element, the first hash value selects the Bloom filter block
 to be used. Additional hash values are then used to set or test bits as usual, but only inside
@@ -74,24 +74,16 @@ implementation, it divides the 256 bits in each block up into eight contiguous 3
 sets or checks one bit in each lane.
 
 #### Algorithm
-The algorithm requires two prerequisites:
-
-1. The number of bits `m` of a multi-block Bloom filter bitset must be a power of 2. Therefore, it
-may needs round up/down operations in the specific implementation.
-
-2. The number of blocks `n`, which is equal to `m/256`, must be a power of 2. 
-
-
-##### Lookup in a block
-As mentioned above, the least 32 bits of the first [hash](#Hash-Function) value `x` along with the salt
-values are used to compute the bit to set in each lane of the block. It constructs
-eight different hash functions as described in
+In the initial algorithm, the most significant 32 bits from the hash value are used as the
+index to select a block from bitset. The lower 32 bits of the hash value, along with eight
+constant salt values, are used to compute the bit to set in each lane of the block.
+The salt values are used to construct following different hash functions as described in
 [Multiplicative hashing](https://en.wikipedia.org/wiki/Hash_function#Multiplicative_hashing):
 
 hash<sub>i</sub>(x) = salt<sub>i</sub> * x >> y
 
-It right shift `y = 27` bits since the target hash value is `[0, 31]`. As a result, eight
-hash values are generated as indexes of the bit to set in each lane of the block respectively.
+Since the target hash value is `[0, 31]`, so we right shift `y = 27` bits. As a result, eight
+hash values, which are indexes of the tiny bloom filter, are generated.
 
 ```c
 // 8 SALT values used to compute bit pattern
@@ -99,7 +91,7 @@ static const uint32_t SALT[8] = {0x47b6137bU, 0x44974d91U, 0x8824ad5bU, 0xa2b728
   0x705495c7U, 0x2df1424bU, 0x9efc4947U, 0x5c6bfb31U};
 
 // key: the lower 32 bits of hash result
-// mask: the output bit pattern for a block
+// mask: the output bit pattern for a tiny Bloom filter
 void Mask(uint32_t key, uint32_t mask[8]) {
   for (int i = 0; i < 8; ++i) {
     mask[i] = key * SALT[i];
@@ -113,18 +105,12 @@ void Mask(uint32_t key, uint32_t mask[8]) {
 }
 
 ```
-##### Lookup in the multi-block Bloom filter
-The most significant 32 bits from the first hash value `h` and the number of blocks `n` of a multi-block Bloom filter
-are used to select a block within the multi-block Bloom filter.
-
-    index = h & (n - 1)
-
 
 #### Hash Function
 The function used to hash values in the initial implementation is
 [xxHash](https://cyan4973.github.io/xxHash/), using the function XXH64 with a
-seed of 0 and following the [specification](https://github.com/Cyan4973/xxHash/blob/v0.7.0/doc/xxhash_spec.md) 
-version 0.1.1.
+seed of 0 and [following the specification version
+0.1.1](https://github.com/Cyan4973/xxHash/blob/v0.7.0/doc/xxhash_spec.md).
 
 #### Build a Bloom filter
 The fact that exactly eight bits are checked during each lookup means that these filters
