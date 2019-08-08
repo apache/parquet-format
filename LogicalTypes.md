@@ -282,6 +282,12 @@ counterpart, it must annotate an `int32`.
 type that is UTC normalized and has `MICROS` precision. Like the logical type
 counterpart, it must annotate an `int64`.
 
+Despite there is no exact corresponding ConvertedType for local time semantic,
+in order to support forward compatibility with those libraries, which annotated
+their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotation,
+Parquet writer implementation *must* annotate local time with legacy annotations too,
+as shown below.
+
 *Backward compatibility:*
 
 | ConvertedType | LogicalType |
@@ -313,11 +319,11 @@ counterpart, it must annotate an `int64`.
     <tr>
         <td rowspan="3">isAdjustedToUTC = false</td>
         <td>unit = MILLIS</td>
-        <td>-</td>
+        <td>TIME_MILLIS</td>
     </tr>
     <tr>
         <td>unit = MICROS</td>
-        <td>-</td>
+        <td>TIME_MICROS</td>
     </tr>
     <tr>
         <td>unit = NANOS</td>
@@ -452,6 +458,12 @@ type counterpart, it must annotate an `int64`.
 logical type that is UTC normalized and has `MICROS` precision. Like the logical
 type counterpart, it must annotate an `int64`.
 
+Despite there is no exact corresponding ConvertedType for local timestamp semantic,
+in order to support forward compatibility with those libraries, which annotated
+their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotation,
+Parquet writer implementation *must* annotate local timestamps with legacy annotations too,
+as shown below.
+
 *Backward compatibility:*
 
 | ConvertedType | LogicalType |
@@ -483,11 +495,11 @@ type counterpart, it must annotate an `int64`.
     <tr>
         <td rowspan="3">isAdjustedToUTC = false</td>
         <td>unit = MILLIS</td>
-        <td>-</td>
+        <td>TIMESTAMP_MILLIS</td>
     </tr>
     <tr>
         <td>unit = MICROS</td>
-        <td>-</td>
+        <td>TIMESTAMP_MICROS</td>
     </tr>
     <tr>
         <td>unit = NANOS</td>
