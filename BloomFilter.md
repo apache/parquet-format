@@ -147,10 +147,10 @@ This closes the definition of a block and the operations on it.
 
 Now that a block is defined, we can describe Parquet's split block
 Bloom filters. A split block Bloom filter (henceforth "SBBF") is
-composed of `z` blocks, where `z` is a power of two greater than or
-equal to one and less than 2 to the 27th power. When an SBBF is
-initialized, each block in it is initialized, which means each bit in
-each word in each block in the SBBF is unset.
+composed of `z` blocks, where `z` is greater than or equal to one and
+less than 2 to the 31st power. When an SBBF is initialized, each block
+in it is initialized, which means each bit in each word in each block
+in the SBBF is unset.
 
 In addition to initialization, an SBBF supports an operation called
 `filter_insert` and one called `filter_check`. Each takes as an
@@ -158,10 +158,37 @@ argument a 64-bit unsigned integer; `filter_check` returns a boolean
 and `filter_insert` does not return a value, but does modify the SBBF.
 
 The `filter_insert` operation first uses the most significant 32 bits
-of its argument, modulo the number of blocks, to select a block to
-operate on. It then uses the least significant 32 bits of the argument
-to `filter_insert` as an argument to `block_insert` called on that
-block.
+of its argument to select a block to operate on. Call the argument
+"`h`", and recall the use of "`z`" to mean the number of blocks. Then
+a block number `i` between `0` and `z-1` (inclusive) to operate on is
+chosen as follows:
+
+```c
+unsigned int64 h_top_bits = h >> 32;
+unsigned int64 z_as_64_bit = z;
+unsigned int32 i = (h_top_bits * z_as_64_bit) >> 32;
+```
+
+The first line extracts the most significant 32 bits from `h` and
+assignes them to a 64-bit unsigned integer. The second line is
+simpler: it just sets an unsigned 64-bit value to the same value as
+the 32-bit unsigned value `z`. The purpose of having both `h_top_bits`
+and `z_as_64_bit` be 64-bit values is so that their product is a
+64-bit value. That product is taken in the third line, and then the
+most significant 32 bits are extracted into the value `i`, which is
+the index of the block that will be operated on.
+
+
+After this process to select `i`, `filter_insert` uses the least
+significant 32 bits of `h` as the argument to `block_insert` called on
+block `i`.
+
+The technique for converting the most significant 32 bits to an
+integer between `0` and `z-1` (inclusive) avoids using the modulo
+operation, which is often very slow.  This trick can be found in
+[Kenneth A. Ross's 2006 IBM research report, "Efficient Hash Probes on
+Modern Processors"](
+https://domino.research.ibm.com/library/cyberdig.nsf/papers/DF54E3545C82E8A585257222006FD9A2/$File/rc24100.pdf)
 
 The `filter_check` operation uses the same method as `filter_insert`
 to select a block to operate on, then uses the least significant 32
@@ -178,14 +205,16 @@ significant 32 bits.
 
 ```
 void filter_insert(SBBF filter, unsigned int64 x) {
-  block b = filter.getBlock((x >> 32) % filter.numberOfBlocks());
+  unsigned int64 i = ((x >> 32) * filter.numberOfBlocks()) >> 32;
+  block b = filter.getBlock(i);
   block_insert(b, (unsigned int32)x)
 }
 ```
 
 ```
 boolean filter_check(SBBF filter, unsigned int64 x) {
-  block b = filter.getBlock((x >> 32) % filter.numberOfBlocks());
+  unsigned int64 i = ((x >> 32) * filter.numberOfBlocks()) >> 32;
+  block b = filter.getBlock(i);
   return block_check(b, (unsigned int32)x)
 }
 ```
