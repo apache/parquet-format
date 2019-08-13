@@ -264,6 +264,14 @@ union BloomFilterHash {
 }
 
 /**
+ * The compression used in the Bloom filter.
+ **/
+struct Uncompressed {}
+union BloomFilterCompression {
+  1: Uncompressed UNCOMPRESSED;
+}
+
+/**
   * Bloom filter header is stored at beginning of Bloom filter data of each column
   * and followed by its bitset.
   **/
@@ -274,6 +282,8 @@ struct BloomFilterPageHeader {
   2: required BloomFilterAlgorithm algorithm;
   /** The hash function used for Bloom filter. **/
   3: required BloomFilterHash hash;
+  /** The compression used in the Bloom filter **/
+  4: required BloomFilterCompression compression;
 }
 
 struct ColumnMetaData {
