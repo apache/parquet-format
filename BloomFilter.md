@@ -132,6 +132,7 @@ to default row group size. It is also recommended to expose the ability for sett
 parameters to end users.
 
 #### File Format
+
 Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block Bloom
 filter contains the header of one Bloom filter, which must include the size of the filter in bytes, the algorithm,
 the hash function, and the Bloom filter bitset. The offset in column chunk metadata points to the start of
@@ -182,7 +183,7 @@ struct ColumnMetaData {
 
 ```
 
-The Bloom filter data is stored right after the page indexes, and the file layout looks like:
+The Bloom filter data of a row group is stored at the beginning of the row group, and the file layout looks like:
  ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter.png)
 
 #### Encryption
