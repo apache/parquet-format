@@ -135,7 +135,7 @@ parameters to end users.
 
 Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block Bloom
 filter contains the header of one Bloom filter, which must include the size of the filter in bytes, the algorithm,
-the hash function, and the Bloom filter bitset. The offset in column chunk metadata points to the start of
+the hash function, the compression and the Bloom filter bitset. The offset in column chunk metadata points to the start of
 the Bloom filter header. 
 Here are the Bloom filter definitions in thrift:
 
@@ -183,8 +183,12 @@ struct ColumnMetaData {
 
 ```
 
-The Bloom filter data of a row group is stored at the beginning of the row group, and the file layout looks like:
- ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter.png)
+The Bloom filters are grouped by row group and with data for each column in the same order as the file schema.
+The Bloom filter data can be stored before the page indexes after all row groups. The file layout looks like:
+ ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter2.png)
+
+Or it can be stored between row groups, the file layout looks like:
+ ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter1.png)
 
 #### Encryption
 In the case of columns with sensitive data, the Bloom filter exposes a subset of sensitive
