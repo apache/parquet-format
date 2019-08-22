@@ -133,11 +133,12 @@ parameters to end users.
 
 #### File Format
 
-Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block Bloom
-filter contains the header of one Bloom filter, which must include the size of the filter in bytes, the algorithm,
-the hash function, the compression and the Bloom filter bitset. The offset in column chunk metadata points to the start of
-the Bloom filter header. 
+Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block
+bloom filter consists of the bloom filter header followed by the bloom filter bitset. The bloom filter
+header encodes the size of the bloom filter bit set in bytes that is used to read the bitset.
+
 Here are the Bloom filter definitions in thrift:
+
 
 ```
 /** Block-based algorithm type annotation. **/
