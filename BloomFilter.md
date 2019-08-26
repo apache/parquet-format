@@ -264,10 +264,13 @@ false positive rates:
 |                       41   |  0.001 %                   |
 
 #### File Format
-The Bloom filter data of a column chunk, which contains the size of the filter in bytes, the
-algorithm, the hash function and the Bloom filter bitset, is stored near the footer. The Bloom
-filter data offset is stored in column chunk metadata. Here are Bloom filter definitions in
-thrift:
+
+Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block
+bloom filter consists of the bloom filter header followed by the bloom filter bitset. The bloom filter
+header encodes the size of the bloom filter bit set in bytes that is used to read the bitset.
+
+Here are the Bloom filter definitions in thrift:
+
 
 ```
 /** Block-based algorithm type annotation. **/
@@ -322,6 +325,13 @@ struct ColumnMetaData {
 }
 
 ```
+
+The Bloom filters are grouped by row group and with data for each column in the same order as the file schema.
+The Bloom filter data can be stored before the page indexes after all row groups. The file layout looks like:
+ ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter2.png)
+
+Or it can be stored between row groups, the file layout looks like:
+ ![File Layout - Bloom filter footer](doc/images/FileLayoutBloomFilter1.png)
 
 #### Encryption
 In the case of columns with sensitive data, the Bloom filter exposes a subset of sensitive
