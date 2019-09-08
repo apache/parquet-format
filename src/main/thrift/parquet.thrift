@@ -122,7 +122,7 @@ enum ConvertedType {
   /**
    * An unsigned integer value.
    *
-   * The number describes the maximum number of meainful data bits in
+   * The number describes the maximum number of meaningful data bits in
    * the stored value. 8, 16 and 32 bit values are stored using the
    * INT32 physical type.  64 bit values are stored using the INT64
    * physical type.
@@ -136,7 +136,7 @@ enum ConvertedType {
   /**
    * A signed integer value.
    *
-   * The number describes the maximum number of meainful data bits in
+   * The number describes the maximum number of meaningful data bits in
    * the stored value. 8, 16 and 32 bit values are stored using the
    * INT32 physical type.  64 bit values are stored using the INT64
    * physical type.
