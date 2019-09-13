@@ -19,6 +19,48 @@
 
 # Parquet #
 
+### Version 2.7.0 ###
+
+#### Sub-task
+
+*   [PARQUET-1592](https://issues.apache.org/jira/browse/PARQUET-1592) - update hash naming of bloom filter
+*   [PARQUET-1619](https://issues.apache.org/jira/browse/PARQUET-1619) - Merge crypto spec and structures to format master
+*   [PARQUET-1625](https://issues.apache.org/jira/browse/PARQUET-1625) - Update parquet thrift to align with spec
+*   [PARQUET-1630](https://issues.apache.org/jira/browse/PARQUET-1630) - Resolve Bloom filter spec concerns
+
+#### Bug
+
+*   [PARQUET-1437](https://issues.apache.org/jira/browse/PARQUET-1437) - Misleading comment in parquet.thrift
+*   [PARQUET-1554](https://issues.apache.org/jira/browse/PARQUET-1554) - Compilation error when upgrading Scrooge version
+*   [PARQUET-1561](https://issues.apache.org/jira/browse/PARQUET-1561) - Inconsistencies in the Parquet Delta Encoding specification
+
+#### New Feature
+
+*   [PARQUET-41](https://issues.apache.org/jira/browse/PARQUET-41) - Add bloom filters to parquet statistics
+*   [PARQUET-1178](https://issues.apache.org/jira/browse/PARQUET-1178) - Parquet modular encryption
+
+#### Improvement
+
+*   [PARQUET-1462](https://issues.apache.org/jira/browse/PARQUET-1462) - Allow specifying new development version in prepare-release.sh
+*   [PARQUET-1487](https://issues.apache.org/jira/browse/PARQUET-1487) - Do not write original type for timezone-agnostic timestamps
+*   [PARQUET-1499](https://issues.apache.org/jira/browse/PARQUET-1499) - [parquet-mr] Add Java 11 to Travis
+*   [PARQUET-1539](https://issues.apache.org/jira/browse/PARQUET-1539) - Clarify CRC checksum in page header
+*   [PARQUET-1579](https://issues.apache.org/jira/browse/PARQUET-1579) - Add Github PR template
+*   [PARQUET-1588](https://issues.apache.org/jira/browse/PARQUET-1588) - Bump Apache Thrift to 0.12.0 in parquet-format
+*   [PARQUET-1589](https://issues.apache.org/jira/browse/PARQUET-1589) - Bump Java to 8
+*   [PARQUET-1590](https://issues.apache.org/jira/browse/PARQUET-1590) - [parquet-format] Add Java 11 to Travis
+*   [PARQUET-1591](https://issues.apache.org/jira/browse/PARQUET-1591) - Remove @author tags from the source
+*   [PARQUET-1609](https://issues.apache.org/jira/browse/PARQUET-1609) - support xxhash in bloom filter
+*   [PARQUET-1610](https://issues.apache.org/jira/browse/PARQUET-1610) - Small spelling issues
+*   [PARQUET-1617](https://issues.apache.org/jira/browse/PARQUET-1617) - Add more details to bloom filter spec
+
+#### Task
+
+*   [PARQUET-1433](https://issues.apache.org/jira/browse/PARQUET-1433) - Parquet-format doesn't compile with Thrift 0.10.0
+*   [PARQUET-1572](https://issues.apache.org/jira/browse/PARQUET-1572) - Clarify the definition of timestamp types
+*   [PARQUET-1585](https://issues.apache.org/jira/browse/PARQUET-1585) - Update old external links in the code base
+*   [PARQUET-1627](https://issues.apache.org/jira/browse/PARQUET-1627) - Update specification so that legacy timestamp logical types can be written for local semantics as well
+
 ### Version 2.6.0 ###
 
 #### Bug
