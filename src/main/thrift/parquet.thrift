@@ -968,9 +968,14 @@ struct AesGcmCtrV1 {
   3: optional bool supply_aad_prefix
 }
 
+struct AesCtrV1 {
+
+}
+
 union EncryptionAlgorithm {
   1: AesGcmV1 AES_GCM_V1
   2: AesGcmCtrV1 AES_GCM_CTR_V1
+  3: AesCtrV1 AES_CTR_V1
 }
 
 /**
