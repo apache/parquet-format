@@ -19,6 +19,22 @@
 
 # Parquet #
 
+### Version 2.8.0 ###
+
+#### New Feature
+
+*   [PARQUET-1622](https://issues.apache.org/jira/browse/PARQUET-1622) - Add BYTE\_STREAM\_SPLIT encoding
+
+#### Improvement
+
+*   [PARQUET-1672](https://issues.apache.org/jira/browse/PARQUET-1672) - \[DOC\] Broken link to "How To Contribute" section in Parquet-MR project
+*   [PARQUET-1708](https://issues.apache.org/jira/browse/PARQUET-1708) - Fix Thrift compiler warning
+
+#### Task
+
+*   [PARQUET-1687](https://issues.apache.org/jira/browse/PARQUET-1687) - Update release process
+*   [PARQUET-1714](https://issues.apache.org/jira/browse/PARQUET-1714) - Release parquet format 2.8.0
+
 ### Version 2.7.0 ###
 
 #### Sub-task
