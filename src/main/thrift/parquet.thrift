@@ -566,7 +566,7 @@ struct DataPageHeaderV2 {
   If missing it is considered compressed */
   7: optional bool is_compressed = 1;
 
-  /** optional statistics for this column chunk */
+  /** optional statistics for the data in this page **/
   8: optional Statistics statistics;
 }
 
