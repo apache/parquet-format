@@ -646,6 +646,8 @@ struct PageHeader {
    *     uncompressed definition levels and the compressed column values.
    *     If no compression scheme is specified, the CRC shall be calculated on
    *     the uncompressed concatenation.
+   * - In encrypted columns, CRC is calculated after page encryption; the
+   *   encryption itself is performed after page compression (if compressed)
    * If enabled, this allows for disabling checksumming in HDFS if only a few
    * pages need to be read.
    **/
