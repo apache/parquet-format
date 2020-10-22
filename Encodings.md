@@ -20,9 +20,10 @@
 Parquet encoding definitions
 ====
 
-This file contains the specification of all supported encodings.
+This file contains the specification of all supported encodings. Each
+encoding also has a parenthetical indicate which data versions support it.
 
-### <a name="PLAIN"></a>Plain: (PLAIN = 0)
+### <a name="PLAIN"></a>Plain: (PLAIN = 0) (V1 or V2)
 
 Supported Types: all
 
@@ -46,7 +47,7 @@ For native types, this outputs the data as little endian. Floating
 For the byte array type, it encodes the length as a 4 byte little
 endian, followed by the bytes.
 
-### Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
+### Dictionary Encoding (PLAIN_DICTIONARY = 2 (V1, deprecated V2) and RLE_DICTIONARY = 8 (V2))
 The dictionary encoding builds a dictionary of values encountered in a given column. The
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
 using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
@@ -61,7 +62,7 @@ followed by the values encoded using RLE/Bit packed described above (with the gi
 Using the PLAIN_DICTIONARY enum value is deprecated in the Parquet 2.0 specification. Prefer using RLE_DICTIONARY
 in a data page and PLAIN in a dictionary page for Parquet 2.0+ files.
 
-### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
+### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3) (V1 or V2)
 
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
@@ -150,7 +151,7 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 Note that the BIT_PACKED encoding method is only supported for encoding
 repetition and definition levels.
 
-### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
+### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5) (V2 Only)
 Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov.
@@ -231,7 +232,7 @@ The encoded data is
 This encoding is similar to the [RLE/bit-packing](#RLE) encoding. However the [RLE/bit-packing](#RLE) encoding is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
 The delta encoding algorithm described above stores a bit width per miniblock and is less sensitive to variations in the size of encoded integers. It is also somewhat doing RLE encoding as a block containing all the same values will be bit packed to a zero bit width thus being only a header.
 
-### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
+### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6) (V2 Only)
 
 Supported Types: BYTE_ARRAY
 
@@ -250,7 +251,7 @@ For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
 
 The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
 
-### Delta Strings: (DELTA_BYTE_ARRAY = 7)
+### Delta Strings: (DELTA_BYTE_ARRAY = 7) (V2 Only)
 
 Supported Types: BYTE_ARRAY
 
@@ -262,7 +263,7 @@ For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
 
-### Byte Stream Split: (BYTE_STREAM_SPLIT = 9)
+### Byte Stream Split: (BYTE_STREAM_SPLIT = 9) (V1 or V2)
 
 Supported Types: FLOAT DOUBLE
 
@@ -285,3 +286,5 @@ After applying the transformation, the data has the following representation:
 ```
 Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
 ```
+
+This encoding was introduced in December 2019.  It might not be supported in all implementations.

@@ -44,6 +44,9 @@ enum Type {
  * Common types used by frameworks(e.g. hive, pig) using parquet.  This helps map
  * between types in those frameworks to the base types in parquet.  This is only
  * metadata and not needed to read or write the data.
+ * 
+ * Legacy, writers should populate this for backwards compatibility but also populate
+ * LogicalType.  LogicalType should be preferred for reading.
  */
 enum ConvertedType {
   /** a BYTE_ARRAY actually contains UTF8 encoded chars */
@@ -403,6 +406,8 @@ struct SchemaElement {
  * Encodings supported by Parquet.  Not all encodings are valid for all types.  These
  * enums are also used to specify the encoding of definition and repetition levels.
  * See the accompanying doc for the details of the more complicated encodings.
+ *
+ * Some encoding are only valid for datapage v2, they are documented below.
  */
 enum Encoding {
   /** Default encoding.
@@ -440,30 +445,34 @@ enum Encoding {
   BIT_PACKED = 4;
 
   /** Delta encoding for integers. This can be used for int columns and works best
-   * on sorted data
+   * on sorted data.  Can only be used on datapage V2.
    */
   DELTA_BINARY_PACKED = 5;
 
   /** Encoding for byte arrays to separate the length values and the data. The lengths
-   * are encoded using DELTA_BINARY_PACKED
+   * are encoded using DELTA_BINARY_PACKED. Can only be used on datapage V2.
    */
   DELTA_LENGTH_BYTE_ARRAY = 6;
 
   /** Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED.
-   * Suffixes are stored as delta length byte arrays.
+   * Suffixes are stored as delta length byte arrays. Can only be used on datapage V2.
    */
   DELTA_BYTE_ARRAY = 7;
 
   /** Dictionary encoding: the ids are encoded using the RLE encoding
+   *
+   * Can only be used on datapage V2.
    */
   RLE_DICTIONARY = 8;
 
   /** Encoding for floating-point data.
-      K byte-streams are created where K is the size in bytes of the data type.
-      The individual bytes of an FP value are scattered to the corresponding stream and
-      the streams are concatenated.
-      This itself does not reduce the size of the data but can lead to better compression
-      afterwards.
+   *  K byte-streams are created where K is the size in bytes of the data type.
+   *  The individual bytes of an FP value are scattered to the corresponding stream and
+   *  the streams are concatenated.
+   *  This itself does not reduce the size of the data but can lead to better compression
+   *  afterwards.
+   *  Can be used for either datapage V1 or V2. This encoding was added in Dec 2019, not all 
+   *  implementations of Parquet support it.
    */
   BYTE_STREAM_SPLIT = 9;
 }
@@ -490,7 +499,7 @@ enum PageType {
   DATA_PAGE = 0;
   INDEX_PAGE = 1;
   DICTIONARY_PAGE = 2;
-  DATA_PAGE_V2 = 3;
+  DATA_PAGE_V2 = 3; // Currently not recommended for production use.
 }
 
 /**
