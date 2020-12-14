@@ -24,8 +24,8 @@ list is a subset of the features which parquet-format makes available.
 
 ## Purpose
 
-The list of core features for a certian release makes a compliance level that
-the different implementations can tied to. If an implementation claims that it
+The list of core features for a certain release makes a compliance level that
+for implementations . If an implementation claims that it
 provides the functionality of a parquet-format release core features it must
 implement all of the listed features according the specification (both read and
 write path). This way it is easier to ensure compatibility between the
@@ -34,7 +34,7 @@ We cannot and don't want to stop our clients to use any features that are not
 on this list but it shall be highlighted that using these features might make
 the written parquet files unreadable by other implementations. We can say that
 the features available in a parquet-format release (and one of the
-implementations of it) and not on this list are experimental.
+implementations of it) and not on the core feature list are experimental.
 
 ## Versioning
 
@@ -56,7 +56,7 @@ The idea is to only include features which are specified correctly and proven
 to be useful for everyone. Because of that we require to have at least two
 different implementations that are released and widely tested.
 
-## The "list"
+## Core feature list
 
 This list is based on the [parquet thrift file](src/main/thrift/parquet.thrift)
 where all the data structures we might use in a parquet file are defined.
@@ -165,7 +165,7 @@ The following compression algorithms are supported (including `UNCOMPRESSED`).
 
 ### Statistics
 
-However understanding statistics is not crucial to read the data in a file we
+Statistics are not required for reading data but incorrect or under specified statistics implementation can cause data loss.
 still list these features as wrongly specified/implemented statistics can still
 cause losing data unnoticed.
 The following features related to statistics are supported.
@@ -178,4 +178,3 @@ NOTE: Writing page level statistics to the data page headers is not required.
 The list of `column\_orders` in `FileMetaData` must be set according to the
 notes. See the special handlings required for floating point numbers at
 `ColumnOrder`.
-
