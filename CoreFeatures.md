@@ -24,17 +24,18 @@ list is a subset of the features which parquet-format makes available.
 
 ## Purpose
 
-The list of core features for a certain release makes a compliance level that
-for implementations . If an implementation claims that it
-provides the functionality of a parquet-format release core features it must
-implement all of the listed features according the specification (both read and
-write path). This way it is easier to ensure compatibility between the
-different parquet implementations.
+The list of core features for a certain release makes a compliance level for
+implementations. If a writer implementation claims that it is at a certain
+compliance level then it must use only features from the *core feature list* of
+that parquet-format release. If a reader implementation claims the same if must
+implement all of the listed features. This way it is easier to ensure
+compatibility between the different parquet implementations.
+
 We cannot and don't want to stop our clients to use any features that are not
 on this list but it shall be highlighted that using these features might make
 the written parquet files unreadable by other implementations. We can say that
 the features available in a parquet-format release (and one of the
-implementations of it) and not on the core feature list are experimental.
+implementations of it) and not on the *core feature list* are experimental.
 
 ## Versioning
 
@@ -54,7 +55,9 @@ in the thrift object `FileMetaData`.
 
 The idea is to only include features which are specified correctly and proven
 to be useful for everyone. Because of that we require to have at least two
-different implementations that are released and widely tested.
+different implementations that are released and widely tested. We also require
+to implement interoperability tests for that feature to prove one
+implementation can read the data written by the other one and vice versa.
 
 ## Core feature list
 
@@ -149,16 +152,11 @@ NOTE: [BIT\_PACKED](Encodings.md#bit-packed-deprecated-bit_packed--4) is
 deprecated and not used directly (boolean values are encoded with this under
 PLAIN) so not included in this list.
 
-**TODO**: In parquet-mr dictionary encoding is not enabled for
-FIXED\_LEN\_BYTE\_ARRAY in case of writing V1 pages. I don't know the reason
-behind. Any experience/idea about this from other implementations?
-
 ### Compression
 
 The following compression algorithms are supported (including `UNCOMPRESSED`).
 * `SNAPPY`
 * `GZIP`
-* `LZO` **(?)**
 * `BROTLI` **(?)**
 * `LZ4` **(?)**
 * `ZSTD` **(?)**
