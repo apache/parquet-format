@@ -274,6 +274,23 @@ struct TimestampType {
   2: required TimeUnit unit
 }
 
+/** Interval units for logical types */
+struct YearMonth {}
+struct DayTime {}
+union IntervalUnit {
+  1: YearMonth YEAR_MONTH
+  2: DayTime DAY_TIME
+}
+
+/*
+ * Interval logical type annotation
+ *
+ * Allowed for physical types: INT32 (year_month), FIXED_LEN_BYTE_ARRAY(8) (day_time)
+ */
+struct IntervalType {
+  1: required IntervalUnit unit
+}
+
 /**
  * Time logical type annotation
  *
@@ -335,7 +352,8 @@ union LogicalType {
   // use ConvertedType TIMESTAMP_MILLIS for TIMESTAMP(isAdjustedToUTC = *, unit = MILLIS)
   8:  TimestampType TIMESTAMP
 
-  // 9: reserved for INTERVAL
+  // The interval type is not compatible with the legacy ConvertedType INTERVAL
+  9: IntervalType INTERVAL
   10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
   11: NullType UNKNOWN        // no compatible ConvertedType
   12: JsonType JSON           // use ConvertedType JSON
