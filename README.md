@@ -240,9 +240,9 @@ There are many places in the format for compatible extensions:
 - Page types: Additional page types can be added and safely skipped.
 
 ## Compatibility
-Because of the many features got into the Parquet format it is hard for the
-different implementations to keep up. We introduced the list of "core
-features". This document is versioned by the parquet format releases and defines
+Because of the many features that have been added to the Parquet format not all
+of the implementations was able to keep up. We introduced the list of "core
+features". This document is versioned by the Parquet format releases and defines
 a compliance level for the different implementations. See
 [CoreFeatures.md](CoreFeatures.md) for more details.
 

@@ -29,11 +29,11 @@ implementations. If a writer implementation claims that it is at a certain
 compliance level then it must use only features from the *core feature list* of
 that parquet-format release. If a reader implementation claims the same if must
 implement all of the listed features. This way it is easier to ensure
-compatibility between the different parquet implementations.
+compatibility between the different Parquet implementations.
 
 We cannot and don't want to stop our clients to use any features that are not
 on this list but it shall be highlighted that using these features might make
-the written parquet files unreadable by other implementations. We can say that
+the written Parquet files unreadable by other implementations. We can say that
 the features available in a parquet-format release (and one of the
 implementations of it) and not on the *core feature list* are experimental.
 
@@ -43,13 +43,13 @@ This document is versioned by the parquet-format releases which follows the
 scheme of semantic versioning. It means that no feature will be deleted from
 this document under the same major version. (We might deprecate some, though.)
 Because of the semantic versioning if one implementation supports the core
-features of the parquet-format release `a.b.x` it must be able to read any
-parquet files written by implementations supporting the release `a.d.y` where
-`b >= d`.
+features of the parquet-format release `a.c.x` it must be able to read any
+Parquet files written by implementations supporting the release `a.b.y` where
+`c >= b`.
 
-If a parquet file is written according to a released version of this document
+If a Parquet file is written according to a released version of this document
 it might be a good idea to write this version into the field `compliance_level`
-in the thrift object `FileMetaData`.
+in the Thrift object `FileMetaData`.
 
 ## Adding new features
 
@@ -61,8 +61,8 @@ implementation can read the data written by the other one and vice versa.
 
 ## Core feature list
 
-This list is based on the [parquet thrift file](src/main/thrift/parquet.thrift)
-where all the data structures we might use in a parquet file are defined.
+This list is based on the [Parquet Thrift file](src/main/thrift/parquet.thrift)
+where all the data structures we might use in a Parquet file are defined.
 
 ### File structure
 
@@ -94,7 +94,7 @@ here.
 
 The [logical type](LogicalTypes.md)s are practically annotations helping to
 understand the related primitive type (or structure). Originally we have had
-the `ConvertedType` enum in the thrift file representing all the possible
+the `ConvertedType` enum in the Thrift file representing all the possible
 logical types. After a while we realized it is hard to extend and so introduced
 the `LogicalType` union. For backward compatibility reasons we allow to use the
 old `ConvertedType` values according to the specified rules but we expect that
