@@ -74,6 +74,16 @@ The following page types are supported:
 
 **TODO**: list optional fields that must be filled properly.
 
+#### Column chunk file reference
+
+The optional field `file_path` in the `ColumnChunk` object of the Parquet footer
+(aka Parquet Thrift file) makes it available to reference an external file. This
+option was used for different features like _summary files_ or
+_external column chunks_. These features were never specified correctly and
+they did not spread across the different implementations. Because of that we do
+not include these features in this document and therefore the field `file_path`
+is not supported.
+
 ### Types
 
 #### Primitive types
