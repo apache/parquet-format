@@ -17,7 +17,7 @@
   - under the License.
   -->
 
-# Parquet [![Build Status](https://github.com/apache/parquet-mr/workflows/Test/badge.svg)](https://github.com/apache/parquet-format/actions)
+# Parquet [![Build Status](https://github.com/apache/parquet-format/workflows/Test/badge.svg)](https://github.com/apache/parquet-format/actions)
 
 Parquet is a columnar storage format that supports nested data.
 
