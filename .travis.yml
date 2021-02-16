@@ -21,7 +21,13 @@ jdk:
   - openjdk8
   - openjdk11
 
-before_install:
+jobs:
+  include:
+    - name: Linux AARCH64
+      arch: arm64
+      before_script: sudo apt-get install -qq maven
+
+install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq protobuf-compiler
   - sudo apt-get install -qq libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
@@ -31,3 +37,5 @@ before_install:
   - ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-php --without-nodejs --without-java
   - sudo make install
   - cd ..
+
+script: mvn --batch-mode --show-version clean verify
