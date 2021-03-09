@@ -183,6 +183,9 @@ page is only the encoded values.
 
 The supported encodings are described in [Encodings.md](https://github.com/apache/parquet-format/blob/master/Encodings.md)
 
+The supported compression codecs are described in
+[Compression.md](https://github.com/apache/parquet-format/blob/master/Compression.md)
+
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common
 header and readers can skip over pages they are not interested in.  The data for the
