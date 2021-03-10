@@ -168,7 +168,6 @@ The following compression algorithms are supported (including `UNCOMPRESSED`).
 * `SNAPPY`
 * `GZIP`
 * `BROTLI` **(?)**
-* `LZ4` **(?)**
 * `ZSTD` **(?)**
 
 ### Statistics
