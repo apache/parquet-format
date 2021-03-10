@@ -65,8 +65,11 @@ A codec based on or interoperable with the
 
 ### BROTLI
 
-A codec based on or interoperable with the
-[Brotli compression library](https://github.com/google/brotli).
+A codec based on the Brotli format defined by
+[RFC 7932](https://tools.ietf.org/html/rfc7932).
+If any ambiguity arises when implementing this format, the implementation
+provided by the  [Brotli compression library](https://github.com/google/brotli)
+is authoritative.
 
 ### LZ4
 
