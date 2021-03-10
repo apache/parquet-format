@@ -24,12 +24,12 @@ This document contains the specification of all supported compression codecs.
 ## Overview
 
 Parquet allows the data block inside dictionary pages and data pages to
-be compressed for better space efficiency.  The Parquet specification allows
-several compression codecs, most of which are optional to implement.  Only the
-`UNCOMPRESSED` codec is mandatory.
+be compressed for better space efficiency. The Parquet format supports
+several compression covering different areas in the compression ratio /
+processing cost spectrum.
 
 The detailed specifications of compression codecs are maintained externally
-by the respective software projects, which we reference hereafter.
+by their respective authors or maintainers, which we reference hereafter.
 
 For all compression codecs except the deprecated `LZ4` codec, the raw data
 of a (data or dictionary) page is fed *as-is* to the underlying compression
@@ -45,14 +45,18 @@ No-op codec.  Data is left uncompressed.
 
 ### SNAPPY
 
-A codec based on or interoperable with the
-[Snappy compression library](https://github.com/google/snappy).
+A codec based on the
+[Snappy compression format](https://github.com/google/snappy/blob/master/format_description.txt).
+If any ambiguity arises when implementing this format, the implementation
+provided by Google Snappy [library](https://github.com/google/snappy/)
+is authoritative.
 
 ### GZIP
 
-A codec based on or interoperable with the `gzip` format (not the
-closely-related `zlib` format) defined by the
-[zlib compression library](https://zlib.net/).
+A codec based on the GZIP format (not the closely-related "zlib" or "deflate"
+formats) defined by [RFC 1952](https://tools.ietf.org/html/rfc1952).
+If any ambiguity arises when implementing this format, the implementation
+provided by the [zlib compression library](https://zlib.net/) is authoritative.
 
 ### LZO
 
@@ -77,10 +81,14 @@ switch to the newer, interoperable `LZ4_RAW` codec.
 
 ### ZSTD
 
-A codec based on or interoperable with the
-[ZStandard compression library](https://facebook.github.io/zstd/).
+A codec based on the Zstandard format defined by
+[RFC 8478](https://tools.ietf.org/html/rfc8478).  If any ambiguity arises
+when implementing this format, the implementation provided by the
+[ZStandard compression library](https://facebook.github.io/zstd/)
+is authoritative.
 
 ### LZ4_RAW
 
-A codec based on or interoperable with the LZ4 block format defined by the
-[LZ4 compression library](http://www.lz4.org/).
+A codec based on the [LZ4 block format](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md).
+If any ambiguity arises when implementing this format, the implementation
+provided by the [LZ4 compression library](http://www.lz4.org/) is authoritative.
