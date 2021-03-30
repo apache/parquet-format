@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [ '1.8', '11' ]
-    name: Build Parquet with JDK ${{ matrix.java }} and ${{ matrix.codes }}
+    name: Build Parquet with JDK ${{ matrix.java }}
 
     steps:
       - uses: actions/checkout@master
