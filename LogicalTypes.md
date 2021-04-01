@@ -31,6 +31,7 @@ This file contains the specification for all logical types.
 
 The parquet format's `LogicalType` stores the type annotation. The annotation
 may require additional metadata fields, as well as rules for those fields.
+
 There is an older representation of the logical type annotations called `ConvertedType`.
 To support backward compatibility with old files, readers should interpret `LogicalTypes`
 in the same way as `ConvertedType`, and writers should populate `ConvertedType` in the metadata
@@ -39,16 +40,18 @@ according to well defined conversion rules.
 ### Compatibility
 
 The Thrift definition of the metadata has two fields for logical types: `ConvertedType` and `LogicalType`.
-`ConvertedType` is an enum of all available annotation. Since Thrift enums can't have additional type parameters,
+`ConvertedType` is an enum of all available annotations. Since Thrift enums can't have additional type parameters,
 it is cumbersome to define additional type parameters, like decimal scale and precision
 (which are additional 32 bit integer fields on SchemaElement, and are relevant only for decimals) or time unit
 and UTC adjustment flag for Timestamp types. To overcome this problem, a new logical type representation was introduced into
-the metadata to replace `ConvertedType`: `LogicalType`.  The new representation is a union of struct of logical types,
+the metadata to replace `ConvertedType`: `LogicalType`.  The new representation is a union of structs of logical types,
 this way allowing more flexible API, logical types can have type parameters.
 
-However, to maintain compatibility, Parquet readers should be able to read
-and interpret old logical type representation (in case the new one is not present,
-because the file was written by older writer), and write `ConvertedType` field for old readers.
+`ConvertedType` is deprecated. However, to maintain compatibility with old writers,
+Parquet readers should be able to read and interpret `ConvertedType` annotations
+in case `LogicalType` annotations are not present. Parquet writers must always write
+`LogicalType` annotations where applicable, but should also write the corresponding
+`ConvertedType` annotations (if any) to maintain compatibility with old readers.
 
 Compatibility considerations are mentioned for each annotation in the corresponding section.
 
@@ -242,7 +245,7 @@ comparison.
 To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
-## Date/Time Types
+## Temporal Types
 
 ### DATE
 
@@ -753,7 +756,9 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
-## Null
-Sometimes when discovering the schema of existing data values are always null and there's no type information.
-The `NULL` type can be used to annotates a column that is always null.
-(Similar to Null type in Avro)
+## UNKNOWN (always null)
+
+Sometimes, when discovering the schema of existing data, values are always null
+and there's no type information.
+The `UNKNOWN` type can be used to annotate a column that is always null.
+(Similar to Null type in Avro and Arrow)
