@@ -41,9 +41,10 @@ enum Type {
 }
 
 /**
- * Common types used by frameworks(e.g. hive, pig) using parquet.  This helps map
- * between types in those frameworks to the base types in parquet.  This is only
- * metadata and not needed to read or write the data.
+ * DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+ * ConvertedType is superseded by LogicalType.  This enum should not be extended.
+ *
+ * See LogicalTypes.md for conversion between ConvertedType and LogicalType.
  */
 enum ConvertedType {
   /** a BYTE_ARRAY actually contains UTF8 encoded chars */
@@ -316,7 +317,7 @@ struct BsonType {
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
- * SchemaElement must also set the corresponding ConvertedType from the
+ * SchemaElement should also set the corresponding ConvertedType from the
  * following table.
  */
 union LogicalType {
@@ -374,13 +375,19 @@ struct SchemaElement {
    */
   5: optional i32 num_children;
 
-  /** When the schema is the result of a conversion from another model
+  /**
+   * DEPRECATED: When the schema is the result of a conversion from another model.
    * Used to record the original type to help with cross conversion.
+   *
+   * This is superseded by logicalType.
    */
   6: optional ConvertedType converted_type;
 
-  /** Used when this column contains decimal data.
+  /**
+   * DEPRECATED: Used when this column contains decimal data.
    * See the DECIMAL converted type for more details.
+   *
+   * This is superseded by using the DecimalType annotation in logicalType.
    */
   7: optional i32 scale
   8: optional i32 precision
