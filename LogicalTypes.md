@@ -50,7 +50,7 @@ this way allowing more flexible API, logical types can have type parameters.
 `ConvertedType` is deprecated. However, to maintain compatibility with old writers,
 Parquet readers should be able to read and interpret `ConvertedType` annotations
 in case `LogicalType` annotations are not present. Parquet writers must always write
-`LogicalType` annotations where applicable, but should also write the corresponding
+`LogicalType` annotations where applicable, but must also write the corresponding
 `ConvertedType` annotations (if any) to maintain compatibility with old readers.
 
 Compatibility considerations are mentioned for each annotation in the corresponding section.

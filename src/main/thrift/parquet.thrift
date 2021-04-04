@@ -317,15 +317,15 @@ struct BsonType {
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
- * SchemaElement should also set the corresponding ConvertedType from the
- * following table.
+ * SchemaElement must also set the corresponding ConvertedType (if any)
+ * from the following table.
  */
 union LogicalType {
   1:  StringType STRING       // use ConvertedType UTF8
   2:  MapType MAP             // use ConvertedType MAP
   3:  ListType LIST           // use ConvertedType LIST
   4:  EnumType ENUM           // use ConvertedType ENUM
-  5:  DecimalType DECIMAL     // use ConvertedType DECIMAL
+  5:  DecimalType DECIMAL     // use ConvertedType DECIMAL + SchemaElement.{scale, precision}
   6:  DateType DATE           // use ConvertedType DATE
 
   // use ConvertedType TIME_MICROS for TIME(isAdjustedToUTC = *, unit = MICROS)
@@ -341,7 +341,7 @@ union LogicalType {
   11: NullType UNKNOWN        // no compatible ConvertedType
   12: JsonType JSON           // use ConvertedType JSON
   13: BsonType BSON           // use ConvertedType BSON
-  14: UUIDType UUID
+  14: UUIDType UUID           // no compatible ConvertedType
 }
 
 /**
