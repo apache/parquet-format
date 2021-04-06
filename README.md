@@ -17,7 +17,7 @@
   - under the License.
   -->
 
-# Parquet [![Build Status](https://travis-ci.org/apache/parquet-format.png?branch=master)](http://travis-ci.org/apache/parquet-format)
+# Parquet [![Build Status](https://github.com/apache/parquet-format/actions/workflows/test.yml/badge.svg)](https://github.com/apache/parquet-format/actions)
 
 Parquet is a columnar storage format that supports nested data.
 
@@ -139,9 +139,8 @@ by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
 example, strings are stored as byte arrays (binary) with a UTF8 annotation.
 These annotations define how to further decode and interpret the data.
-Annotations are stored as `ConvertedType` fields in the file metadata and are
-documented in
-[LogicalTypes.md][logical-types].
+Annotations are stored as `LogicalType` fields in the file metadata and are
+documented in [LogicalTypes.md][logical-types].
 
 [logical-types]: LogicalTypes.md
 
@@ -182,6 +181,9 @@ For example, in the case where the column is non-nested and required, the data i
 page is only the encoded values.
 
 The supported encodings are described in [Encodings.md](https://github.com/apache/parquet-format/blob/master/Encodings.md)
+
+The supported compression codecs are described in
+[Compression.md](https://github.com/apache/parquet-format/blob/master/Compression.md)
 
 ## Column chunks
 Column chunks are composed of pages written back to back.  The pages share a common

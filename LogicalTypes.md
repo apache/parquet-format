@@ -31,6 +31,7 @@ This file contains the specification for all logical types.
 
 The parquet format's `LogicalType` stores the type annotation. The annotation
 may require additional metadata fields, as well as rules for those fields.
+
 There is an older representation of the logical type annotations called `ConvertedType`.
 To support backward compatibility with old files, readers should interpret `LogicalTypes`
 in the same way as `ConvertedType`, and writers should populate `ConvertedType` in the metadata
@@ -39,16 +40,18 @@ according to well defined conversion rules.
 ### Compatibility
 
 The Thrift definition of the metadata has two fields for logical types: `ConvertedType` and `LogicalType`.
-`ConvertedType` is an enum of all available annotation. Since Thrift enums can't have additional type parameters,
+`ConvertedType` is an enum of all available annotations. Since Thrift enums can't have additional type parameters,
 it is cumbersome to define additional type parameters, like decimal scale and precision
 (which are additional 32 bit integer fields on SchemaElement, and are relevant only for decimals) or time unit
 and UTC adjustment flag for Timestamp types. To overcome this problem, a new logical type representation was introduced into
-the metadata to replace `ConvertedType`: `LogicalType`.  The new representation is a union of struct of logical types,
+the metadata to replace `ConvertedType`: `LogicalType`.  The new representation is a union of structs of logical types,
 this way allowing more flexible API, logical types can have type parameters.
 
-However, to maintain compatibility, Parquet readers should be able to read
-and interpret old logical type representation (in case the new one is not present,
-because the file was written by older writer), and write `ConvertedType` field for old readers.
+`ConvertedType` is deprecated. However, to maintain compatibility with old writers,
+Parquet readers should be able to read and interpret `ConvertedType` annotations
+in case `LogicalType` annotations are not present. Parquet writers must always write
+`LogicalType` annotations where applicable, but must also write the corresponding
+`ConvertedType` annotations (if any) to maintain compatibility with old readers.
 
 Compatibility considerations are mentioned for each annotation in the corresponding section.
 
@@ -242,7 +245,7 @@ comparison.
 To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
-## Date/Time Types
+## Temporal Types
 
 ### DATE
 
@@ -256,17 +259,17 @@ The sort order used for `DATE` is signed.
 
 `TIME` is used for a logical time type without a date with millisecond or microsecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
-and precision (`MILLIS` or `MICROS`, `NANOS`).
+and unit (`MILLIS` or `MICROS`, `NANOS`).
 
-`TIME` with precision `MILLIS` is used for millisecond precision.
+`TIME` with unit `MILLIS` is used for millisecond precision.
 It must annotate an `int32` that stores the number of
 milliseconds after midnight.
 
-`TIME` with precision `MICROS` is used for microsecond precision.
+`TIME` with unit `MICROS` is used for microsecond precision.
 It must annotate an `int64` that stores the number of
 microseconds after midnight.
 
-`TIME` with precision `NANOS` is used for nanosecond precision.
+`TIME` with unit `NANOS` is used for nanosecond precision.
 It must annotate an `int64` that stores the number of
 nanoseconds after midnight.
 
@@ -341,26 +344,26 @@ time-line and such interpertations are allowed on purpose.
 
 The `TIMESTAMP` type has two type parameters:
 - `isAdjustedToUTC` must be either `true` or `false`.
-- `precision` must be one of `MILLIS`, `MICROS` or `NANOS`. This list is subject
-  to potential expansion in the future. Upon reading, unknown `precision`-s must
+- `unit` must be one of `MILLIS`, `MICROS` or `NANOS`. This list is subject
+  to potential expansion in the future. Upon reading, unknown `unit`-s must
   be handled as unsupported features (rather than as errors in the data files).
 
 #### Instant semantics (timestamps normalized to UTC)
 
 A `TIMESTAMP` with `isAdjustedToUTC=true` is defined as the number of
-milliseconds, microseconds or nanoseconds (depending on the `precision`
+milliseconds, microseconds or nanoseconds (depending on the `unit`
 parameter being `MILLIS`, `MICROS` or `NANOS`, respectively) elapsed since the
 Unix epoch, 1970-01-01 00:00:00 UTC. Each such value unambiguously identifies a
 single instant on the time-line.
 
-For example, in a `TIMESTAMP(isAdjustedToUTC=true, precision=MILLIS)`, the
+For example, in a `TIMESTAMP(isAdjustedToUTC=true, unit=MILLIS)`, the
 number 172800000 corresponds to 1970-01-03 00:00:00 UTC, because it is equal to
 2 * 24 * 60 * 60 * 1000, therefore it is exactly two days from the reference
 point, the Unix epoch. In Java, this calculation can be achieved by calling
 `Instant.ofEpochMilli(172800000)`.
 
 As a slightly more complicated example, if one wants to store 1970-01-03
-00:00:00 (UTC+01:00) as a `TIMESTAMP(isAdjustedToUTC=true, precision=MILLIS)`,
+00:00:00 (UTC+01:00) as a `TIMESTAMP(isAdjustedToUTC=true, unit=MILLIS)`,
 first the time zone offset has to be dealt with. By normalizing the timestamp to
 UTC, we calculate what time in UTC corresponds to the same instant: 1970-01-02
 23:00:00 UTC. This is 1 day and 23 hours after the epoch, therefore it can be
@@ -397,7 +400,7 @@ local timestamp. We define the reference local timestamp to be 1970-01-01
 00:00:00 (note the lack of UTC at the end, as this is not an instant). This way
 the encoding of local timestamp values becomes very similar to the encoding of
 instant values. For example, in a `TIMESTAMP(isAdjustedToUTC=false,
-precision=MILLIS)`, the number 172800000 corresponds to 1970-01-03 00:00:00
+unit=MILLIS)`, the number 172800000 corresponds to 1970-01-03 00:00:00
 (note the lack of UTC at the end), because it is exactly two days from the
 reference point (172800000 = 2 * 24 * 60 * 60 * 1000).
 
@@ -440,10 +443,10 @@ second and subsecond values can be encoded into an `int64`. Most notably:
   - minute = 61
   - month = 13
   - day = 29, month = 2, year = any non-leap year
-- Due to the range of the `int64` type, timestamps using the `NANOS` precision
+- Due to the range of the `int64` type, timestamps using the `NANOS` unit
   can only represent values between 1677-09-21 00:12:43 and 2262-04-11 23:47:16.
   Values outside of this range can not be represented with the `NANOS`
-  precision. (Other precisions have similar limits but those are outside of the
+  unit. (Other precisions have similar limits but those are outside of the
   domain for practical everyday usage.)
 
 The sort order used for `TIMESTAMP` is signed.
@@ -753,7 +756,9 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
-## Null
-Sometimes when discovering the schema of existing data values are always null and there's no type information.
-The `NULL` type can be used to annotates a column that is always null.
-(Similar to Null type in Avro)
+## UNKNOWN (always null)
+
+Sometimes, when discovering the schema of existing data, values are always null
+and there's no type information.
+The `UNKNOWN` type can be used to annotate a column that is always null.
+(Similar to Null type in Avro and Arrow)
