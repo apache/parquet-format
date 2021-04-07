@@ -19,6 +19,25 @@
 
 # Parquet #
 
+### Version 2.9.0 ###
+
+#### Bug
+
+*   [PARQUET-1862](https://issues.apache.org/jira/browse/PARQUET-1862) - Fix comment on statistics field in Thrift file
+*   [PARQUET-2011](https://issues.apache.org/jira/browse/PARQUET-2011) - Update the doc for data types having parameters as precision instead of unit
+
+#### Improvement
+
+*   [PARQUET-1892](https://issues.apache.org/jira/browse/PARQUET-1892) - Explain CRC computation better
+*   [PARQUET-1930](https://issues.apache.org/jira/browse/PARQUET-1930) - Bump Apache Thrift to 0.13.0
+*   [PARQUET-1969](https://issues.apache.org/jira/browse/PARQUET-1969) - Migrate CI to Github Actions
+*   [PARQUET-1996](https://issues.apache.org/jira/browse/PARQUET-1996) - \[Format\] Add interoperable LZ4 codec, deprecate existing LZ4 codec
+
+#### Task
+
+*   [PARQUET-1777](https://issues.apache.org/jira/browse/PARQUET-1777) - Add Parquet logo vector files to repo
+*   [PARQUET-2013](https://issues.apache.org/jira/browse/PARQUET-2013) - \[Format\] Mention that converted types are deprecated
+
 ### Version 2.8.0 ###
 
 #### New Feature
