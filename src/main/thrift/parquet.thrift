@@ -941,13 +941,14 @@ struct ColumnIndex {
   1: required list<bool> null_pages
 
   /**
-   * Two lists containing lower and upper bounds for the values of each page.
-   * These may be the actual minimum and maximum values found on a page, but
-   * can also be (more compact) values that do not exist on a page. For
-   * example, instead of storing ""Blart Versenwald III", a writer may set
-   * min_values[i]="B", max_values[i]="C". Such more compact values must still
-   * be valid values within the column's logical type. Readers must make sure
-   * that list entries are populated before using them by inspecting null_pages.
+   * Two lists containing lower and upper bounds for the values of each page
+   * determined by the ColumnOrder of the column. These may be the actual
+   * minimum and maximum values found on a page, but can also be (more compact)
+   * values that do not exist on a page. For example, instead of storing ""Blart
+   * Versenwald III", a writer may set min_values[i]="B", max_values[i]="C".
+   * Such more compact values must still be valid values within the column's
+   * logical type. Readers must make sure that list entries are populated before
+   * using them by inspecting null_pages.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1024,17 +1025,20 @@ struct FileMetaData {
   6: optional string created_by
 
   /**
-   * Sort order used for the min_value and max_value fields of each column in
-   * this file. Sort orders are listed in the order matching the columns in the
-   * schema. The indexes are not necessary the same though, because only leaf
-   * nodes of the schema are represented in the list of sort orders.
+   * Sort order used for the min_value and max_value fields in the Statistics
+   * objects and the min_values and max_values fields in the ColumnIndex
+   * objects of each column in this file. Sort orders are listed in the order
+   * matching the columns in the schema. The indexes are not necessary the same
+   * though, because only leaf nodes of the schema are represented in the list
+   * of sort orders.
    *
-   * Without column_orders, the meaning of the min_value and max_value fields is
-   * undefined. To ensure well-defined behaviour, if min_value and max_value are
-   * written to a Parquet file, column_orders must be written as well.
+   * Without column_orders, the meaning of the min_value and max_value fields
+   * in the Statistics object and the ColumnIndex object is undefined. To ensure
+   * well-defined behaviour, these fields are written to a Parquet file,
+   * column_orders must be written as well.
    *
-   * The obsolete min and max fields are always sorted by signed comparison
-   * regardless of column_orders.
+   * The obsolete min and max fields in the Statistics object are always sorted
+   * by signed comparison regardless of column_orders.
    */
   7: optional list<ColumnOrder> column_orders;
 

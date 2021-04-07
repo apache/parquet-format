@@ -96,3 +96,6 @@ For range scans, this approach can be extended to return ranges of rows, page
 indices, and page offsets to scan in each column. The reader can then
 initialize a scanner for each column and fast forward them to the start row of
 the scan.
+
+The `min_values` and `max_values` are calculated based on the `column_orders`
+field in the `FileMetaData` struct of the footer.
