@@ -1034,7 +1034,7 @@ struct FileMetaData {
    *
    * Without column_orders, the meaning of the min_value and max_value fields
    * in the Statistics object and the ColumnIndex object is undefined. To ensure
-   * well-defined behaviour, these fields are written to a Parquet file,
+   * well-defined behaviour, if these fields are written to a Parquet file,
    * column_orders must be written as well.
    *
    * The obsolete min and max fields in the Statistics object are always sorted
