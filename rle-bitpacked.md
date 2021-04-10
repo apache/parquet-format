@@ -69,7 +69,7 @@ to the first slot (e.g. Apache Arrow), the decoding is the identity function.
 
 ### Example
 
-Let's now consider the the following byte stream and a `bit_width = 1`,
+Let's now consider the following byte stream and a `bit_width = 1`,
 
 ```
 [
