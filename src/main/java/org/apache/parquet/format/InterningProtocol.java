@@ -226,7 +226,7 @@ public class InterningProtocol extends TProtocol {
 
   @Override
   public int getMinSerializedSize(byte b) throws TException {
-    return 0;
+    return delegate.getMinSerializedSize(b);
   }
 
   public void reset() {
