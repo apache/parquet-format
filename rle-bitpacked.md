@@ -25,7 +25,7 @@ and bit-packing. Note that "combine" here means this encoding allows both encodi
 within the same stream, and, during encoding, it can switch between them.
 
 This encoding is used to encode integer values that may either represent definition levels,
-representation levels, the boolean type, or ids of dictionary-encoded pages.
+representation levels, or ids of dictionary-encoded pages.
 
 This document uses MUST, SHOULD, etc. according to [RFC-8174](https://tools.ietf.org/html/rfc8174).
 
