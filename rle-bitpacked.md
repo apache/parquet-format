@@ -17,9 +17,9 @@
   - under the License.
   -->
 
-# RLE-Bitpacked hybrid encoding
+# RLE/bit-packed hybrid encoding
 
-The RLE-Bitpacked hybrid encoding is a parquet-specific encoding that combines
+The RLE/bit-packed hybrid encoding is a parquet-specific encoding that combines
 two well known encoding strategies, [RLE](https://en.wikipedia.org/wiki/Run-length_encoding)
 and bit-packing. Note that "combine" here means this encoding allows both encodings
 within the same stream, and, during encoding, it can switch between them.
