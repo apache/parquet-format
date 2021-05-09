@@ -354,7 +354,7 @@ struct SchemaElement {
   /** Data type for this field. Not set if the current element is a non-leaf node */
   1: optional Type type;
 
-  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the vales.
+  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values.
    * Otherwise, if specified, this is the maximum bit length to store any of the values.
    * (e.g. a low cardinality INT col could have this set to 3).  Note that this is
    * in the schema, and therefore fixed for the entire file.
