@@ -534,6 +534,11 @@ struct IndexPageHeader {
   // TODO
 }
 
+/**
+ * The dictionary page must be placed at the first position of the column chunk
+ * if it is partly or completely dictionary encoded. At most one dictionary page
+ * can be placed in a column chunk.
+ **/
 struct DictionaryPageHeader {
   /** Number of values in the dictionary **/
   1: required i32 num_values;
