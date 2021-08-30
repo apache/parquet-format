@@ -831,8 +831,12 @@ struct RowGroup {
    */
   4: optional list<SortingColumn> sorting_columns
 
-  /** Byte offset from beginning of file to first page (data or dictionary)
-   * in this row group **/
+  /** Deprecated: This field might contain invalid values in certain cases so it
+   * is concidered not reliable.
+   * Use ColumnMetaData.data_page_offset of the first column chunk or
+   * ColumnMetaData.dictionary_page_offset of the same one if it is dictionary
+   * encoded.
+   */
   5: optional i64 file_offset
 
   /** Total byte size of all compressed (and potentially encrypted) column data 
