@@ -153,7 +153,7 @@ be computed from the schema (i.e. how much nesting there is).  This defines the
 maximum number of bits required to store the levels (levels are defined for all
 values in the column).
 
-Two encodings for the levels are supported BIT_PACKED and RLE. Only RLE is now used as it supersedes BIT_PACKED.
+Two encodings for the levels are supported `BIT_PACKED` and `RLE`. Only `RLE` is now used as it supersedes `BIT_PACKED`.
 
 ## Nulls
 Nullity is encoded in the definition levels (which is run-length encoded).  NULL values
