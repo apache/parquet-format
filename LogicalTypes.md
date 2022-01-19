@@ -93,7 +93,7 @@ The sort order used for `UUID` values is unsigned byte-wise comparison.
 ### Signed Integers
 
 `INT` annotation can be used to specify the maximum number of bits in the stored value.
-The annotation has two parameter: bit width and sign.
+The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 For signed integers, the second parameter should be `true`,
 for example, a signed integer with bit width of 8 is defined as `INT(8, true)`
@@ -116,7 +116,7 @@ The sort order used for signed integer types is signed.
 
 `INT` annotation can be used to specify unsigned integer types,
 along with a maximum number of bits in the stored value.
-The annotation has two parameter: bit width and sign.
+The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 In case of unsigned integers, the second parameter should be `false`,
 for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`
@@ -340,7 +340,7 @@ In data annotated with the `TIMESTAMP` logical type, each value is a single
 `int64` number that can be decoded into year, month, day, hour, minute, second
 and subsecond fields using calculations detailed below. Please note that a value
 defined this way does not necessarily correspond to a single instant on the
-time-line and such interpertations are allowed on purpose.
+time-line and such interpretations are allowed on purpose.
 
 The `TIMESTAMP` type has two type parameters:
 - `isAdjustedToUTC` must be either `true` or `false`.
@@ -378,11 +378,11 @@ the execution environment.
 #### Local semantics (timestamps not normalized to UTC)
 
 A `TIMESTAMP` with `isAdjustedToUTC=false` represents year, month, day, hour,
-minute, second and subsecond fields in a local timezone, _regadless of what
+minute, second and subsecond fields in a local timezone, _regardless of what
 specific time zone is considered local_. This means that such timestamps should
 always be displayed the same way, regardless of the local time zone in effect.
 On the other hand, without additional information such as an offset or
-time-zone, these values do not identify instants on the time-line unambigously,
+time-zone, these values do not identify instants on the time-line unambiguously,
 because the corresponding instants would depend on the local time zone.
 
 Using a single number to represent a local timestamp is a lot less intuitive
