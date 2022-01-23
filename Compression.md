@@ -31,11 +31,24 @@ processing cost spectrum.
 The detailed specifications of compression codecs are maintained externally
 by their respective authors or maintainers, which we reference hereafter.
 
-For all compression codecs except the deprecated `LZ4` codec, the raw data
-of a (data or dictionary) page is fed *as-is* to the underlying compression
-library, without any additional framing or padding.  The information required
-for precise allocation of compressed and decompressed buffers is written
-in the `PageHeader` struct.
+Each page is compressed and decompressed independently. What is compressed
+depends on both the page type and the page version. Let `{Data,Dict}` represent
+the two page types and `{V1, V2}` represent the two versions. Recall that,
+for a data page, its buffer is composed of
+`<encoded rep levels><encoded def levels><encoded values> = <encoded levels><encoded values>`.
+
+The spec is:
+
+* `(Dict, V1)`: all bytes in the page buffer are compressed *as-is*
+* `(Dict, V2)`: all bytes in the page buffer are compressed *as-is*
+* `(Page, V1)`: all bytes in the page buffer are compressed *as-is*
+* `(Page, V2)`: the encoded levels are _copied_ *as-is*;
+  the encoded values are compressed *as-is*. I.e. the resulting compressed buffer
+  is `<encoded levels><compressed encoded values>`
+
+The deprecated `LZ4` codec is an exception and discussed below.
+The information required for precise allocation of compressed and decompressed
+buffers is written in the `PageHeader` struct.
 
 ## Codecs
 
