@@ -22,9 +22,9 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-### <a name="PLAIN"></a>Plain: (PLAIN = 0)
+### <a name="PLAIN"></a>Plain (PLAIN = 0)
 
-Supported Types: all
+*Supported Types: all*
 
 This is the plain encoding that must be supported for types.  It is
 intended to be the simplest encoding.  Values are encoded back to back.
@@ -151,7 +151,7 @@ Note that the BIT_PACKED encoding method is only supported for encoding
 repetition and definition levels.
 
 ### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
-Supported Types: INT32, INT64
+*Supported Types: INT32, INT64*
 
 This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov.
 
@@ -192,40 +192,56 @@ If, in the last block, less than ```<number of miniblocks in a block>``` miniblo
 
 The following examples use 8 as the block size to keep the examples short, but in real cases it would be invalid.
 #### Example 1
+```
 1, 2, 3, 4, 5
+```
 
-After step 1), we compute the deltas as:
+After step 1, we compute the deltas as:
 
+```
 1, 1, 1, 1
+```
 
 The minimum delta is 1 and after step 2, the deltas become
 
+```
 0, 0, 0, 0
+```
 
 The final encoded data is:
 
- header:
-8 (block size), 1 (miniblock count), 5 (value count), 1 (first value)
-
- block
-1 (minimum delta), 0 (bitwidth), (no data needed for bitwidth 0)
+```
+header:
+  8 (block size), 1 (miniblock count), 5 (value count), 1 (first value)
+block:
+  1 (minimum delta), 0 (bitwidth), (no data needed for bitwidth 0)
+```
 
 #### Example 2
-7, 5, 3, 1, 2, 3, 4, 5, the deltas would be
+```
+7, 5, 3, 1, 2, 3, 4, 5
+```
 
+The deltas would be:
+
+```
 -2, -2, -2, 1, 1, 1, 1
+```
 
 The minimum is -2, so the relative deltas are:
 
+```
 0, 0, 0, 3, 3, 3, 3
+```
 
-The encoded data is
+The encoded data is:
 
- header:
-8 (block size), 1 (miniblock count), 8 (value count), 7 (first value)
-
- block
--2 (minimum delta), 2 (bitwidth), 00000011111111b (0,0,0,3,3,3,3 packed on 2 bits)
+```
+header:
+  8 (block size), 1 (miniblock count), 8 (value count), 7 (first value)
+block:
+  -2 (minimum delta), 2 (bitwidth), 00000011111111b (0,0,0,3,3,3,3 packed on 2 bits)
+```
 
 #### Characteristics
 This encoding is similar to the [RLE/bit-packing](#RLE) encoding. However the [RLE/bit-packing](#RLE) encoding is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
@@ -233,7 +249,7 @@ The delta encoding algorithm described above stores a bit width per miniblock an
 
 ### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
 
-Supported Types: BYTE_ARRAY
+*Supported Types: BYTE_ARRAY*
 
 This encoding is always preferred over PLAIN for byte array columns.
 
@@ -244,15 +260,15 @@ and possibly better compression in the data (it is no longer interleaved with th
 
 The data stream looks like:
 
+```
 <Delta Encoded Lengths> <Byte Array Data>
+```
 
-For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
-
-The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
+For example, if the data was "Hello", "World", "Foobar", "ABCDEF", the encoded data would be `DeltaEncoding(5, 5, 6, 6)` followed by `"HelloWorldFoobarABCDEF"`.
 
 ### Delta Strings: (DELTA_BYTE_ARRAY = 7)
 
-Supported Types: BYTE_ARRAY
+*Supported Types: BYTE_ARRAY*
 
 This is also known as incremental encoding or front compression: for each element in a
 sequence of strings, store the prefix length of the previous entry plus the suffix.
@@ -264,7 +280,7 @@ the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
 
 ### Byte Stream Split: (BYTE_STREAM_SPLIT = 9)
 
-Supported Types: FLOAT DOUBLE
+*Supported Types: FLOAT, DOUBLE*
 
 This encoding does not reduce the size of the data but can lead to a significantly better
 compression ratio and speed when a compression algorithm is used afterwards.
