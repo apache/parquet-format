@@ -46,7 +46,7 @@ For native types, this outputs the data as little endian. Floating
 For the byte array type, it encodes the length as a 4 byte little
 endian, followed by the bytes.
 
-### Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
+### <a name="PLAIN_DICTIONARY"></a><a name="RLE_DICTIONARY"></a>Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
 The dictionary encoding builds a dictionary of values encountered in a given column. The
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
 using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
@@ -123,7 +123,7 @@ data:
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
-### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
+### <a name="BITPACKED"></a><a name="BIT_PACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
 
 This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
@@ -150,7 +150,7 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 Note that the BIT_PACKED encoding method is only supported for encoding
 repetition and definition levels.
 
-### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
+### <a name="DELTAENC"></a><a name="DELTA_BINARY_PACKED"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
 *Supported Types: INT32, INT64*
 
 This encoding is adapted from the Binary packing described in ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf) by D. Lemire and L. Boytsov.
@@ -247,7 +247,7 @@ block:
 This encoding is similar to the [RLE/bit-packing](#RLE) encoding. However the [RLE/bit-packing](#RLE) encoding is specifically used when the range of ints is small over the entire page, as is true of repetition and definition levels. It uses a single bit width for the whole page.
 The delta encoding algorithm described above stores a bit width per miniblock and is less sensitive to variations in the size of encoded integers. It is also somewhat doing RLE encoding as a block containing all the same values will be bit packed to a zero bit width thus being only a header.
 
-### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
+### <a name="DELTA_LENGTH_BYTE_ARRAY"></a>Delta-length byte array (DELTA_LENGTH_BYTE_ARRAY = 6)
 
 *Supported Types: BYTE_ARRAY*
 
@@ -266,7 +266,7 @@ The data stream looks like:
 
 For example, if the data was "Hello", "World", "Foobar", "ABCDEF", the encoded data would be `DeltaEncoding(5, 5, 6, 6)` followed by `"HelloWorldFoobarABCDEF"`.
 
-### Delta Strings: (DELTA_BYTE_ARRAY = 7)
+### <a name="DELTA_BYTE_ARRAY"></a>Delta Strings (DELTA_BYTE_ARRAY = 7)
 
 *Supported Types: BYTE_ARRAY*
 
@@ -278,7 +278,7 @@ For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
 
-### Byte Stream Split: (BYTE_STREAM_SPLIT = 9)
+### <a name="BYTE_STREAM_SPLIT"></a>Byte Stream Split (BYTE_STREAM_SPLIT = 9)
 
 *Supported Types: FLOAT, DOUBLE*
 
