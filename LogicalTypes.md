@@ -245,6 +245,14 @@ comparison.
 To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
+### FLOAT16
+
+The `FLOAT16` annotation represents half-precision floating-point numbers in the 2-byte IEEE little-endian format.
+
+Used in contexts where precision is traded off for smaller footprint and potentially better performance.
+
+The primitive type is a 2-byte fixed length binary.
+
 ## Temporal Types
 
 ### DATE
