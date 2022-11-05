@@ -144,6 +144,25 @@ documented in [LogicalTypes.md][logical-types].
 
 [logical-types]: LogicalTypes.md
 
+### Sort Order
+
+Parquet stores min/max statistics at several levels (e.g. RowGroup, Page Index,
+etc). Comparison for values of a type follow the following logic:
+
+1.  Each logical type has a specified comparison order. If a column is
+    annotated with an unknown logical type, statistics may not be used
+    for pruning data. The sort order for logical types is documented in
+    the [LogicalTypes.md][logical-types] page.
+2.  For primitives the following sort orders apply:
+
+    * BOOLEAN - false, true
+    * INT32, INT64, FLOAT, DOUBLE - Signed comparison. Floating point values are
+      not totally ordered due to special case like NaN and infinity. They require special
+      handling when reading statistics. The details are documented in parquet.thrift in the
+      `ColumnOrder` union.
+    * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic Unsigned byte-wise comparisons.
+
+
 ## Nested Encoding
 To encode nested columns, Parquet uses the Dremel encoding with definition and
 repetition levels.  Definition levels specify how many optional fields in the
