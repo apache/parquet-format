@@ -219,10 +219,11 @@ padding bytes for the miniblock bodies though, as if their bit widths were 0
 (regardless of the actual byte values). The reader knows when to stop reading
 by keeping track of the number of values read.
 
-Subtractions in steps 1) and 2) may incur signed arithmetic overflow. Overflow
-should be allowed and handled as wrapping around in 2's complement notation.
-This may require explicit care in some programming languages (for example by
-doing all arithmetic in the unsigned domain).
+Subtractions in steps 1) and 2) may incur signed arithmetic overflow, and so
+will the corresponding additions when decoding. Overflow should be allowed
+and handled as wrapping around in 2's complement notation so that the original
+values are correctly restituted. This may require explicit care in some programming
+languages (for example by doing all arithmetic in the unsigned domain).
 
 The following examples use 8 as the block size to keep the examples short,
 but in real cases it would be invalid.
