@@ -902,6 +902,13 @@ union ColumnOrder {
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
+   * 
+   *     When writing statistics the following rules should be followed:
+   *     - NaNs should not be written to min or max statistics fields.
+   *     - Only -0 should be written into min statistics fields (if only 
+   *       +0 is present in the column it should be converted to -0.0).
+   *     - Only +0 should be written into a max statistics fields (if 
+   *       only -0 is present it must be convereted to +0).
    */
   1: TypeDefinedOrder TYPE_ORDER;
 }

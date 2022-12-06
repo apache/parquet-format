@@ -157,9 +157,22 @@ etc). Comparison for values of a type follow the following logic:
 
     * BOOLEAN - false, true
     * INT32, INT64, FLOAT, DOUBLE - Signed comparison. Floating point values are
-      not totally ordered due to special case like NaN and infinity. They require special
+      not totally ordered due to special case like NaN. They require special
       handling when reading statistics. The details are documented in parquet.thrift in the
-      `ColumnOrder` union.
+      `ColumnOrder` union. They are summarized 
+       here but parquet.thrift is considered authoritative:
+        * NaNs should not be written to min or max statistics fields.
+        * Only -0 should be written into min statistics fields (if only +0 is present in the column it should be converted to -0.0).
+        * Only +0 should be written into 
+        a max statistics fields (if only -0 is present it must be convereted to +0).
+
+      For backwards compatibility when reading files:
+        *   If the min is a NaN, it should be ignored.
+        *   If the max is a NaN, it should be ignored.
+        *   If the min is +0, the row group may contain -0 values as well.
+        *   If the max is -0, the row group may contain +0 values as well.
+        *   When looking for NaN values, min and max should be ignored.
+      
     * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic Unsigned byte-wise comparisons.
 
 
