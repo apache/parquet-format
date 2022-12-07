@@ -158,16 +158,12 @@ following rules:
 
     * BOOLEAN - false, true
     * INT32, INT64 - Signed comparison.
-    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs
-      and signed zeros. The details are documented in...
-      not totally ordered due to special case like NaN. They require special
-      handling when reading statistics. The details are documented in parquet.thrift in the
+    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs and signed zeros.   The details are documented in parquet.thrift in the
       `ColumnOrder` union. They are summarized 
        here but parquet.thrift is considered authoritative:
         * NaNs should not be written to min or max statistics fields.
-        * Only -0 should be written into min statistics fields (if only +0 is present in the column it should be converted to -0.0).
-        * Only +0 should be written into 
-        a max statistics fields (if only -0 is present it must be convereted to +0).
+        * If the computed max value is zero (whether negative or positive), `+0.0` should be written into the max statistics field.
+       * If the computed min value is zero (whether negative or positive), `-0.0` should be written into the min statistics field.
 
       For backwards compatibility when reading files:
         *   If the min is a NaN, it should be ignored.
