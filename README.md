@@ -81,7 +81,7 @@ more pages.
   - Encoding/Compression - Page
 
 ## File format
-This file and the [thrift definition](src/main/thrift/parquet.thrift) should be read together to understand the format.
+This file and the [Thrift definition](src/main/thrift/parquet.thrift) should be read together to understand the format.
 
     4-byte magic number "PAR1"
     <Column 1 Chunk 1 + Column Metadata>
@@ -104,7 +104,7 @@ This file and the [thrift definition](src/main/thrift/parquet.thrift) should be 
 In the above example, there are N columns in this table, split into M row
 groups.  The file metadata contains the locations of all the column metadata
 start locations.  More details on what is contained in the metadata can be found
-in the thrift definition.
+in the Thrift definition.
 
 Metadata is written after the data to allow for single pass writing.
 
@@ -158,21 +158,26 @@ following rules:
 
     * BOOLEAN - false, true
     * INT32, INT64 - Signed comparison.
-    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs and signed zeros.   The details are documented in parquet.thrift in the
-      `ColumnOrder` union. They are summarized 
-       here but parquet.thrift is considered authoritative:
-        * NaNs should not be written to min or max statistics fields.
-        * If the computed max value is zero (whether negative or positive), `+0.0` should be written into the max statistics field.
-       * If the computed min value is zero (whether negative or positive), `-0.0` should be written into the min statistics field.
+    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs and
+      signed zeros.   The details are documented in the
+      [Thrift definition](src/main/thrift/parquet.thrift) in the
+      `ColumnOrder` union. They are summarized here but the Thrift definition
+      is considered authoritative:
+      * NaNs should not be written to min or max statistics fields.
+      * If the computed max value is zero (whether negative or positive),
+        `+0.0` should be written into the max statistics field.
+      * If the computed min value is zero (whether negative or positive),
+        `-0.0` should be written into the min statistics field.
 
       For backwards compatibility when reading files:
-        *   If the min is a NaN, it should be ignored.
-        *   If the max is a NaN, it should be ignored.
-        *   If the min is +0, the row group may contain -0 values as well.
-        *   If the max is -0, the row group may contain +0 values as well.
-        *   When looking for NaN values, min and max should be ignored.
+      * If the min is a NaN, it should be ignored.
+      * If the max is a NaN, it should be ignored.
+      * If the min is +0, the row group may contain -0 values as well.
+      * If the max is -0, the row group may contain +0 values as well.
+      * When looking for NaN values, min and max should be ignored.
       
-    * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic Unsigned byte-wise comparisons.
+    * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic unsigned byte-wise
+      comparison.
 
 
 ## Nested Encoding
