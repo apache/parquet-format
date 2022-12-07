@@ -146,17 +146,20 @@ documented in [LogicalTypes.md][logical-types].
 
 ### Sort Order
 
-Parquet stores min/max statistics at several levels (e.g. RowGroup, Page Index,
-etc). Comparison for values of a type follow the following logic:
+Parquet stores min/max statistics at several levels (such as Column Chunk,
+Column Index and Data Page). Comparison for values of a type obey the
+following rules:
 
 1.  Each logical type has a specified comparison order. If a column is
     annotated with an unknown logical type, statistics may not be used
     for pruning data. The sort order for logical types is documented in
     the [LogicalTypes.md][logical-types] page.
-2.  For primitives the following sort orders apply:
+2.  For primitive types, the following rules apply:
 
     * BOOLEAN - false, true
-    * INT32, INT64, FLOAT, DOUBLE - Signed comparison. Floating point values are
+    * INT32, INT64 - Signed comparison.
+    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs
+      and signed zeros. The details are documented in...
       not totally ordered due to special case like NaN. They require special
       handling when reading statistics. The details are documented in parquet.thrift in the
       `ColumnOrder` union. They are summarized 

@@ -905,10 +905,10 @@ union ColumnOrder {
    * 
    *     When writing statistics the following rules should be followed:
    *     - NaNs should not be written to min or max statistics fields.
-   *     - Only -0 should be written into min statistics fields (if only 
-   *       +0 is present in the column it should be converted to -0.0).
-   *     - Only +0 should be written into a max statistics fields (if 
-   *       only -0 is present it must be convereted to +0).
+   *     - If the computed max value is zero (whether negative or positive),
+   *       `+0.0` should be written into the max statistics field.
+   *     - If the computed min value is zero (whether negative or positive),
+   *       `-0.0` should be written into the min statistics field.
    */
   1: TypeDefinedOrder TYPE_ORDER;
 }
