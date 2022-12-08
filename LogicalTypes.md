@@ -129,7 +129,7 @@ Implementations must not write values that are larger than the annotation
 allows.
 
 `INT(8, false)`, `INT(16, false)`, and `INT(32, false)` must annotate an `int32` primitive type and
-`INT(64, true)` must annotate an `int64` primitive type.
+`INT(64, false)` must annotate an `int64` primitive type.
 
 The sort order used for unsigned integer types is unsigned.
 
