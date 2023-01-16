@@ -280,16 +280,19 @@ concatenated back to back. The expected savings is from the cost of encoding the
 and possibly better compression in the data (it is no longer interleaved with the lengths).
 
 The data stream looks like:
-
+```
 <Delta Encoded Lengths> <Byte Array Data>
+```
 
-For example, if the data was "Hello", "World", "Foobar", "ABCDEF":
+For example, if the data was "Hello", "World", "Foobar", "ABCDEF"
 
-The encoded data would be DeltaEncoding(5, 5, 6, 6) "HelloWorldFoobarABCDEF"
+The encoded data would be comprised of the following segments:
+- DeltaEncoding(5, 5, 6, 6) (the string lengths)
+- "HelloWorldFoobarABCDEF"
 
 ### Delta Strings: (DELTA_BYTE_ARRAY = 7)
 
-Supported Types: BYTE_ARRAY
+Supported Types: BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY
 
 This is also known as incremental encoding or front compression: for each element in a
 sequence of strings, store the prefix length of the previous entry plus the suffix.
@@ -299,9 +302,18 @@ For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
 
+For example, if the data was "axis", "axle", "babble", "babyhood":
+
+The encoded data would be comprised of the following segments:
+- DeltaEncoding(0, 2, 0, 3) (the prefix lengths)
+- DeltaEncoding(4, 2, 6, 5) (the suffix lengths)
+- "axislebabbleyhood"
+
+Note that, even for FIXED_LEN_BYTE_ARRAY, all lengths are encoded despite the redundancy.
+
 ### Byte Stream Split: (BYTE_STREAM_SPLIT = 9)
 
-Supported Types: FLOAT DOUBLE
+Supported Types: FLOAT, DOUBLE
 
 This encoding does not reduce the size of the data but can lead to a significantly better
 compression ratio and speed when a compression algorithm is used afterwards.
