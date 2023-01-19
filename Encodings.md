@@ -286,7 +286,7 @@ The data stream looks like:
 
 For example, if the data was "Hello", "World", "Foobar", "ABCDEF"
 
-The encoded data would be comprised of the following segments:
+then the encoded data would be comprised of the following segments:
 - DeltaEncoding(5, 5, 6, 6) (the string lengths)
 - "HelloWorldFoobarABCDEF"
 
@@ -302,9 +302,9 @@ For a longer description, see https://en.wikipedia.org/wiki/Incremental_encoding
 This is stored as a sequence of delta-encoded prefix lengths (DELTA_BINARY_PACKED), followed by
 the suffixes encoded as delta length byte arrays (DELTA_LENGTH_BYTE_ARRAY).
 
-For example, if the data was "axis", "axle", "babble", "babyhood":
+For example, if the data was "axis", "axle", "babble", "babyhood"
 
-The encoded data would be comprised of the following segments:
+then the encoded data would be comprised of the following segments:
 - DeltaEncoding(0, 2, 0, 3) (the prefix lengths)
 - DeltaEncoding(4, 2, 6, 5) (the suffix lengths)
 - "axislebabbleyhood"
