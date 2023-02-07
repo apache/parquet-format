@@ -224,6 +224,11 @@ public class InterningProtocol extends TProtocol {
     return delegate.readBinary();
   }
 
+  @Override
+  public int getMinSerializedSize(byte b) throws TException {
+    return delegate.getMinSerializedSize(b);
+  }
+
   public void reset() {
     delegate.reset();
   }

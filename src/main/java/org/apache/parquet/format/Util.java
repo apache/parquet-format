@@ -47,6 +47,7 @@ import org.apache.parquet.format.event.EventBasedThriftReader;
 import org.apache.parquet.format.event.TypedConsumer.I32Consumer;
 import org.apache.parquet.format.event.TypedConsumer.I64Consumer;
 import org.apache.parquet.format.event.TypedConsumer.StringConsumer;
+import org.apache.thrift.transport.TTransportException;
 
 /**
  * Utility to read/write metadata
@@ -207,11 +208,11 @@ public class Util {
     }
   }
 
-  private static TProtocol protocol(OutputStream to) {
+  private static TProtocol protocol(OutputStream to) throws TTransportException {
     return protocol(new TIOStreamTransport(to));
   }
 
-  private static TProtocol protocol(InputStream from) {
+  private static TProtocol protocol(InputStream from) throws TTransportException {
     return protocol(new TIOStreamTransport(from));
   }
 
