@@ -199,7 +199,7 @@ nothing else.
 
 ## Data Pages
 For data pages, the 3 pieces of information are encoded back to back, after the page
-header.
+header. No padding is allowed in the data page.
 In order we have:
  1. repetition levels data
  1. definition levels data

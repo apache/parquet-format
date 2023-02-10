@@ -319,10 +319,14 @@ This encoding does not reduce the size of the data but can lead to a significant
 compression ratio and speed when a compression algorithm is used afterwards.
 
 This encoding creates K byte-streams of length N where K is the size in bytes of the data
-type and N is the number of elements in the data sequence.
+type and N is the number of elements in the data sequence. Specifically, K is 4 for FLOAT
+type and 8 for DOUBLE type.
 The bytes of each value are scattered to the corresponding streams. The 0-th byte goes to the
 0-th stream, the 1-st byte goes to the 1-st stream and so on.
 The streams are concatenated in the following order: 0-th stream, 1-st stream, etc.
+The total length of encoded streams is K * N bytes. Because it does not have any metadata
+to indicate the total length, the end of the streams is also the end of data page. No padding
+is allowed inside the data page.
 
 Example:
 Original data is three 32-bit floats and for simplicity we look at their raw representation.
