@@ -119,7 +119,7 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
 Note that the RLE encoding method is only supported for the following types of
 data:
 
-* Repetition and definition levels
+* Repetition and definition levels (Please note that the 4-byte length of the `<encoded-data>` is not prefixed in the data page v2 as it is duplicated in the `DataPageHeaderV2`)
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
