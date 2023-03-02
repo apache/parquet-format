@@ -131,8 +131,8 @@ readers and writers for the format.  The types are:
   - INT96: 96 bit signed ints
   - FLOAT: IEEE 32-bit floating point values
   - DOUBLE: IEEE 64-bit floating point values
-  - BYTE_ARRAY: arbitrarily long byte arrays.
-  - FIXED_LEN_BYTE_ARRAY: fixed length byte arrays.
+  - BYTE_ARRAY: arbitrarily long byte arrays
+  - FIXED_LEN_BYTE_ARRAY: fixed length byte arrays
 
 ### Logical Types
 Logical types are used to extend the types that parquet can be used to store,
