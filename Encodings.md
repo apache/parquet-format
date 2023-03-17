@@ -68,6 +68,7 @@ This encoding uses a combination of bit-packing and run length encoding to more 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
 ```
 rle-bit-packed-hybrid: <length> <encoded-data>
+// length is not written for definition/repetition levels in v2 data pages since it is duplicated in the DataPageHeaderV2
 length := length of the <encoded-data> in bytes stored as 4 bytes little endian (unsigned int32)
 encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>
@@ -119,7 +120,7 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
 Note that the RLE encoding method is only supported for the following types of
 data:
 
-* Repetition and definition levels (Please note that the 4-byte length of the `<encoded-data>` is not prefixed in the data page v2 as it is duplicated in the `DataPageHeaderV2`)
+* Repetition and definition levels
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
