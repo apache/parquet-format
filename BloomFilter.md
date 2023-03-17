@@ -301,6 +301,7 @@ union BloomFilterHash {
 struct Uncompressed {}
 union BloomFilterCompression {
   1: Uncompressed UNCOMPRESSED;
+  2: CompressionCodec COMPRESSED;
 }
 
 /**
