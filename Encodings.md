@@ -68,7 +68,7 @@ This encoding uses a combination of bit-packing and run length encoding to more 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
 ```
 rle-bit-packed-hybrid: <length> <encoded-data>
-// length is not written for definition/repetition levels in v2 data pages since it is duplicated in the DataPageHeaderV2
+// length is not always prepended, please check the table below for more detail
 length := length of the <encoded-data> in bytes stored as 4 bytes little endian (unsigned int32)
 encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>
@@ -123,6 +123,23 @@ data:
 * Repetition and definition levels
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
+
+Whether prepending the four-byte `length` to the `encoded-data` is summarized as the table below:
+```
++--------------+------------------------+-----------------+
+| Page kind    | RLE-encoded data kind  | Prepend length? |
++--------------+------------------------+-----------------+
+| Data page v1 | Definition levels      | Y               |
+|              | Repetition levels      | Y               |
+|              | Dictionary indices     | N               |
+|              | Boolean values         | Y               |
++--------------+------------------------+-----------------+
+| Data page v2 | Definition levels      | N               |
+|              | Repetition levels      | N               |
+|              | Dictionary indices     | N               |
+|              | Boolean values         | Y               |
++--------------+------------------------+-----------------+
+```
 
 ### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
 
