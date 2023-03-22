@@ -163,18 +163,25 @@ following rules:
       [Thrift definition](src/main/thrift/parquet.thrift) in the
       `ColumnOrder` union. They are summarized here but the Thrift definition
       is considered authoritative:
-      * NaNs should not be written to min or max statistics fields.
-      * If the computed max value is zero (whether negative or positive),
-        `+0.0` should be written into the max statistics field.
-      * If the computed min value is zero (whether negative or positive),
-        `-0.0` should be written into the min statistics field.
-
-      For backwards compatibility when reading files:
-      * If the min is a NaN, it should be ignored.
-      * If the max is a NaN, it should be ignored.
-      * If the min is +0, the row group may contain -0 values as well.
-      * If the max is -0, the row group may contain +0 values as well.
-      * When looking for NaN values, min and max should be ignored.
+      * The following compatibility rules should be applied when reading statistics:
+        * If the nan_count field is set to > 0 and both min and max are
+          NaN, a reader can rely on that all non-NULL values are NaN
+        * Otherwise, if the min or the max is a NaN, it should be ignored.
+        * When looking for NaN values, min and max should be ignored;
+          if the nan_count field is set, it should be used to check whether
+          NaNs are present.
+        * If the min is +0, the row group may contain -0 values as well.
+        * If the max is -0, the row group may contain +0 values as well.
+      * When writing statistics the following rules should be followed:
+        * The nan_count fields should always be set for FLOAT and DOUBLE columns.
+        * NaNs should not be written to min or max statistics fields except
+          when all non-NULL values are NaN, in which case min and max should
+          both be written as NaN. If the nan_count field is set, this semantics
+          is mandated and readers may rely on it.
+        * If the computed max value is zero (whether negative or positive),
+          `+0.0` should be written into the max statistics field.
+        * If the computed min value is zero (whether negative or positive),
+          `-0.0` should be written into the min statistics field.
       
     * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic unsigned byte-wise
       comparison.

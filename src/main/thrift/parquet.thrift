@@ -211,7 +211,7 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** count of null value in the column */
+   /** count of null values in the column */
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
@@ -223,6 +223,8 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   /** count of NaN values in the column; only present if type is FLOAT or DOUBLE */
+   7: optional i64 nan_count;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -886,16 +888,23 @@ union ColumnOrder {
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
    * (*) Because the sorting order is not specified properly for floating
-   *     point values (relations vs. total ordering) the following
-   *     compatibility rules should be applied when reading statistics:
-   *     - If the min is a NaN, it should be ignored.
-   *     - If the max is a NaN, it should be ignored.
+   *     point values (relations vs. total ordering), the following compatibility
+   *     rules should be applied when reading statistics:
+   *     - If the nan_count field is set to > 0 and both min and max are
+   *       NaN, a reader can rely on that all non-NULL values are NaN
+   *     - Otherwise, if the min or the max is a NaN, it should be ignored.
+   *     - When looking for NaN values, min and max should be ignored;
+   *       if the nan_count field is set, it can be used to check whether
+   *       NaNs are present.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
-   *     - When looking for NaN values, min and max should be ignored.
    * 
    *     When writing statistics the following rules should be followed:
-   *     - NaNs should not be written to min or max statistics fields.
+   *     - The nan_count fields should always be set for FLOAT and DOUBLE columns.
+   *     - NaNs should not be written to min or max statistics fields except
+   *       when all non-NULL values are NaN, in which case min and max should
+   *       both be written as NaN. If the nan_count field is set, this semantics
+   *       is mandated and readers may rely on it.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
@@ -952,6 +961,9 @@ struct ColumnIndex {
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
+   * For columns of type FLOAT and DOUBLE, NaN values are not to be included
+   * in these bounds unless all non-null values in a page are NaN, in which
+   * case min and max are to be set to NaN.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -966,6 +978,10 @@ struct ColumnIndex {
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
+
+  /** A list containing the number of NaN values for each page. Only present
+   *  for columns of type FLOAT and DOUBLE. **/
+  6: optional list<i64> nan_counts
 }
 
 struct AesGcmV1 {
