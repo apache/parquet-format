@@ -226,7 +226,7 @@ struct Statistics {
    /** The number of bytes the row/group or page would take if encoded with plain-encoding */
    7: optional i64 plain_encoded_bytes;
    /** 
-     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_leve) 
+     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level) 
      * where each element represens the count of the number of times that level occurs in the page/column chunk.
      */
    8: optional list<i64> repetition_level_histogram;
