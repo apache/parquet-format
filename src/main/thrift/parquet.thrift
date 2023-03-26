@@ -223,6 +223,17 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   /** The number of bytes the row/group or page would take if encoded with plain-encoding */
+   7: optional i64 plain_encoded_bytes;
+   /** 
+     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_leve) 
+     * where each element represens the count of the number of times that level occurs in the page/column chunk.
+     */
+   8: optional list<i64> repetition_level_histogram;
+   /**
+    * Same as repetition_level_histogram except for keeps the historgram for definition levels.
+    */ 
+   9: optional list<i64> definition_level_histogram;
 }
 
 /** Empty structs to use as logical type annotations */
