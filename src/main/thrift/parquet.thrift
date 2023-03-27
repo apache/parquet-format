@@ -196,29 +196,28 @@ enum FieldRepetitionType {
  */ 
 struct SizeEstimationStatistics {
    /** 
-    * The number of logic bytes needed to store present values.
+    * The number of logic bytes needed to store present/non-null values.
     * Unless specified below, the computed size is the size it would take to plain-encode the underlying
     * physical type.
     * Special calculations:
     *  - Enum: plain-encoded BYTE_ARRAY size
     *  - Integers (same size used for signed and unsigned): int8 - 1 bytes, int16 - 2 
-    *  - Decimal - plain encoding of the underlying physical type 
-    *    (int32, int64, Fixed Length Byte Array and Variable Length Byte array) are all valid encodings
-    *  - Nested types (lists, nested groups and maps) - No additional size for theses structures
-    *    are accounted for in this field, instead the cumulative distributions listed below can be
+    *  - Decimal - Each value is assumed to take the minimal number of bytes necessary to encode
+    *    the precision of the decimal value.
+    *  - Nested types (lists, nested groups and maps) - No additional size for these structures
+    *    are accounted for in this field, instead the histogram fields below can be
     *    be used to estimate overhead to recreate these structures.
     */
    1: optional i64 logical_value_byte_storage;
    /** 
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
-     * where each element represens the cumulative sum of the repetition level (For an element at index x, the values
-     * is the number of times x occurs as a repetition level + the element at index x-1). 
+     * where each element represens the number of time the repetition level was observed in the data.
      */
-   2: optional list<i64> repetition_level_cumulative_distribution;
+   2: optional list<i64> repetition_level_histogram;
    /**
-    * Same as  repetition_level_cumulative_distributionexcept for definition levels.
+    * Same as  repetition_level_histogram except for definition levels.
     */ 
-   3: optional list<i64> definition_level_cumulative_distribution;
+   3: optional list<i64> definition_level_histogram;
 }
 
 /**
