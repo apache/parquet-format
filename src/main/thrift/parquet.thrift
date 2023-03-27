@@ -190,6 +190,36 @@ enum FieldRepetitionType {
   /** The field is repeated and can contain 0 or more values */
   REPEATED = 2;
 }
+/**
+ * A structure for capturing metadata for estimating the unencoded, uncompressed size
+ * of data.
+ */ 
+struct SizeEstimationStatistics {
+   /** 
+    * The number of logic bytes needed to store present values.
+    * Unless specified below, the computed size is the size it would take to plain-encode the underlying
+    * physical type.
+    * Special calculations:
+    *  - Enum: plain-encoded BYTE_ARRAY size
+    *  - Integers (same size used for signed and unsigned): int8 - 1 bytes, int16 - 2 
+    *  - Decimal - plain encoding of the underlying physical type 
+    *    (int32, int64, Fixed Length Byte Array and Variable Length Byte array) are all valid encodings
+    *  - Nested types (lists, nested groups and maps) - No additional size for theses structures
+    *    are accounted for in this field, instead the cumulative distributions listed below can be
+    *    be used to estimate overhead to recreate these structures.
+    */
+   1: optional i64 logical_value_byte_storage;
+   /** 
+     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
+     * where each element represens the cumulative sum of the repetition level (For an element at index x, the values
+     * is the number of times x occurs as a repetition level + the element at index x-1). 
+     */
+   2: optional list<i64> repetition_level_cumulative_distribution;
+   /**
+    * Same as  repetition_level_cumulative_distributionexcept for definition levels.
+    */ 
+   3: optional list<i64> definition_level_cumulative_distribution;
+}
 
 /**
  * Statistics per row group and per page
@@ -223,17 +253,7 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
-   /** The number of bytes the row/group or page would take if encoded with plain-encoding */
-   7: optional i64 plain_encoded_bytes;
-   /** 
-     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level) 
-     * where each element represens the count of the number of times that level occurs in the page/column chunk.
-     */
-   8: optional list<i64> repetition_level_histogram;
-   /**
-    * Same as repetition_level_histogram except for keeps the historgram for definition levels.
-    */ 
-   9: optional list<i64> definition_level_histogram;
+   7: optional SizeEstimationStatistics size_estimate_statistics;
 }
 
 /** Empty structs to use as logical type annotations */
