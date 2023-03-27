@@ -193,29 +193,35 @@ enum FieldRepetitionType {
 /**
  * A structure for capturing metadata for estimating the unencoded, uncompressed size
  * of data.
+ *
+ * Writers should populate all fields in this struct except for the exceptions listed per field.
  */ 
 struct SizeEstimationStatistics {
    /** 
-    * The number of logic bytes needed to store present/non-null values.
-    * Unless specified below, the computed size is the size it would take to plain-encode the underlying
-    * physical type.
-    * Special calculations:
-    *  - Enum: plain-encoded BYTE_ARRAY size
-    *  - Integers (same size used for signed and unsigned): int8 - 1 bytes, int16 - 2 
-    *  - Decimal - Each value is assumed to take the minimal number of bytes necessary to encode
-    *    the precision of the decimal value.
-    *  - Nested types (lists, nested groups and maps) - No additional size for these structures
-    *    are accounted for in this field, instead the histogram fields below can be
-    *    be used to estimate overhead to recreate these structures.
+    * The number of logical physical bytes stored for BYTE_ARRAY data values. Logical bytes refers to the number
+    * of bytes needed if no special encoding is used. This is exclusive of the bytes needed
+    * to store the length of each byte array. In other words, this field is equivelant to the the (size of 
+    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written). To determine logical sizes 
+    * of other other types readers can use schema information multiplied by the number of non-null values.
+    * The number of non-null values can be inferred from the histograms below.
+    *
+    * For example if column chunk is dictionary encoded with a dictionary ["a", "bc", "cde"] and a data page 
+    * has indexes [0, 0, 1, 2].  This value is expected to be 7 (1 + 1 + 2 + 3).
+    *
+    * This option should only be set for physical and logical types that would use BYTE_ARRAY when encoded with PLAIN encoding.
     */
-   1: optional i64 logical_value_byte_storage;
+   1: optional i64 logical_variable_width_stored_bytes;
    /** 
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
      * where each element represens the number of time the repetition level was observed in the data.
+     *
+     * This value is optional if max_repetition_level is 0.
      */
    2: optional list<i64> repetition_level_histogram;
    /**
     * Same as  repetition_level_histogram except for definition levels.
+    *
+    * This value is optional when max_definition_level is 0. 
     */ 
    3: optional list<i64> definition_level_histogram;
 }
