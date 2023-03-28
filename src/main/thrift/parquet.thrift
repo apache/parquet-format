@@ -198,11 +198,10 @@ enum FieldRepetitionType {
  */ 
 struct SizeEstimationStatistics {
    /** 
-    * The number of logical physical bytes stored for BYTE_ARRAY data values. Logical bytes refers to the number
-    * of bytes needed if no special encoding is used. This is exclusive of the bytes needed
-    * to store the length of each byte array. In other words, this field is equivelant to the the (size of 
-    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written). To determine logical sizes 
-    * of other other types readers can use schema information multiplied by the number of non-null values.
+    * The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the 
+    * bytes needed to store the length of each byte array. In other words, this field is equivelant to the `(size of 
+    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine logical sizes 
+    * of other types readers can use schema information multiplied by the number of non-null values.
     * The number of non-null values can be inferred from the histograms below.
     *
     * For example if column chunk is dictionary encoded with a dictionary ["a", "bc", "cde"] and a data page 
