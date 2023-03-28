@@ -200,16 +200,16 @@ struct SizeEstimationStatistics {
    /** 
     * The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the 
     * bytes needed to store the length of each byte array. In other words, this field is equivelant to the `(size of 
-    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine logical sizes 
-    * of other types readers can use schema information multiplied by the number of non-null values.
-    * The number of non-null values can be inferred from the histograms below.
+    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes 
+    * of other types readers can use schema information multiplied by the number of non-null and null values.
+    * The number of null/non-null values can be inferred from the histograms below.
     *
     * For example if column chunk is dictionary encoded with a dictionary ["a", "bc", "cde"] and a data page 
     * has indexes [0, 0, 1, 2].  This value is expected to be 7 (1 + 1 + 2 + 3).
     *
     * This field should only be set for types that use BYTE_ARRAY as their physical type.
     */
-   1: optional i64 logical_variable_width_stored_bytes;
+   1: optional i64 unencoded_variable_width_stored_bytes;
    /** 
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
      * where each element represents the number of time the repetition level was observed in the data.
