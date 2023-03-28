@@ -208,20 +208,24 @@ struct SizeEstimationStatistics {
     * For example if column chunk is dictionary encoded with a dictionary ["a", "bc", "cde"] and a data page 
     * has indexes [0, 0, 1, 2].  This value is expected to be 7 (1 + 1 + 2 + 3).
     *
-    * This option should only be set for physical and logical types that would use BYTE_ARRAY when encoded with PLAIN encoding.
+    * This field should only be set for types that use BYTE_ARRAY as their physical type.
     */
    1: optional i64 logical_variable_width_stored_bytes;
    /** 
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
-     * where each element represens the number of time the repetition level was observed in the data.
+     * where each element represents the number of time the repetition level was observed in the data.
      *
      * This value is optional if max_repetition_level is 0.
+     *  This field applies to all types.
      */
    2: optional list<i64> repetition_level_histogram;
    /**
-    * Same as  repetition_level_histogram except for definition levels.
+    * Same as repetition_level_histogram except for definition levels.
     *
     * This value is optional when max_definition_level is 0. 
+    *
+    * This field applies to all types.
+    *
     */ 
    3: optional list<i64> definition_level_histogram;
 }
