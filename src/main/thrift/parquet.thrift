@@ -215,7 +215,7 @@ struct SizeEstimationStatistics {
      * where each element represents the number of time the repetition level was observed in the data.
      *
      * This value is optional if max_repetition_level is 0.
-     *  This field applies to all types.
+     * This field applies to all types.
      */
    2: optional list<i64> repetition_level_histogram;
    /**
