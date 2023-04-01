@@ -199,7 +199,7 @@ enum FieldRepetitionType {
 struct SizeEstimationStatistics {
    /** 
     * The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the 
-    * bytes needed to store the length of each byte array. In other words, this field is equivelant to the `(size of 
+    * bytes needed to store the length of each byte array. In other words, this field is equivalent to the `(size of 
     * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes 
     * of other types readers can use schema information multiplied by the number of non-null and null values.
     * The number of null/non-null values can be inferred from the histograms below.
@@ -214,14 +214,14 @@ struct SizeEstimationStatistics {
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
      * where each element represents the number of time the repetition level was observed in the data.
      *
-     * This value is optional if max_repetition_level is 0.
+     * This value is should not be written if max_repetition_level is 0.
      * This field applies to all types.
      */
    2: optional list<i64> repetition_level_histogram;
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value is optional when max_definition_level is 0. 
+    * This value is should not be written when max_definition_level is 0. 
     *
     * This field applies to all types.
     */ 
