@@ -224,7 +224,6 @@ struct SizeEstimationStatistics {
     * This value is optional when max_definition_level is 0. 
     *
     * This field applies to all types.
-    *
     */ 
    3: optional list<i64> definition_level_histogram;
 }
