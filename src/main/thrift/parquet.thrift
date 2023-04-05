@@ -203,13 +203,13 @@ enum FieldRepetitionType {
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
      * where each element represents the number of time the repetition level was observed in the data.
      *
-     * This value is should not be written if max_repetition_level is 0.
+     * This value should not be written if max_repetition_level is 0.
      **/
    1: optional list<i64> repetition_level_histogram;
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value is should not be written when max_definition_level is 0. 
+    * This value should not be written when max_definition_level is 0. 
     **/ 
    2: optional list<i64> definition_level_histogram;
  }
@@ -217,8 +217,8 @@ enum FieldRepetitionType {
  * A structure for capturing metadata for estimating the unencoded, uncompressed size
  * of data written. This is useful for readers to estimate how much memory is needed 
  * to reconstruct data in their memory model and for fine grained filter pushdown on nested
- * structures (the histogram contained in this structure can help number of nulls at a particular
- * nesting level).
+ * structures (the histogram contained in this structure can help determine the 
+ * number of nulls at a particular nesting level).
  *
  * Writers should populate all fields in this struct except for the exceptions listed per field.
  */ 
@@ -277,7 +277,6 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
-   7: optional SizeEstimationStatistics size_estimate_statistics;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -587,16 +586,11 @@ struct DataPageHeader {
   /** 
    *  Optional statistics for the data in this page.
    * 
-   * Statistics can serve two purposes:
-   *   1. Used for optimizations on filter push-down
-   *   2. Estimating the size a column will take when it is materialized to memory.
-   *
-   * For the first use-case populating data in the page index is generally a superior
+   * For filter use-cases populating data in the page index is generally a superior
    * solution because it allows readers to avoid IO, however not all readers make use
    * of the page index.  For best compatibility both should be populated. If the writer
    * knows that all readers will make use of the page index or is concerned about file size 
-   * then writer may omit statistics for filter pushdown. Similarly statistics for memory
-   * size estimation are not-required and might not be utilized to all readers.
+   * then writer may omit statistics for filter pushdown.
    **/
   5: optional Statistics statistics;
 }
@@ -837,6 +831,13 @@ struct ColumnMetaData {
    * in a single I/O.
    */
   15: optional i32 bloom_filter_length;
+
+  /**
+   * Optional statistics to help estimate total memory when converted to in memory
+   * representations. The histogram contained on these statistics can also be useful
+   * in some cases for more fine-grained nullability/list length filter pushdown.
+   */
+  16: optional SizeEstimationStatistics size_estimate_statistics;
 }
 
 struct EncryptionWithFooterKey {
@@ -1051,7 +1052,7 @@ struct ColumnIndex {
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
   /** 
-    * Repetition and definition level histograms for the page.  
+    * Repetition and definition level histograms for the pages.  
     *
     * This contains some redundancy with null_counts, however, to accomodate the
     * widest range of readers both should be populated.
