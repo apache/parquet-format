@@ -654,8 +654,8 @@ struct DataPageHeaderV2 {
   /** 
    * optional statistics for the data in this page 
    *
-   * See notes on DataPage struct for use-cases and recommendations on a discussion on 
-   * recommendations around populating this field.
+   * See notes on DataPage struct for use-cases and recommendations around populating
+   * this field.
    **/
   8: optional Statistics statistics;
 }
