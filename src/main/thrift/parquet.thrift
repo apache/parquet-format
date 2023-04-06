@@ -754,7 +754,12 @@ struct ColumnMetaData {
   /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
 
-  /** Size of Bloom filter data, in bytes. **/
+  /** Size of Bloom filter data including the serialized header, in bytes.
+   * Added in 2.10 so readers may not read this field from old files and
+   * it can be obtained after the BloomFilterHeader has been deserialized.
+   * Writers should write this field so readers can read the bloom filter
+   * in a single I/O.
+   */
   15: optional i32 bloom_filter_length;
 }
 
