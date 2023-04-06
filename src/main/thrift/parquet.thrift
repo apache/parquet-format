@@ -245,6 +245,9 @@ struct NullType {}    // allowed for any physical type, only null values stored
 /**
  * Decimal logical type annotation
  *
+ * Scale must be zero or a positive integer less than or equal to the precision.
+ * Precision must be a non-zero positive integer.
+ *
  * To maintain forward-compatibility in v1, implementations using this logical
  * type must also set scale and precision on the annotated SchemaElement.
  *
