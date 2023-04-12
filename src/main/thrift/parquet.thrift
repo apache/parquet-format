@@ -1054,7 +1054,7 @@ struct ColumnIndex {
   /** 
     * Repetition and definition level histograms for the pages.  
     *
-    * This contains some redundancy with null_counts, however, to accomodate the
+    * This contains some redundancy with null_counts, however, to accommodate  the
     * widest range of readers both should be populated.
    **/
   6: optional list<RepetitionDefinitionLevelHistogram> repetition_definition_level_histograms; 
