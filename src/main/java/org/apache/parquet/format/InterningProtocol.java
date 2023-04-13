@@ -20,6 +20,7 @@
 package org.apache.parquet.format;
 
 import java.nio.ByteBuffer;
+import java.util.UUID;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TField;
@@ -127,6 +128,11 @@ public class InterningProtocol extends TProtocol {
     delegate.writeI64(i64);
   }
 
+  @Override
+  public void writeUuid(UUID uuid) throws TException {
+    delegate.writeUuid(uuid);
+  }
+
   public void writeDouble(double dub) throws TException {
     delegate.writeDouble(dub);
   }
@@ -209,6 +215,11 @@ public class InterningProtocol extends TProtocol {
 
   public long readI64() throws TException {
     return delegate.readI64();
+  }
+
+  @Override
+  public UUID readUuid() throws TException {
+    return delegate.readUuid();
   }
 
   public double readDouble() throws TException {
