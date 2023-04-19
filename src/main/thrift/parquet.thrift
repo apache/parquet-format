@@ -190,15 +190,16 @@ enum FieldRepetitionType {
   /** The field is repeated and can contain 0 or more values */
   REPEATED = 2;
 }
- /**
-   * Tracks a histogram of repetition and definition levels for either a page or column chunk. 
-   *
-   * This is useful for:
-   *   1. Estimating the size of the data when materialized in memory 
-   *   2. For filter push-down on nulls at various levels of nested structures and 
-   *      list lengths.
-   */ 
- struct RepetitionDefinitionLevelHistogram {
+
+/**
+  * Tracks a histogram of repetition and definition levels for either a page or column chunk. 
+  *
+  * This is useful for:
+  *   1. Estimating the size of the data when materialized in memory 
+  *   2. For filter push-down on nulls at various levels of nested structures and 
+  *      list lengths.
+  */ 
+struct RepetitionDefinitionLevelHistogram {
    /** 
      * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
      * where each element represents the number of time the repetition level was observed in the data.
@@ -213,6 +214,7 @@ enum FieldRepetitionType {
     **/ 
    2: optional list<i64> definition_level_histogram;
  }
+
 /**
  * A structure for capturing metadata for estimating the unencoded, uncompressed size
  * of data written. This is useful for readers to estimate how much memory is needed 
