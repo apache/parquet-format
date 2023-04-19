@@ -219,7 +219,7 @@ decimal point, and the precision stores the maximum number of digits supported
 in the unscaled value.
 
 If not specified, the scale is 0. Scale must be zero or a positive integer less
-than the precision. Precision is required and must be a non-zero positive
+than or equal to the precision. Precision is required and must be a non-zero positive
 integer. A precision too large for the underlying type (see below) is an error.
 
 `DECIMAL` can be used to annotate the following types:
