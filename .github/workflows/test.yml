@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '1.8', '11' ]
+        java: [ '8', '11', '17' ]
     name: Build Parquet with JDK ${{ matrix.java }}
 
     steps:
@@ -35,6 +35,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java }}
+          distribution: temurin
       - name: before_install
         run: |
           sudo apt-get update -qq
