@@ -581,7 +581,7 @@ struct DataPageHeaderV2 {
   definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
-  7: optional bool is_compressed = 1;
+  7: optional bool is_compressed = true;
 
   /** optional statistics for the data in this page **/
   8: optional Statistics statistics;
