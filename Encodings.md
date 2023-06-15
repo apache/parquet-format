@@ -22,7 +22,8 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-### <a name="PLAIN"></a>Plain: (PLAIN = 0)
+<a name="PLAIN"></a>
+### Plain: (PLAIN = 0)
 
 Supported Types: all
 
@@ -31,7 +32,7 @@ intended to be the simplest encoding.  Values are encoded back to back.
 
 The plain encoding is used whenever a more efficient encoding can not be used. It
 stores the data in the following format:
- - BOOLEAN: [Bit Packed](#RLE), LSB first
+ - BOOLEAN: [Bit Packed](#BITPACKED), LSB first
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
  - INT96: 12 bytes little endian (deprecated)
@@ -61,7 +62,8 @@ followed by the values encoded using RLE/Bit packed described above (with the gi
 Using the PLAIN_DICTIONARY enum value is deprecated in the Parquet 2.0 specification. Prefer using RLE_DICTIONARY
 in a data page and PLAIN in a dictionary page for Parquet 2.0+ files.
 
-### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
+<a name="RLE"></a>
+### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
@@ -141,7 +143,8 @@ Whether prepending the four-byte `length` to the `encoded-data` is summarized as
 +--------------+------------------------+-----------------+
 ```
 
-### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
+<a name="BITPACKED"></a>
+### Bit-packed (Deprecated) (BIT_PACKED = 4)
 
 This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
@@ -168,7 +171,8 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 Note that the BIT_PACKED encoding method is only supported for encoding
 repetition and definition levels.
 
-### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
+<a name="DELTAENC"></a>
+### Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in
