@@ -202,7 +202,7 @@ enum FieldRepetitionType {
 struct RepetitionDefinitionLevelHistogram {
    /** 
      * When present, there is expected to be one element corresponding
-     to each repetition (i.e. size=max repetition_level+1) 
+     * to each repetition (i.e. size=max repetition_level+1) 
      * where each element represents the number of times the repetition level was observed in the data.
      *
      * This value should not be written if max_repetition_level is 0.
