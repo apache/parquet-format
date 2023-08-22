@@ -192,7 +192,7 @@ enum FieldRepetitionType {
 }
 
 /**
-  * Tracks a histogram of repetition and definition levels for either a page or column chunk. 
+  * A histogram of repetition and definition levels for either a page or column chunk. 
   *
   * This is useful for:
   *   1. Estimating the size of the data when materialized in memory 
@@ -201,8 +201,9 @@ enum FieldRepetitionType {
   */ 
 struct RepetitionDefinitionLevelHistogram {
    /** 
-     * When present there is expected to be one element corresponding to each repetition (i.e. size=max repetition_level+1) 
-     * where each element represents the number of time the repetition level was observed in the data.
+     * When present, there is expected to be one element corresponding
+     to each repetition (i.e. size=max repetition_level+1) 
+     * where each element represents the number of times the repetition level was observed in the data.
      *
      * This value should not be written if max_repetition_level is 0.
      **/
@@ -210,7 +211,7 @@ struct RepetitionDefinitionLevelHistogram {
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value should not be written when max_definition_level is 0. 
+    * This value should not be written if max_definition_level is 0. 
     **/ 
    2: optional list<i64> definition_level_histogram;
  }
@@ -232,15 +233,16 @@ struct SizeEstimationStatistics {
     * of other types readers can use schema information multiplied by the number of non-null and null values.
     * The number of null/non-null values can be inferred from the histograms below.
     *
-    * For example if column chunk is dictionary encoded with a dictionary ["a", "bc", "cde"] and a data page 
-    * has indexes [0, 0, 1, 2].  This value is expected to be 7 (1 + 1 + 2 + 3).
+    * For example, if a column chunk is dictionary-encoded with dictionary ["a", "bc", "cde"],
+    * and a data page contains the indices [0, 0, 1, 2], then this value for that data page
+    * should be 7 (1 + 1 + 2 + 3).
     *
     * This field should only be set for types that use BYTE_ARRAY as their physical type.
     */
    1: optional i64 unencoded_variable_width_stored_bytes;
    /**
     *
-    * This field should not be written when maximum definition and repetition level are both 0.
+    * Repetition and definition level histograms for this data page 
     *
     * This field applies to all types.
     */ 
