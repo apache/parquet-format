@@ -192,60 +192,70 @@ enum FieldRepetitionType {
 }
 
 /**
-  * A histogram of repetition and definition levels for either a page or column chunk. 
+  * A histogram of repetition and definition levels for either a page or column
+  * chunk.
   *
   * This is useful for:
-  *   1. Estimating the size of the data when materialized in memory 
-  *   2. For filter push-down on nulls at various levels of nested structures and 
-  *      list lengths.
-  */ 
+  *   1. Estimating the size of the data when materialized in
+  *   memory
+  *
+  *   2. For filter push-down on nulls at various levels of nested
+  *   structures and list lengths.
+  */
 struct RepetitionDefinitionLevelHistogram {
-   /** 
-     * When present, there is expected to be one element corresponding
-     * to each repetition (i.e. size=max repetition_level+1) 
-     * where each element represents the number of times the repetition level was observed in the data.
-     *
-     * This value should not be written if max_repetition_level is 0.
-     **/
+   /**
+    * When present, there is expected to be one element corresponding to each
+    * repetition (i.e. size=max repetition_level+1) where each element
+    * represents the number of times the repetition level was observed in the
+    * data.
+    *
+    * This value should not be written if max_repetition_level is 0.
+    **/
    1: optional list<i64> repetition_level_histogram;
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value should not be written if max_definition_level is 0. 
-    **/ 
+    * This value should not be written if max_definition_level is 0.
+    **/
    2: optional list<i64> definition_level_histogram;
  }
 
 /**
- * A structure for capturing metadata for estimating the unencoded, uncompressed size
- * of data written. This is useful for readers to estimate how much memory is needed 
- * to reconstruct data in their memory model and for fine grained filter pushdown on nested
- * structures (the histogram contained in this structure can help determine the 
- * number of nulls at a particular nesting level).
+ * A structure for capturing metadata for estimating the unencoded,
+ * uncompressed size of data written. This is useful for readers to estimate
+ * how much memory is needed to reconstruct data in their memory model and for
+ * fine grained filter pushdown on nested structures (the histogram contained
+ * in this structure can help determine the number of nulls at a particular
+ * nesting level).
  *
- * Writers should populate all fields in this struct except for the exceptions listed per field.
- */ 
-struct SizeEstimationStatistics {
-   /** 
-    * The number of physical bytes stored for BYTE_ARRAY data values assuming no encoding. This is exclusive of the 
-    * bytes needed to store the length of each byte array. In other words, this field is equivalent to the `(size of 
-    * PLAIN-ENCODING the byte array values) - (4 bytes * number of values written)`. To determine unencoded sizes 
-    * of other types readers can use schema information multiplied by the number of non-null and null values.
-    * The number of null/non-null values can be inferred from the histograms below.
+ * Writers should populate all fields in this struct except for the exceptions
+ * listed per field.
+ */
+struct SizeStatistics {
+   /**
+    * The number of physical bytes stored for BYTE_ARRAY data values assuming
+    * no encoding. This is exclusive of the bytes needed to store the length of
+    * each byte array. In other words, this field is equivalent to the `(size
+    * of PLAIN-ENCODING the byte array values) - (4 bytes * number of values
+    * written)`. To determine unencoded sizes of other types readers can use
+    * schema information multiplied by the number of non-null and null values.
+    * The number of null/non-null values can be inferred from the histograms
+    * below.
     *
-    * For example, if a column chunk is dictionary-encoded with dictionary ["a", "bc", "cde"],
-    * and a data page contains the indices [0, 0, 1, 2], then this value for that data page
-    * should be 7 (1 + 1 + 2 + 3).
+    * For example, if a column chunk is dictionary-encoded with dictionary
+    * ["a", "bc", "cde"], and a data page contains the indices [0, 0, 1, 2],
+    * then this value for that data page should be 7 (1 + 1 + 2 + 3).
     *
-    * This field should only be set for types that use BYTE_ARRAY as their physical type.
+    * This field should only be set for types that use BYTE_ARRAY as their
+    * physical type.
     */
    1: optional i64 unencoded_variable_width_stored_bytes;
    /**
     *
-    * Repetition and definition level histograms for this data page 
+    * Repetition and definition level histograms for this data page
     *
     * This field applies to all types.
-    */ 
+    */
    2: optional RepetitionDefinitionLevelHistogram repetition_definition_level_histogram;
 }
 
@@ -837,11 +847,12 @@ struct ColumnMetaData {
   15: optional i32 bloom_filter_length;
 
   /**
-   * Optional statistics to help estimate total memory when converted to in memory
-   * representations. The histogram contained on these statistics can also be useful
-   * in some cases for more fine-grained nullability/list length filter pushdown.
+   * Optional statistics to help estimate total memory when converted to in
+   * memory representations. The histogram contained on these statistics can
+   * also be useful in some cases for more fine-grained nullability/list length
+   * filter pushdown.
    */
-  16: optional SizeEstimationStatistics size_estimate_statistics;
+  16: optional SizeStatistics size_estimate_statistics;
 }
 
 struct EncryptionWithFooterKey {
@@ -850,7 +861,7 @@ struct EncryptionWithFooterKey {
 struct EncryptionWithColumnKey {
   /** Column path in schema **/
   1: required list<string> path_in_schema
-  
+
   /** Retrieval metadata of column encryption key **/
   2: optional binary key_metadata
 }
@@ -1055,13 +1066,13 @@ struct ColumnIndex {
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
-  /** 
-    * Repetition and definition level histograms for the pages.  
+  /**
+    * Repetition and definition level histograms for the pages.
     *
     * This contains some redundancy with null_counts, however, to accommodate the
     * widest range of readers both should be populated.
    **/
-  6: optional list<RepetitionDefinitionLevelHistogram> repetition_definition_level_histograms; 
+  6: optional list<RepetitionDefinitionLevelHistogram> repetition_definition_level_histograms
 }
 
 struct AesGcmV1 {
