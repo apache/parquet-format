@@ -215,7 +215,7 @@ struct RepetitionDefinitionLevelHistogram {
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value should not be written if max_definition_level is 0.
+    * This value should not be written if max_definition_level is 0 or 1.
     **/
    2: optional list<i64> definition_level_histogram;
  }
@@ -900,7 +900,7 @@ struct ColumnChunk {
 
   /** Crypto metadata of encrypted columns **/
   8: optional ColumnCryptoMetaData crypto_metadata
-  
+
   /** Encrypted column metadata for this chunk **/
   9: optional binary encrypted_column_metadata
 }
@@ -1027,6 +1027,13 @@ struct OffsetIndex {
    * that page_locations[i].first_row_index < page_locations[i+1].first_row_index.
    */
   1: required list<PageLocation> page_locations
+  /**
+   * Unencoded/uncompressed size for BYTE_ARRAY types.
+   *
+   * See documention for unencoded_variable_width_stored_bytes in
+   * SizeStatistics for more details on this field.
+   */
+  2: optional list<i64> unencoded_variable_width_stored_bytes
 }
 
 /**
