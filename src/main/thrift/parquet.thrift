@@ -597,13 +597,13 @@ struct DataPageHeader {
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
 
-  /** 
+  /**
    *  Optional statistics for the data in this page.
-   * 
+   *
    * For filter use-cases populating data in the page index is generally a superior
    * solution because it allows readers to avoid IO, however not all readers make use
    * of the page index.  For best compatibility both should be populated. If the writer
-   * knows that all readers will make use of the page index or is concerned about file size 
+   * knows that all readers will make use of the page index or is concerned about file size
    * then writer may omit statistics for filter pushdown.
    **/
   5: optional Statistics statistics;
@@ -1076,8 +1076,10 @@ struct ColumnIndex {
   /**
     * Repetition and definition level histograms for the pages.
     *
-    * This contains some redundancy with null_counts, however, to accommodate the
-    * widest range of readers both should be populated.
+    * This contains some redundancy with null_counts, however, to accommodate
+    * the widest range of readers both should be populated when either the max
+    * definition and repetition level meet the requirements specified in
+    * RepetitionDefinitionLevelHistogram.
    **/
   6: optional list<RepetitionDefinitionLevelHistogram> repetition_definition_level_histograms
 }
@@ -1088,7 +1090,7 @@ struct AesGcmV1 {
 
   /** Unique file identifier part of AAD suffix **/
   2: optional binary aad_file_unique
-  
+
   /** In files encrypted with AAD prefix without storing it,
    * readers must supply the prefix **/
   3: optional bool supply_aad_prefix
@@ -1100,7 +1102,7 @@ struct AesGcmCtrV1 {
 
   /** Unique file identifier part of AAD suffix **/
   2: optional binary aad_file_unique
-  
+
   /** In files encrypted with AAD prefix without storing it,
    * readers must supply the prefix **/
   3: optional bool supply_aad_prefix
