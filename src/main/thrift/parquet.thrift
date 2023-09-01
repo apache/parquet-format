@@ -249,7 +249,7 @@ struct SizeStatistics {
     * This field should only be set for types that use BYTE_ARRAY as their
     * physical type.
     */
-   1: optional i64 unencoded_variable_width_stored_bytes;
+   1: optional i64 unencoded_byte_array_data_bytes;
    /**
     *
     * Repetition and definition level histograms for this data page
@@ -1030,10 +1030,10 @@ struct OffsetIndex {
   /**
    * Unencoded/uncompressed size for BYTE_ARRAY types.
    *
-   * See documention for unencoded_variable_width_stored_bytes in
-   * SizeStatistics for more details on this field.
+   * See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+   * more details on this field.
    */
-  2: optional list<i64> unencoded_variable_width_stored_bytes
+  2: optional list<i64> unencoded_byte_array_data_bytes
 }
 
 /**
