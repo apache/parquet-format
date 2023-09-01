@@ -852,7 +852,7 @@ struct ColumnMetaData {
    * also be useful in some cases for more fine-grained nullability/list length
    * filter pushdown.
    */
-  16: optional SizeStatistics size_estimate_statistics;
+  16: optional SizeStatistics size_statistics;
 }
 
 struct EncryptionWithFooterKey {
