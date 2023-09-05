@@ -209,13 +209,13 @@ struct RepetitionDefinitionLevelHistogram {
     * represents the number of times the repetition level was observed in the
     * data.
     *
-    * This value should not be written if max_repetition_level is 0.
+    * This field may be omitted if max_repetition_level is 0.
     **/
    1: optional list<i64> repetition_level_histogram;
    /**
     * Same as repetition_level_histogram except for definition levels.
     *
-    * This value should not be written if max_definition_level is 0 or 1.
+    * This field may be omitted if max_definition_level is 0 or 1.
     **/
    2: optional list<i64> definition_level_histogram;
  }
