@@ -848,7 +848,7 @@ struct ColumnMetaData {
 
   /**
    * Optional statistics to help estimate total memory when converted to in
-   * memory representations. The histogram contained on these statistics can
+   * memory representations. The histograms contained on these statistics can
    * also be useful in some cases for more fine-grained nullability/list length
    * filter pushdown.
    */
