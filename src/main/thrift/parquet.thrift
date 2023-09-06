@@ -251,7 +251,7 @@ struct SizeStatistics {
    1: optional i64 unencoded_byte_array_data_bytes;
    /**
     *
-    * Repetition and definition level histograms for this data page
+    * Repetition and definition level histograms for this data page or column chunk
     *
     * This field applies to all types.
     */
