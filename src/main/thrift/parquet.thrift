@@ -196,8 +196,7 @@ enum FieldRepetitionType {
   * chunk.
   *
   * This is useful for:
-  *   1. Estimating the size of the data when materialized in
-  *   memory
+  *   1. Estimating the size of the data when materialized in memory
   *
   *   2. For filter push-down on nulls at various levels of nested
   *   structures and list lengths.
