@@ -192,43 +192,12 @@ enum FieldRepetitionType {
 }
 
 /**
-  * A histogram of repetition and definition levels for either a page or column
-  * chunk.
-  *
-  * This is useful for:
-  *   1. Estimating the size of the data when materialized in memory
-  *
-  *   2. For filter push-down on nulls at various levels of nested
-  *   structures and list lengths.
-  */
-struct RepetitionDefinitionLevelHistogram {
-   /**
-    * When present, there is expected to be one element corresponding to each
-    * repetition (i.e. size=max repetition_level+1) where each element
-    * represents the number of times the repetition level was observed in the
-    * data.
-    *
-    * This field may be omitted if max_repetition_level is 0.
-    **/
-   1: optional list<i64> repetition_level_histogram;
-   /**
-    * Same as repetition_level_histogram except for definition levels.
-    *
-    * This field may be omitted if max_definition_level is 0 or 1.
-    **/
-   2: optional list<i64> definition_level_histogram;
- }
-
-/**
  * A structure for capturing metadata for estimating the unencoded,
  * uncompressed size of data written. This is useful for readers to estimate
  * how much memory is needed to reconstruct data in their memory model and for
- * fine grained filter pushdown on nested structures (the histogram contained
+ * fine grained filter pushdown on nested structures (the histograms contained
  * in this structure can help determine the number of nulls at a particular
- * nesting level).
- *
- * Writers should populate all fields in this struct except for the exceptions
- * listed per field.
+ * nesting level and maximum length of lists).
  */
 struct SizeStatistics {
    /**
@@ -250,12 +219,22 @@ struct SizeStatistics {
     */
    1: optional i64 unencoded_byte_array_data_bytes;
    /**
+    * When present, there is expected to be one element corresponding to each
+    * repetition (i.e. size=max repetition_level+1) where each element
+    * represents the number of times the repetition level was observed in the
+    * data.
     *
-    * Repetition and definition level histograms for this data page or column chunk
+    * This field may be omitted if max_repetition_level is 0 without loss
+    * of information.
+    **/
+   2: optional list<i64> repetition_level_histogram;
+   /**
+    * Same as repetition_level_histogram except for definition levels.
     *
-    * This field applies to all types.
-    */
-   2: optional RepetitionDefinitionLevelHistogram repetition_definition_level_histogram;
+    * This field may be omitted if max_definition_level is 0 or 1 without
+    * loss of information.
+    **/
+   3: optional list<i64> definition_level_histogram;
 }
 
 /**
@@ -596,15 +575,7 @@ struct DataPageHeader {
   /** Encoding used for repetition levels **/
   4: required Encoding repetition_level_encoding;
 
-  /**
-   *  Optional statistics for the data in this page.
-   *
-   * For filter use-cases populating data in the page index is generally a superior
-   * solution because it allows readers to avoid IO, however not all readers make use
-   * of the page index.  For best compatibility both should be populated. If the writer
-   * knows that all readers will make use of the page index or is concerned about file size
-   * then writer may omit statistics for filter pushdown.
-   **/
+  /** Optional statistics for the data in this page **/
   5: optional Statistics statistics;
 }
 
@@ -646,24 +617,19 @@ struct DataPageHeaderV2 {
 
   // repetition levels and definition levels are always using RLE (without size in it)
 
-  /** length of the definition levels */
+  /** Length of the definition levels */
   5: required i32 definition_levels_byte_length;
-  /** length of the repetition levels */
+  /** Length of the repetition levels */
   6: required i32 repetition_levels_byte_length;
 
-  /**  whether the values are compressed.
+  /**  Whether the values are compressed.
   Which means the section of the page between
   definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
   7: optional bool is_compressed = true;
 
-  /** 
-   * optional statistics for the data in this page 
-   *
-   * See notes on DataPage struct for use-cases and recommendations around populating
-   * this field.
-   **/
+  /** Optional statistics for the data in this page **/
   8: optional Statistics statistics;
 }
 
@@ -676,11 +642,11 @@ union BloomFilterAlgorithm {
 }
 
 /** Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash
- * algorithm. It uses 64 bits version of xxHash. 
+ * algorithm. It uses 64 bits version of xxHash.
  **/
 struct XxHash {}
 
-/** 
+/**
  * The hash function used in Bloom filter. This function takes the hash of a column value
  * using plain encoding.
  **/
@@ -1072,15 +1038,25 @@ struct ColumnIndex {
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
+
   /**
-    * Repetition and definition level histograms for the pages.
-    *
-    * This contains some redundancy with null_counts, however, to accommodate
-    * the widest range of readers both should be populated when either the max
-    * definition and repetition level meet the requirements specified in
-    * RepetitionDefinitionLevelHistogram.
+   * Contains repetition level histograms for more details) for each page
+   * concatenated together.  The repetition_level_histogram field on
+   * SizeStatistics contains more details.
+   *
+   * When present the length should always be (number of pages *
+   * (max_repetition_level + 1)) elements in size.
+   *
+   * Element 0 is the first element of the histogram for the first page.
+   * Element (max_repetition_level + 1) is the first element of the histogram
+   * for the second page.
    **/
-  6: optional list<RepetitionDefinitionLevelHistogram> repetition_definition_level_histograms
+   2: optional list<i64> repetition_level_histograms;
+   /**
+    * Same as repetition_level_histograms except for definitions levels.
+    **/
+   3: optional list<i64> definition_level_histograms;
+
 }
 
 struct AesGcmV1 {
