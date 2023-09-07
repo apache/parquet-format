@@ -1051,11 +1051,11 @@ struct ColumnIndex {
    * Element (max_repetition_level + 1) is the first element of the histogram
    * for the second page.
    **/
-   2: optional list<i64> repetition_level_histograms;
+   6: optional list<i64> repetition_level_histograms;
    /**
     * Same as repetition_level_histograms except for definitions levels.
     **/
-   3: optional list<i64> definition_level_histograms;
+   7: optional list<i64> definition_level_histograms;
 
 }
 
