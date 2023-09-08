@@ -1040,7 +1040,7 @@ struct ColumnIndex {
   5: optional list<i64> null_counts
 
   /**
-   * Contains repetition level histograms for more details) for each page
+   * Contains repetition level histograms for each page
    * concatenated together.  The repetition_level_histogram field on
    * SizeStatistics contains more details.
    *
