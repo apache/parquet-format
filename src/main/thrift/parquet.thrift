@@ -1045,7 +1045,7 @@ struct ColumnIndex {
    * SizeStatistics contains more details.
    *
    * When present the length should always be (number of pages *
-   * (max_repetition_level + 1)) elements in size.
+   * (max_repetition_level + 1)) elements.
    *
    * Element 0 is the first element of the histogram for the first page.
    * Element (max_repetition_level + 1) is the first element of the histogram
