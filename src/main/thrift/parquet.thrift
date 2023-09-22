@@ -206,6 +206,9 @@ struct Statistics {
     * only. New files should use the correct order for a column's logical type
     * and store the values in the min_value and max_value fields.
     *
+    * An optional sum_value allows for efficient aggregation for any numerical
+    * columns or pages where the whole column is of interest
+    *
     * To support older readers, these may be set when the column order is
     * signed.
     */
@@ -223,6 +226,7 @@ struct Statistics {
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   7: optional binary sum_value;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -977,6 +981,7 @@ struct ColumnIndex {
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
+  6: optional list<binary> sum_values
 }
 
 struct AesGcmV1 {
