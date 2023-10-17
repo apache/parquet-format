@@ -253,7 +253,7 @@ Used in contexts where precision is traded off for smaller footprint and potenti
 
 The primitive type is a 2-byte fixed length binary.
 
-The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT32` and `FLOAT64`.
+The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
 
 ## Temporal Types
 
