@@ -216,13 +216,23 @@ struct Statistics {
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
    /**
-    * Min and max values for the column, determined by its ColumnOrder.
+    * Lower and upper bound values for the column, determined by its ColumnOrder.
+    *
+    * These may be the actual minimum and maximum values found on a page or column
+    * chunk, but can also be (more compact) values that do not exist on a page or
+    * column chunk. For example, instead of storing "Blart Versenwald III", a writer
+    * may set min_value="B", max_value="C". Such more compact values must still be
+    * valid values within the column's logical type.
     *
     * Values are encoded using PLAIN encoding, except that variable-length byte
     * arrays do not include a length prefix.
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   /** If true, max_value is the actual maximum value for a column */
+   7: optional bool is_max_value_exact;
+   /** If true, min_value is the actual minimum value for a column */
+   8: optional bool is_min_value_exact;
 }
 
 /** Empty structs to use as logical type annotations */
