@@ -179,6 +179,12 @@ This encoding is adapted from the Binary packing described in
 ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf)
 by D. Lemire and L. Boytsov.
 
+Delta encoding is best when used on sorted data, or data with runs of repeated
+values. It can also be useful when the range of values is small, such as would
+be the case with INT_8 data. It should *not* be used when the range of the data
+would necessitate the use of large bitwidths, as could be the case with random
+INT32 values.
+
 In delta encoding we make use of variable length integers for storing various
 numbers (not the deltas themselves). For unsigned values, we use ULEB128,
 which is the unsigned version of LEB128 (https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128).
@@ -246,6 +252,15 @@ will the corresponding additions when decoding. Overflow should be allowed
 and handled as wrapping around in 2's complement notation so that the original
 values are correctly restituted. This may require explicit care in some programming
 languages (for example by doing all arithmetic in the unsigned domain).
+
+One strategy that might be employed to avoid the above mentioned overflow is to
+perform the subtraction utilizing integers with a larger number of bits. For example,
+while encoding INT32 data one might choose to perform arithmetic operations using
+64-bit integers. This can lead to situtations where the number of bits used to encode
+the resulting deltas is greater than the number of bits used to represent the input
+values. While this behavior is allowed, data produced in this manner may not be
+supported by all readers. For this reason, it is suggested that encoders use no more
+than 32 bits to encode INT32 data, and no more than 64 bits when encoding INT64 data.
 
 The following examples use 8 as the block size to keep the examples short,
 but in real cases it would be invalid.
