@@ -22,7 +22,8 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-### <a name="PLAIN"></a>Plain: (PLAIN = 0)
+<a name="PLAIN"></a>
+### Plain: (PLAIN = 0)
 
 Supported Types: all
 
@@ -31,7 +32,7 @@ intended to be the simplest encoding.  Values are encoded back to back.
 
 The plain encoding is used whenever a more efficient encoding can not be used. It
 stores the data in the following format:
- - BOOLEAN: [Bit Packed](#RLE), LSB first
+ - BOOLEAN: [Bit Packed](#BITPACKED), LSB first
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
  - INT96: 12 bytes little endian (deprecated)
@@ -53,7 +54,7 @@ using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too b
 or number of distinct values, the encoding will fall back to the plain encoding. The dictionary page is
 written first, before the data pages of the column chunk.
 
-Dictionary page format: the entries in the dictionary - in dictionary order - using the [plain](#PLAIN) encoding.
+Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) encoding.
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
@@ -61,13 +62,15 @@ followed by the values encoded using RLE/Bit packed described above (with the gi
 Using the PLAIN_DICTIONARY enum value is deprecated in the Parquet 2.0 specification. Prefer using RLE_DICTIONARY
 in a data page and PLAIN in a dictionary page for Parquet 2.0+ files.
 
-### <a name="RLE"></a>Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
+<a name="RLE"></a>
+### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
 
 This encoding uses a combination of bit-packing and run length encoding to more efficiently store repeated values.
 
 The grammar for this encoding looks like this, given a fixed bit-width known in advance:
 ```
 rle-bit-packed-hybrid: <length> <encoded-data>
+// length is not always prepended, please check the table below for more detail
 length := length of the <encoded-data> in bytes stored as 4 bytes little endian (unsigned int32)
 encoded-data := <run>*
 run := <bit-packed-run> | <rle-run>
@@ -123,11 +126,29 @@ data:
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
-### <a name="BITPACKED"></a>Bit-packed (Deprecated) (BIT_PACKED = 4)
+Whether prepending the four-byte `length` to the `encoded-data` is summarized as the table below:
+```
++--------------+------------------------+-----------------+
+| Page kind    | RLE-encoded data kind  | Prepend length? |
++--------------+------------------------+-----------------+
+| Data page v1 | Definition levels      | Y               |
+|              | Repetition levels      | Y               |
+|              | Dictionary indices     | N               |
+|              | Boolean values         | Y               |
++--------------+------------------------+-----------------+
+| Data page v2 | Definition levels      | N               |
+|              | Repetition levels      | N               |
+|              | Dictionary indices     | N               |
+|              | Boolean values         | Y               |
++--------------+------------------------+-----------------+
+```
+
+<a name="BITPACKED"></a>
+### Bit-packed (Deprecated) (BIT_PACKED = 4)
 
 This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
-There is no padding between values (except for the last byte) which is padded with 0s.
+There is no padding between values (except for the last byte, which is padded with 0s).
 For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
 (2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
 
@@ -150,7 +171,8 @@ bit label: ABCDEFGH IJKLMNOP QRSTUVWX
 Note that the BIT_PACKED encoding method is only supported for encoding
 repetition and definition levels.
 
-### <a name="DELTAENC"></a>Delta Encoding (DELTA_BINARY_PACKED = 5)
+<a name="DELTAENC"></a>
+### Delta Encoding (DELTA_BINARY_PACKED = 5)
 Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in

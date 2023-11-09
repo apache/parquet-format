@@ -216,18 +216,28 @@ struct Statistics {
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
    /**
-    * Min and max values for the column, determined by its ColumnOrder.
+    * Lower and upper bound values for the column, determined by its ColumnOrder.
+    *
+    * These may be the actual minimum and maximum values found on a page or column
+    * chunk, but can also be (more compact) values that do not exist on a page or
+    * column chunk. For example, instead of storing "Blart Versenwald III", a writer
+    * may set min_value="B", max_value="C". Such more compact values must still be
+    * valid values within the column's logical type.
     *
     * Values are encoded using PLAIN encoding, except that variable-length byte
     * arrays do not include a length prefix.
     */
    5: optional binary max_value;
    6: optional binary min_value;
+   /** If true, max_value is the actual maximum value for a column */
+   7: optional bool is_max_value_exact;
+   /** If true, min_value is the actual minimum value for a column */
+   8: optional bool is_min_value_exact;
    /** 
     * count of NaN values in the column; only present if physical type is FLOAT
     * or DOUBLE
     */
-   7: optional i64 nan_count;
+   9: optional i64 nan_count;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -237,6 +247,7 @@ struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
+struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
 
 /**
  * Logical type to annotate a column that is always null.
@@ -249,6 +260,9 @@ struct NullType {}    // allowed for any physical type, only null values stored
 
 /**
  * Decimal logical type annotation
+ *
+ * Scale must be zero or a positive integer less than or equal to the precision.
+ * Precision must be a non-zero positive integer.
  *
  * To maintain forward-compatibility in v1, implementations using this logical
  * type must also set scale and precision on the annotated SchemaElement.
@@ -347,6 +361,7 @@ union LogicalType {
   12: JsonType JSON           // use ConvertedType JSON
   13: BsonType BSON           // use ConvertedType BSON
   14: UUIDType UUID           // no compatible ConvertedType
+  15: Float16Type FLOAT16     // no compatible ConvertedType
 }
 
 /**
@@ -583,7 +598,7 @@ struct DataPageHeaderV2 {
   definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
-  7: optional bool is_compressed = 1;
+  7: optional bool is_compressed = true;
 
   /** optional statistics for the data in this page **/
   8: optional Statistics statistics;
@@ -758,6 +773,14 @@ struct ColumnMetaData {
 
   /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
+
+  /** Size of Bloom filter data including the serialized header, in bytes.
+   * Added in 2.10 so readers may not read this field from old files and
+   * it can be obtained after the BloomFilterHeader has been deserialized.
+   * Writers should write this field so readers can read the bloom filter
+   * in a single I/O.
+   */
+  15: optional i32 bloom_filter_length;
 }
 
 struct EncryptionWithFooterKey {

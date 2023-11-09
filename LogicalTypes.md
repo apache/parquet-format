@@ -219,7 +219,7 @@ decimal point, and the precision stores the maximum number of digits supported
 in the unscaled value.
 
 If not specified, the scale is 0. Scale must be zero or a positive integer less
-than the precision. Precision is required and must be a non-zero positive
+than or equal to the precision. Precision is required and must be a non-zero positive
 integer. A precision too large for the underlying type (see below) is an error.
 
 `DECIMAL` can be used to annotate the following types:
@@ -244,6 +244,16 @@ comparison.
 
 To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
+
+### FLOAT16
+
+The `FLOAT16` annotation represents half-precision floating-point numbers in the 2-byte IEEE little-endian format.
+
+Used in contexts where precision is traded off for smaller footprint and potentially better performance.
+
+The primitive type is a 2-byte fixed length binary.
+
+The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
 
 ## Temporal Types
 
