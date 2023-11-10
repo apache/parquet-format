@@ -158,7 +158,9 @@ documented in [LogicalTypes.md][logical-types].
 Parquet stores min/max statistics at several levels (such as Column Chunk,
 Column Index, and Data Page). These statistics are according to a sort order,
 which is defined for each column in the file footer. Parquet supports common
-sort orders for logical and primitve types. The details are documented in the
+sort orders for logical and primitve types and also special orders for types
+where the common sort order is not unambiguously defined (e.g., NaN ordering
+for floating point types). The details are documented in the
 [Thrift definition](src/main/thrift/parquet.thrift) in the `ColumnOrder` union.
 
 ## Nested Encoding
