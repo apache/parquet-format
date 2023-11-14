@@ -58,6 +58,10 @@ formats) defined by [RFC 1952](https://tools.ietf.org/html/rfc1952).
 If any ambiguity arises when implementing this format, the implementation
 provided by the [zlib compression library](https://zlib.net/) is authoritative.
 
+Readers should support reading pages containing multiple GZIP members, however,
+as this has historically not been supported by all implementations, it is recommended
+that writers refrain from creating such pages by default for better interoperability.
+
 ### LZO
 
 A codec based on or interoperable with the
