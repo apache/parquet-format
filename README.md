@@ -162,21 +162,7 @@ following rules:
     * FLOAT, DOUBLE - Signed comparison with special handling of NaNs and
       signed zeros.   The details are documented in the
       [Thrift definition](src/main/thrift/parquet.thrift) in the
-      `ColumnOrder` union. They are summarized here but the Thrift definition
-      is considered authoritative:
-      * NaNs should not be written to min or max statistics fields.
-      * If the computed max value is zero (whether negative or positive),
-        `+0.0` should be written into the max statistics field.
-      * If the computed min value is zero (whether negative or positive),
-        `-0.0` should be written into the min statistics field.
-
-      For backwards compatibility when reading files:
-      * If the min is a NaN, it should be ignored.
-      * If the max is a NaN, it should be ignored.
-      * If the min is +0, the row group may contain -0 values as well.
-      * If the max is -0, the row group may contain +0 values as well.
-      * When looking for NaN values, min and max should be ignored.
-      
+      `ColumnOrder` union.
     * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic unsigned byte-wise
       comparison.
 

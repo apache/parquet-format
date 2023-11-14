@@ -211,7 +211,7 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** count of null value in the column */
+   /** count of null values in the column */
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
@@ -233,6 +233,11 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+   /** 
+    * count of NaN values in the column; only present if physical type is FLOAT
+    * or DOUBLE
+    */
+   9: optional i64 nan_count;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -909,16 +914,25 @@ union ColumnOrder {
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
    * (*) Because the sorting order is not specified properly for floating
-   *     point values (relations vs. total ordering) the following
-   *     compatibility rules should be applied when reading statistics:
+   *     point values (relations vs. total ordering), the following compatibility
+   *     rules should be applied when reading statistics:
    *     - If the min is a NaN, it should be ignored.
    *     - If the max is a NaN, it should be ignored.
+   *     - If the nan_count field is set, a reader can compute
+   *       nan_count + null_count == num_values to deduce whether all non-NULL
+   *       values are NaN.
+   *     - When looking for NaN values, min and max should be ignored.
+   *       If the nan_count field is set, it can be used to check whether
+   *       NaNs are present.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
-   *     - When looking for NaN values, min and max should be ignored.
    * 
    *     When writing statistics the following rules should be followed:
-   *     - NaNs should not be written to min or max statistics fields.
+   *     - It is suggested to always set the nan_count fields for FLOAT and
+           DOUBLE columns.
+   *     - NaNs should not be written to min or max statistics fields except
+   *       in the column index, where a value has to be written incase of
+   *       only-NaN pages.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
@@ -975,6 +989,11 @@ struct ColumnIndex {
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
+   * For columns of type FLOAT and DOUBLE, NaN values are not to be included
+   * in these bounds unless all non-null values in a page are NaN, in which
+   * case min and max should be set to NaN. Readers should always ignore NaN
+   * values in the bounds; they should check nan_pages to detect the "all
+   * non-null values are NaN" case.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -989,6 +1008,23 @@ struct ColumnIndex {
 
   /** A list containing the number of null values for each page **/
   5: optional list<i64> null_counts
+
+  /**
+   * A list of Boolean values to determine pages that contain only NaNs. Only
+   * present for columns of type FLOAT and DOUBLE. If true, all non-null
+   * values in a page are NaN. Writers are suggested to set the corresponding
+   * entries in min_values and max_values to NaN, so that all lists have the same
+   * length and contain valid values. If false, then either all values in the
+   * page are null or there is at least one non-null non-NaN value in the page.
+   * As readers are supposed to ignore all NaN values in bounds, legacy readers
+   * who do not consider nan_pages yet are still able to use the column index
+   * but are not able to skip only-NaN pages.
+   */
+  6: optional list<bool> nan_pages
+
+  /** A list containing the number of NaN values for each page. Only present
+   *  for columns of type FLOAT and DOUBLE. **/
+  7: optional list<i64> nan_counts
 }
 
 struct AesGcmV1 {
