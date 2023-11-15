@@ -19,6 +19,39 @@
 
 # Parquet #
 
+### Version 2.10.0 ###
+
+#### New Feature
+
+*   [PARQUET-2257](https://issues.apache.org/jira/browse/PARQUET-2257) - Add bloom_filter_length to ColumnMetaData 
+*   [PARQUET-758](https://issues.apache.org/jira/browse/PARQUET-758) - Add Float16/Half-float logical type 
+*   [PARQUET-2261](https://issues.apache.org/jira/browse/PARQUET-2261) - Add statistics for better estimating unencoded/uncompressed sizes and finer grained filtering
+
+#### Improvement
+
+*   [PARQUET-2016](https://issues.apache.org/jira/browse/PARQUET-2016) - Reference column_order field from column indexes 
+*   [PARQUET-2215](https://issues.apache.org/jira/browse/PARQUET-2215) - Document overflow handling in DELTA_BINARY_PACKED 
+*   [PARQUET-1222](https://issues.apache.org/jira/browse/PARQUET-1222) - Add details about sort order to README.md 
+*   [PARQUET-2218](https://issues.apache.org/jira/browse/PARQUET-2218) - Clarify CRC computation 
+*   [PARQUET-2231](https://issues.apache.org/jira/browse/PARQUET-2231) - Allow DELTA_BYTE_ARRAY for FIXED_LEN_BYTE_ARRAY 
+*   [PARQUET-2241](https://issues.apache.org/jira/browse/PARQUET-2241) - Update wording of BYTE_STREAM_SPLIT encoding 
+*   [PARQUET-2264](https://issues.apache.org/jira/browse/PARQUET-2264) - Allow scale == precision for DecimalType 
+*   [PARQUET-2299](https://issues.apache.org/jira/browse/PARQUET-2299) - Use `true` instead of `1` as default value for boolean 
+*   [PARQUET-2362](https://issues.apache.org/jira/browse/PARQUET-2362) - Clarify parquet encoding 
+*   [PARQUET-2352](https://issues.apache.org/jira/browse/PARQUET-2352) - Allow truncation of row group min_values/max_value statistics 
+*   [PARQUET-2369](https://issues.apache.org/jira/browse/PARQUET-2369) - Clarify GZIP members 
+
+#### Task
+
+*   [PARQUET-2271](https://issues.apache.org/jira/browse/PARQUET-2271) - Bump Apache POM to 29 
+*   [PARQUET-2344](https://issues.apache.org/jira/browse/PARQUET-2344) - Bump to Thrift 0.19.0
+
+#### Bug
+
+*   [PARQUET-2110](https://issues.apache.org/jira/browse/PARQUET-2110) - Fix Typos in LogicalTypes.md 
+*   [PARQUET-2222](https://issues.apache.org/jira/browse/PARQUET-2222) - Fix incorrect spec for RLE encoding of data page v2 
+*   [PARQUET-2222](https://issues.apache.org/jira/browse/PARQUET-2222) - Fix broken link for Plain Boolean 
+
 ### Version 2.9.0 ###
 
 #### Bug
