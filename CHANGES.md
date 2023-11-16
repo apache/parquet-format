@@ -19,6 +19,52 @@
 
 # Parquet #
 
+### Version 2.10.0 ###
+
+#### New Feature
+
+*   [PARQUET-758](https://issues.apache.org/jira/browse/PARQUET-758) - Add Float16/Half-float logical type 
+*   [PARQUET-2261](https://issues.apache.org/jira/browse/PARQUET-2261) - Add statistics for better estimating unencoded/uncompressed sizes and finer grained filtering
+
+#### Improvement
+
+*   [PARQUET-2005](https://issues.apache.org/jira/browse/PARQUET-2005) - Upgrade Apache Thrift to 0.14.1
+*   [PARQUET-2215](https://issues.apache.org/jira/browse/PARQUET-2215) - Document overflow handling in DELTA_BINARY_PACKED 
+*   [PARQUET-2218](https://issues.apache.org/jira/browse/PARQUET-2218) - Clarify CRC computation 
+*   [PARQUET-2257](https://issues.apache.org/jira/browse/PARQUET-2257) - Add bloom_filter_length to ColumnMetaData 
+*   [PARQUET-2264](https://issues.apache.org/jira/browse/PARQUET-2264) - Allow scale == precision for DecimalType 
+*   [PARQUET-2270](https://issues.apache.org/jira/browse/PARQUET-2270) - Bump Thrift to 0.16.0
+*   [PARQUET-2271](https://issues.apache.org/jira/browse/PARQUET-2271) - Bump Apache POM to 29
+*   [PARQUET-2284](https://issues.apache.org/jira/browse/PARQUET-2284) - Bump junit from 4.10 to 4.13.2
+*   [PARQUET-2285](https://issues.apache.org/jira/browse/PARQUET-2285) - Add dependabot
+*   [PARQUET-2286](https://issues.apache.org/jira/browse/PARQUET-2286) - Bump apache-rat-plugin from 0.12 to 0.15
+*   [PARQUET-2287](https://issues.apache.org/jira/browse/PARQUET-2287) - Bump maven-shade-plugin from 2.2 to 3.4.1
+*   [PARQUET-2288](https://issues.apache.org/jira/browse/PARQUET-2288) - Bump exec-maven-plugin from 1.2.1 to 3.1.0
+*   [PARQUET-2299](https://issues.apache.org/jira/browse/PARQUET-2299) - Use `true` instead of `1` as default value for boolean 
+*   [PARQUET-2313](https://issues.apache.org/jira/browse/PARQUET-2313) - Bump actions/setup-java from 1 to 3
+*   [PARQUET-2344](https://issues.apache.org/jira/browse/PARQUET-2344) - Bump to Thrift 0.19.0
+*   [PARQUET-2352](https://issues.apache.org/jira/browse/PARQUET-2352) - Allow truncation of row group min_values/max_value statistics 
+*   [PARQUET-2362](https://issues.apache.org/jira/browse/PARQUET-2362) - Clarify parquet encoding 
+*   [PARQUET-2369](https://issues.apache.org/jira/browse/PARQUET-2369) - Clarify GZIP members 
+
+#### Task
+
+*   Document dictionary page position
+*   Fix broken link for Plain Boolean 
+*   Fix typo under "Unsigned Integers"
+*   MINOR: Add FIXED_LEN_BYTE_ARRAY Type
+*   MINOR: Fix typo in parquet.thrift
+*   MINOR: Fix typo in PageIndex.md
+
+#### Bug
+
+*   [PARQUET-1222](https://issues.apache.org/jira/browse/PARQUET-1222) - Add details about sort order to README.md
+*   [PARQUET-2016](https://issues.apache.org/jira/browse/PARQUET-2016) - Reference column_order field from column indexes
+*   [PARQUET-2110](https://issues.apache.org/jira/browse/PARQUET-2110) - Fix Typos in LogicalTypes.md
+*   [PARQUET-2222](https://issues.apache.org/jira/browse/PARQUET-2222) - Fix incorrect spec for RLE encoding of data page v2
+*   [PARQUET-2231](https://issues.apache.org/jira/browse/PARQUET-2231) - Allow DELTA_BYTE_ARRAY for FIXED_LEN_BYTE_ARRAY 
+*   [PARQUET-2241](https://issues.apache.org/jira/browse/PARQUET-2241) - Update wording of BYTE_STREAM_SPLIT encoding 
+
 ### Version 2.9.0 ###
 
 #### Bug
