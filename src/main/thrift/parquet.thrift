@@ -945,7 +945,7 @@ union ColumnOrder {
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
    *   TIMESTAMP_MICROS - signed comparison
-   *   INTERVAL - unsigned comparison
+   *   INTERVAL - undefined
    *   JSON - unsigned byte-wise comparison
    *   BSON - unsigned byte-wise comparison
    *   ENUM - unsigned byte-wise comparison
