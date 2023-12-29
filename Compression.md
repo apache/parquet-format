@@ -25,8 +25,8 @@ This document contains the specification of all supported compression codecs.
 
 Parquet allows the data block inside dictionary pages and data pages to
 be compressed for better space efficiency. The Parquet format supports
-several compression covering different areas in the compression ratio /
-processing cost spectrum.
+several compression codecs covering different areas in the compression
+ratio / processing cost spectrum.
 
 The detailed specifications of compression codecs are maintained externally
 by their respective authors or maintainers, which we reference hereafter.
