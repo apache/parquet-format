@@ -19,6 +19,12 @@
 
 # Parquet #
 
+### Version 2.11.0 ###
+
+#### New Feature
+
+*   [PARQUET-2414](https://issues.apache.org/jira/browse/PARQUET-2414) - Extend BYTE_STREAM_SPLIT to support INT32, INT64 and FIXED_LEN_BYTE_ARRAY data
+
 ### Version 2.10.0 ###
 
 #### New Feature

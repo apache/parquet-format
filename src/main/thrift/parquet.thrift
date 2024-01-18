@@ -526,9 +526,9 @@ enum Encoding {
    */
   RLE_DICTIONARY = 8;
 
-  /** Encoding for floating-point data.
+  /** Encoding for fixed-width data (INT32, INT64, FLOAT, DOUBLE, FIXED_LEN_BYTE_ARRAY).
       K byte-streams are created where K is the size in bytes of the data type.
-      The individual bytes of an FP value are scattered to the corresponding stream and
+      The individual bytes of a value are scattered to the corresponding stream and
       the streams are concatenated.
       This itself does not reduce the size of the data but can lead to better compression
       afterwards.
