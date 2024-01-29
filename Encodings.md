@@ -335,7 +335,7 @@ Note that, even for FIXED_LEN_BYTE_ARRAY, all lengths are encoded despite the re
 
 ### Byte Stream Split: (BYTE_STREAM_SPLIT = 9)
 
-Supported Types: INT32, INT64, FLOAT, DOUBLE, FIXED_LEN_BYTE_ARRAY
+Supported Types: FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY
 
 This encoding does not reduce the size of the data but can lead to a significantly better
 compression ratio and speed when a compression algorithm is used afterwards.

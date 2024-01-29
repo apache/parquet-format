@@ -526,12 +526,15 @@ enum Encoding {
    */
   RLE_DICTIONARY = 8;
 
-  /** Encoding for fixed-width data (INT32, INT64, FLOAT, DOUBLE, FIXED_LEN_BYTE_ARRAY).
+  /** Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY).
       K byte-streams are created where K is the size in bytes of the data type.
       The individual bytes of a value are scattered to the corresponding stream and
       the streams are concatenated.
       This itself does not reduce the size of the data but can lead to better compression
       afterwards.
+
+      Added in 2.8 for FLOAT and DOUBLE.
+      Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
    */
   BYTE_STREAM_SPLIT = 9;
 }
