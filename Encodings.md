@@ -245,7 +245,9 @@ Subtractions in steps 1) and 2) may incur signed arithmetic overflow, and so
 will the corresponding additions when decoding. Overflow should be allowed
 and handled as wrapping around in 2's complement notation so that the original
 values are correctly restituted. This may require explicit care in some programming
-languages (for example by doing all arithmetic in the unsigned domain).
+languages (for example by doing all arithmetic in the unsigned domain). Writers
+must not use more bits when bit packing the miniblock data than would be required
+to PLAIN encode the physical type (e.g. INT32 data must not use more than 32 bits).
 
 One strategy that might be employed to avoid the above mentioned overflow is to
 perform the subtraction utilizing integers with a larger number of bits. For example,
