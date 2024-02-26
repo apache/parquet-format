@@ -179,12 +179,6 @@ This encoding is adapted from the Binary packing described in
 ["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf)
 by D. Lemire and L. Boytsov.
 
-Delta encoding is best when used on sorted data, or data with runs of repeated
-values. It can also be useful when the range of values is small, such as would
-be the case with INT_8 data. It should *not* be used when the range of the data
-would necessitate the use of large bitwidths, as could be the case with random
-INT32 values.
-
 In delta encoding we make use of variable length integers for storing various
 numbers (not the deltas themselves). For unsigned values, we use ULEB128,
 which is the unsigned version of LEB128 (https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128).
