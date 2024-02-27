@@ -249,15 +249,6 @@ languages (for example by doing all arithmetic in the unsigned domain). Writers
 must not use more bits when bit packing the miniblock data than would be required
 to PLAIN encode the physical type (e.g. INT32 data must not use more than 32 bits).
 
-One strategy that might be employed to avoid the above mentioned overflow is to
-perform the subtraction utilizing integers with a larger number of bits. For example,
-while encoding INT32 data one might choose to perform arithmetic operations using
-64-bit integers. This can lead to situtations where the number of bits used to encode
-the resulting deltas is greater than the number of bits used to represent the input
-values. While this behavior is allowed, data produced in this manner may not be
-supported by all readers. For this reason, it is suggested that encoders use no more
-than 32 bits to encode INT32 data, and no more than 64 bits when encoding INT64 data.
-
 The following examples use 8 as the block size to keep the examples short,
 but in real cases it would be invalid.
 
