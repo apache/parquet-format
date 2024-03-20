@@ -288,7 +288,7 @@ struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
-struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
+struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes (see LogicalTypes.md)
 
 /**
  * Logical type to annotate a column that is always null.
@@ -791,7 +791,7 @@ struct ColumnMetaData {
   /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed, and potentially encrypted, pages 
+  /** total byte size of all compressed, and potentially encrypted, pages
    *  in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
@@ -906,16 +906,19 @@ struct RowGroup {
    * in this row group **/
   5: optional i64 file_offset
 
-  /** Total byte size of all compressed (and potentially encrypted) column data 
+  /** Total byte size of all compressed (and potentially encrypted) column data
    *  in this row group **/
   6: optional i64 total_compressed_size
-  
+
   /** Row group ordinal in the file **/
   7: optional i16 ordinal
 }
 
 /** Empty struct to signal the order defined by the physical or logical type */
 struct TypeDefinedOrder {}
+
+/** Empty struct to signal IEEE 754 total order for floating point types */
+struct IEEE754TotalOrder {}
 
 /**
  * Union to specify the order used for the min_value and max_value fields for a
@@ -925,6 +928,7 @@ struct TypeDefinedOrder {}
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
+ * * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -944,6 +948,7 @@ union ColumnOrder {
    *   UINT64 - unsigned comparison
    *   DECIMAL - signed comparison of the represented value
    *   DATE - signed comparison
+   *   FLOAT16 - signed comparison of the represented value (*)
    *   TIME_MILLIS - signed comparison
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
@@ -965,15 +970,19 @@ union ColumnOrder {
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
-   * (*) Because the sorting order is not specified properly for floating
-   *     point values (relations vs. total ordering) the following
+   * (*) Because the precise sorting order is ambiguous for floating
+   *     point types due to underspecified handling of NaN and -0/+0,
+   *     it is recommended that writers use IEEE_754_TOTAL_ORDER
+   *     for these types.
+   *
+   *     If TYPE_ORDER is used for floating point types, then the following
    *     compatibility rules should be applied when reading statistics:
    *     - If the min is a NaN, it should be ignored.
    *     - If the max is a NaN, it should be ignored.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
-   * 
+   *
    *     When writing statistics the following rules should be followed:
    *     - NaNs should not be written to min or max statistics fields.
    *     - If the computed max value is zero (whether negative or positive),
@@ -982,6 +991,58 @@ union ColumnOrder {
    *       `-0.0` should be written into the min statistics field.
    */
   1: TypeDefinedOrder TYPE_ORDER;
+
+  /*
+   * The floating point type is ordered according to the totalOrder predicate,
+   * as defined in section 5.10 of IEEE-754 (2008 revision). Only columns of
+   * physical type FLOAT or DOUBLE, or logical type FLOAT16 may use this ordering.
+
+   * Intuitively, this orders floats mathematically, but defines -0 to be less
+   * than +0, -NaN to be less than anything else, and +NaN to be greater than
+   * anything else. It also defines an order between different bit representations
+   * of the same value.
+   *
+   * The formal definition is as follows:
+   *   a) If x<y, totalOrder(x, y) is true.
+   *   b) If x>y, totalOrder(x, y) is false.
+   *   c) If x=y:
+   *     1) totalOrder(−0, +0) is true.
+   *     2) totalOrder(+0, −0) is false.
+   *     3) If x and y represent the same floating-point datum:
+   *        i) If x and y have negative sign, totalOrder(x, y) is true if and
+   *           only if the exponent of x ≥ the exponent of y
+   *       ii) otherwise totalOrder(x, y) is true if and only if the exponent
+   *           of x ≤ the exponent of y.
+   *   d) If x and y are unordered numerically because x or y is NaN:
+   *     1) totalOrder(−NaN, y) is true where −NaN represents a NaN with
+   *        negative sign bit and y is a floating-point number.
+   *     2) totalOrder(x, +NaN) is true where +NaN represents a NaN with
+   *        positive sign bit and x is a floating-point number.
+   *     3) If x and y are both NaNs, then totalOrder reflects a total ordering
+   *        based on:
+   *         i) negative sign orders below positive sign
+   *        ii) signaling orders below quiet for +NaN, reverse for −NaN
+   *       iii) lesser payload, when regarded as an integer, orders below
+   *            greater payload for +NaN, reverse for −NaN.
+   *
+   * Note that this ordering can be implemented efficiently in software
+   * by flipping all non-sign bits in case of a set sign bit to achieve a
+   * two's-complement-like representation and then performing a signed
+   * integer comparison on the resulting bits.
+   * E.g., this is a possible implementation for DOUBLE in Rust:
+   *
+   *   pub fn totalOrder(x: f64, y: f64) -> bool {
+   *     // view bits as signed integers
+   *     let mut x_int = x.to_bits() as i64;
+   *     let mut y_int = y.to_bits() as i64;
+   *     // flip all non-sign bits if sign bit is set
+   *     x_int ^= (((x_int >> 63) as u64) >> 1) as i64;
+   *     y_int ^= (((y_int >> 63) as u64) >> 1) as i64;
+   *     // perform signed integer comparison
+   *     return x_int <= y_int;
+   *   }
+   */
+  2: IEEE754TotalOrder IEEE_754_TOTAL_ORDER;
 }
 
 struct PageLocation {
@@ -1151,30 +1212,30 @@ struct FileMetaData {
    */
   7: optional list<ColumnOrder> column_orders;
 
-  /** 
+  /**
    * Encryption algorithm. This field is set only in encrypted files
    * with plaintext footer. Files with encrypted footer store algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
 
-  /** 
-   * Retrieval metadata of key used for signing the footer. 
-   * Used only in encrypted files with plaintext footer. 
-   */ 
+  /**
+   * Retrieval metadata of key used for signing the footer.
+   * Used only in encrypted files with plaintext footer.
+   */
   9: optional binary footer_signing_key_metadata
 }
 
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
-  /** 
+  /**
    * Encryption algorithm. This field is only used for files
    * with encrypted footer. Files with plaintext footer store algorithm id
    * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
-    
-  /** Retrieval metadata of key used for encryption of footer, 
+
+  /** Retrieval metadata of key used for encryption of footer,
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }

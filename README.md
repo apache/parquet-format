@@ -146,40 +146,13 @@ documented in [LogicalTypes.md][logical-types].
 [logical-types]: LogicalTypes.md
 
 ### Sort Order
-
 Parquet stores min/max statistics at several levels (such as Column Chunk,
-Column Index and Data Page). Comparison for values of a type obey the
-following rules:
-
-1.  Each logical type has a specified comparison order. If a column is
-    annotated with an unknown logical type, statistics may not be used
-    for pruning data. The sort order for logical types is documented in
-    the [LogicalTypes.md][logical-types] page.
-2.  For primitive types, the following rules apply:
-
-    * BOOLEAN - false, true
-    * INT32, INT64 - Signed comparison.
-    * FLOAT, DOUBLE - Signed comparison with special handling of NaNs and
-      signed zeros.   The details are documented in the
-      [Thrift definition](src/main/thrift/parquet.thrift) in the
-      `ColumnOrder` union. They are summarized here but the Thrift definition
-      is considered authoritative:
-      * NaNs should not be written to min or max statistics fields.
-      * If the computed max value is zero (whether negative or positive),
-        `+0.0` should be written into the max statistics field.
-      * If the computed min value is zero (whether negative or positive),
-        `-0.0` should be written into the min statistics field.
-
-      For backwards compatibility when reading files:
-      * If the min is a NaN, it should be ignored.
-      * If the max is a NaN, it should be ignored.
-      * If the min is +0, the row group may contain -0 values as well.
-      * If the max is -0, the row group may contain +0 values as well.
-      * When looking for NaN values, min and max should be ignored.
-      
-    * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic unsigned byte-wise
-      comparison.
-
+Column Index, and Data Page). These statistics are according to a sort order,
+which is defined for each column in the file footer. Parquet supports common
+sort orders for logical and primitve types and also special orders for types
+where the common sort order is not unambiguously defined (e.g., NaN ordering
+for floating point types). The details are documented in the
+[Thrift definition](src/main/thrift/parquet.thrift) in the `ColumnOrder` union.
 
 ## Nested Encoding
 To encode nested columns, Parquet uses the Dremel encoding with definition and
