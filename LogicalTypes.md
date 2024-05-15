@@ -259,12 +259,10 @@ The sort order for `FLOAT16` is signed (with special handling of NANs and signed
 ### FIXED_SIZE_LIST
 
 The `FIXED_SIZE_LIST` annotation represents a fixed-size list of elements
-of a fixed-width data type. It must annotate an N-byte fixed length binary
-where N is the number of elements in the list times bit width of the element
-data type.
+of a primitive data type. It must annotate a `binary` primitive type.
 
 The `fixed_len_byte_array` data is interpreted as a sequence of elements of
-the same fixed-width data type.
+the same primitive data type.
 
 The sort order used for `FIXED_SIZE_LIST` is undefined.
 
