@@ -289,6 +289,7 @@ struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
 struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
+struct FixedSizeListType {} // see LogicalTypes.md
 
 /**
  * Logical type to annotate a column that is always null.
@@ -397,12 +398,14 @@ union LogicalType {
   8:  TimestampType TIMESTAMP
 
   // 9: reserved for INTERVAL
-  10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
-  11: NullType UNKNOWN        // no compatible ConvertedType
-  12: JsonType JSON           // use ConvertedType JSON
-  13: BsonType BSON           // use ConvertedType BSON
-  14: UUIDType UUID           // no compatible ConvertedType
-  15: Float16Type FLOAT16     // no compatible ConvertedType
+  10: IntType INTEGER                   // use ConvertedType INT_* or UINT_*
+  11: NullType UNKNOWN                  // no compatible ConvertedType
+  12: JsonType JSON                     // use ConvertedType JSON
+  13: BsonType BSON                     // use ConvertedType BSON
+  14: UUIDType UUID                     // no compatible ConvertedType
+  15: Float16Type FLOAT16               // no compatible ConvertedType
+  // 16: reserved for GEOMETRY
+  17: FixedSizeListType FIXED_SIZE_LIST // no compatible ConvertedType
 }
 
 /**
