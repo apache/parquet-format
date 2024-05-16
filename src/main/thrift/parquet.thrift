@@ -467,6 +467,35 @@ struct SchemaElement {
   10: optional LogicalType logicalType
 }
 
+struct SchemaElementV3 {
+  /** Data type for this field. */
+  1: optional Type type;
+
+  /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values.
+   *
+   * CHANGED from v1: this must be omitted for other column types.
+   */
+  2: optional i32 type_length;
+
+  /** repetition of the field. */
+  3: optional FieldRepetitionType repetition_type;
+
+  /** Name of the field in the schema */
+  4: required string name;
+
+  /** Nested fields. */
+  5: optional i32 num_children;
+
+  /** CHANGED from v1: from i32 to i64
+   */
+  6: optional i64 field_id;
+
+  /** The logical type of this SchemaElement */
+  7: optional LogicalType logicalType
+
+  /** REMOVED from v1: converted_type, scale, precision (obsolete) */
+}
+
 /**
  * Encodings supported by Parquet.  Not all encodings are valid for all types.  These
  * enums are also used to specify the encoding of definition and repetition levels.
@@ -835,6 +864,65 @@ struct ColumnMetaData {
   16: optional SizeStatistics size_statistics;
 }
 
+struct ColumnChunkMetaDataV3 {
+  /** REMOVED from v1: type (redundant with SchemaElementV3) */
+  /** REMOVED from v1: encodings (unnecessary and non-trivial to get right) */
+  /** REMOVED from v1: path_in_schema (unnecessary and wasteful) */
+  /** REMOVED from v1: index_page_offset (unused in practice?) */
+
+  /** Compression codec **/
+  1: required CompressionCodec codec
+
+  /** Number of values in this column chunk **/
+  2: required i64 num_values
+
+  /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
+  3: required i64 total_uncompressed_size
+
+  /** total byte size of all compressed, and potentially encrypted, pages
+   *  in this column chunk (including the headers) **/
+  4: required i64 total_compressed_size
+
+  /** Optional key/value metadata for this column chunk.
+   ** CHANGED from v1: only use this for chunk-specific metadata, otherwise
+   ** use `FileColumnMetadataV3.key_value_metadata`.
+   **/
+  5: optional list<KeyValue> key_value_metadata
+
+  /** Byte offset from beginning of file to first data page **/
+  6: required i64 data_page_offset
+
+  /** Byte offset from the beginning of file to first (only) dictionary page **/
+  7: optional i64 dictionary_page_offset
+
+  /** optional statistics for this column chunk */
+  8: optional Statistics statistics;
+
+  /** Set of all encodings used for pages in this column chunk.
+   * This information can be used to determine if all data pages are
+   * dictionary encoded for example **/
+  9: optional list<PageEncodingStats> encoding_stats;
+
+  /** Byte offset from beginning of file to Bloom filter data. **/
+  10: optional i64 bloom_filter_offset;
+
+  /** Size of Bloom filter data including the serialized header, in bytes.
+   * Added in 2.10 so readers may not read this field from old files and
+   * it can be obtained after the BloomFilterHeader has been deserialized.
+   * Writers should write this field so readers can read the bloom filter
+   * in a single I/O.
+   */
+  11: optional i32 bloom_filter_length;
+
+  /**
+   * Optional statistics to help estimate total memory when converted to in-memory
+   * representations. The histograms contained in these statistics can
+   * also be useful in some cases for more fine-grained nullability/list length
+   * filter pushdown.
+   */
+  12: optional SizeStatistics size_statistics;
+}
+
 struct EncryptionWithFooterKey {
 }
 
@@ -885,6 +973,44 @@ struct ColumnChunk {
   9: optional binary encrypted_column_metadata
 }
 
+struct ColumnChunkV3 {
+  /** File where column data is stored. **/
+  1: optional string file_path
+
+  /** Byte offset in file_path to the ColumnChunkMetaDataV3, optionally encrypted
+   ** CHANGED from v1: renamed to metadata_file_offset
+   **/
+  2: required i64 metadata_file_offset
+
+  /** NEW from v1: Byte length in file_path of ColumnChunkMetaDataV3, optionally encrypted
+   **/
+  3: required i32 metadata_file_length
+
+  /** REMOVED from v1: meta_data, encrypted_column_metadata.
+   ** Use encoded_metadata instead.
+   **/
+
+  /** NEW from v1: Column metadata for this chunk, duplicated here from file_path.
+   ** This is a Thrift-encoded ColumnChunkMetaDataV3, optionally encrypted.
+   **/
+  4: optional binary encoded_metadata
+
+  /** File offset of ColumnChunk's OffsetIndex **/
+  5: optional i64 offset_index_offset
+
+  /** Size of ColumnChunk's OffsetIndex, in bytes **/
+  6: optional i32 offset_index_length
+
+  /** File offset of ColumnChunk's ColumnIndex **/
+  7: optional i64 column_index_offset
+
+  /** Size of ColumnChunk's ColumnIndex, in bytes **/
+  8: optional i32 column_index_length
+
+  /** Crypto metadata of encrypted columns **/
+  9: optional ColumnCryptoMetaData crypto_metadata
+}
+
 struct RowGroup {
   /** Metadata for each column chunk in this row group.
    * This list must have the same order as the SchemaElement list in FileMetaData.
@@ -912,6 +1038,32 @@ struct RowGroup {
   
   /** Row group ordinal in the file **/
   7: optional i16 ordinal
+}
+
+struct RowGroupV3 {
+  /** REMOVED from v1: columns.
+   * Instead, decode each FileColumnMetadataV3 individually as needed.
+   */
+
+  /** Total byte size of all the uncompressed column data in this row group **/
+  1: required i64 total_byte_size
+
+  /** Number of rows in this row group **/
+  2: required i64 num_rows
+
+  /** If set, specifies a sort ordering of the rows in this row group. */
+  3: optional list<SortingColumn> sorting_columns
+
+  /** REMOVED from v1: file_offset.
+   * Use the OffsetIndex for each column instead.
+   */
+
+  /** Total byte size of all compressed (and potentially encrypted) column data
+   *  in this row group **/
+  4: optional i64 total_compressed_size
+
+  /** Row group ordinal in the file **/
+  5: optional i16 ordinal
 }
 
 /** Empty struct to signal the order defined by the physical or logical type */
@@ -1163,6 +1315,62 @@ struct FileMetaData {
    * Used only in encrypted files with plaintext footer. 
    */ 
   9: optional binary footer_signing_key_metadata
+}
+
+/** Metadata for a column in this file. */
+struct FileColumnMetadataV3 {
+  /** All column chunks in this file (one per row group) **/
+  1: required list<ColumnChunkV3> columns
+
+  /** Sort order used for the Statistics min_value and max_value fields
+   **/
+  2: optional ColumnOrder column_order;
+
+  /** NEW from v1: Optional key/value metadata for this column at the file level
+   **/
+  3: optional list<KeyValue> key_value_metadata
+}
+
+struct FileMetaDataV3 {
+  /** Version of this file **/
+  1: required i32 version
+
+  /** Parquet schema for this file **/
+  2: required list<SchemaElementV3> schema;
+
+  /** Number of rows in this file **/
+  3: required i64 num_rows
+
+  /** Row groups in this file **/
+  4: required list<RowGroupV3> row_groups
+
+  /** Optional key/value metadata for this file. **/
+  5: optional list<KeyValue> key_value_metadata
+
+  /** String for application that wrote this file. **/
+  6: optional string created_by
+
+  /** NEW from v1: byte offset of FileColumnMetadataV3, for each column **/
+  7: required list<i64> file_column_metadata_offset;
+  /** NEW from v1: byte length of FileColumnMetadataV3, for each column **/
+  8: required list<i32> file_column_metadata_length;
+
+  /** REMOVED from v1: column_orders.
+   ** Use `FileColumnMetadataV3.column_order` instead.
+   **/
+
+  /**
+   * Encryption algorithm. This field is set only in encrypted files
+   * with plaintext footer. Files with encrypted footer store algorithm id
+   * in FileCryptoMetaData structure.
+   */
+  9: optional EncryptionAlgorithm encryption_algorithm
+
+  /**
+   * Retrieval metadata of key used for signing the footer.
+   * Used only in encrypted files with plaintext footer.
+   */
+  10: optional binary footer_signing_key_metadata
 }
 
 /** Crypto metadata for files with encrypted footer **/

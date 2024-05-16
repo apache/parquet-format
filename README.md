@@ -81,7 +81,13 @@ more pages.
   - Encoding/Compression - Page
 
 ## File format
-This file and the [Thrift definition](src/main/thrift/parquet.thrift) should be read together to understand the format.
+
+This file and the [Thrift definition](src/main/thrift/parquet.thrift) should be read
+together to understand the format.
+
+## Overall file structure
+
+A Parquet file is a collection of binary blocks representing data and metadata.
 
     4-byte magic number "PAR1"
     <Column 1 Chunk 1 + Column Metadata>
@@ -107,11 +113,96 @@ start locations.  More details on what is contained in the metadata can be found
 in the Thrift definition.
 
 Metadata is written after the data to allow for single pass writing.
+This is especially useful when writing to backends such as S3.
 
 Readers are expected to first read the file metadata to find all the column
 chunks they are interested in.  The columns chunks should then be read sequentially.
 
  ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
+
+### Parquet 3
+
+Parquet 3 files have the following overall structure:
+
+```
+4-byte magic number "PAR1"
+4-byte magic number "PAR3"
+
+<Column 1 Chunk 1 + Column Metadata>
+<Column 2 Chunk 1 + Column Metadata>
+...
+<Column N Chunk 1 + Column Metadata>
+<Column 1 Chunk 2 + Column Metadata>
+<Column 2 Chunk 2 + Column Metadata>
+...
+<Column N Chunk 2 + Column Metadata>
+...
+<Column 1 Chunk M + Column Metadata>
+<Column 2 Chunk M + Column Metadata>
+...
+<Column N Chunk M + Column Metadata>
+
+<File-level Column 1 Metadata v3>
+...
+<File-level Column N Metadata v3>
+
+File Metadata v3
+4-byte length in bytes of File Metadata v3 (little endian)
+4-byte magic number "PAR3"
+
+File Metadata
+4-byte length in bytes of File Metadata (little endian)
+4-byte magic number "PAR1"
+```
+
+Unlike the legacy File Metadata, the File Metadata v3 is designed to be light-weight
+to decode, regardless of the number of columns in the file. Individual column
+metadata can be opportunistically decoded depending on actual needs.
+
+This file structure is backwards-compatible. Parquet 1 readers will read and
+decode the legacy File Metadata in the file footer, while Parquet 3 readers
+will notice the "PAR3" magic number just before the File Metadata and will
+instead read and decode the File Metadata v3.
+
+### Parquet 3 without legacy metadata
+
+It is possible, though not recommended for the time being, to produce Parquet 3
+files without the legacy metadata blocks:
+```
+4-byte magic number "PAR3"
+
+<Column 1 Chunk 1 + Column Metadata>
+<Column 2 Chunk 1 + Column Metadata>
+...
+<Column N Chunk 1 + Column Metadata>
+<Column 1 Chunk 2 + Column Metadata>
+<Column 2 Chunk 2 + Column Metadata>
+...
+<Column N Chunk 2 + Column Metadata>
+...
+<Column 1 Chunk M + Column Metadata>
+<Column 2 Chunk M + Column Metadata>
+...
+<Column N Chunk M + Column Metadata>
+
+<File-level Column 1 Metadata v3>
+...
+<File-level Column N Metadata v3>
+
+File Metadata v3
+4-byte length in bytes of File Metadata v3 (little endian)
+4-byte magic number "PAR3"
+```
+
+These files are not backwards compatible with Parquet 1 readers.
+Parquet 3 readers should be prepared to read such files, so that the ecosystem
+can gradually switch to this new format.
+
+## Encryption
+
+Encryption with footer encryption enabled changes the above file structure slightly.
+In particular, the "PAR1" magic number is replaced with "PARE".
+See the [encryption specification](Encryption.md) for details.
 
 ## Metadata
 There are three types of metadata: file metadata, column (chunk) metadata and page
