@@ -19,12 +19,17 @@
 
 # Parquet [![Build Status](https://github.com/apache/parquet-format/actions/workflows/test.yml/badge.svg)](https://github.com/apache/parquet-format/actions)
 
-Parquet is a columnar storage format that supports nested data.
+This repository contains the specification for [Apache Parquet] and
+[Apache Thrift] definitions to read and write Parquet metadata.
 
-Parquet metadata is encoded using Apache Thrift.
+Apache Parquet is an open source, column-oriented data file format
+designed for efficient data storage and retrieval. It provides high
+performance compression and encoding schemes to handle complex data in
+bulk and is supported in many programming language and analytics
+tools.
 
-The `Parquet-format` project contains all Thrift definitions that are necessary to create readers
-and writers for Parquet files.
+[Apache Parquet]: https://parquet.apache.org
+[Apache Thrift]: https://thrift.apache.org
 
 ## Motivation
 
@@ -176,7 +181,7 @@ following rules:
       * If the min is +0, the row group may contain -0 values as well.
       * If the max is -0, the row group may contain +0 values as well.
       * When looking for NaN values, min and max should be ignored.
-      
+
     * BYTE_ARRAY and FIXED_LEN_BYTE_ARRAY - Lexicographic unsigned byte-wise
       comparison.
 
