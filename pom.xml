@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>31</version>
+    <version>32</version>
   </parent>
 
   <groupId>org.apache.parquet</groupId>
@@ -132,15 +132,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <!-- Override source and target from the ASF parent -->
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.5.2</version>
@@ -241,6 +232,16 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>jdk9+</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <properties>
+        <!-- release takes precedence over source/target if java version is 9 or higher -->
+        <maven.compiler.release>8</maven.compiler.release>
+      </properties>
+    </profile>
     <profile>
       <activation>
         <os>
