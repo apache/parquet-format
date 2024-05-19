@@ -71,17 +71,6 @@
     </mailingList>
   </mailingLists>
 
-  <developers>
-    <developer>
-      <name>Julien Le Dem</name>
-      <email>julien@twitter.com</email>
-    </developer>
-    <developer>
-      <name>Nong Li</name>
-      <email>nong@cloudera.com</email>
-    </developer>
-  </developers>
-
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
