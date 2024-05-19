@@ -738,10 +738,10 @@ struct PageHeader {
 }
 
 /**
- * Wrapper struct to specify sort order
+ * Sort order within a RowGroup
  */
 struct SortingColumn {
-  /** The column index (in this row group) **/
+  /** The ordinal position of the column (in this row group) **/
   1: required i32 column_idx
 
   /** If true, indicates this column is sorted in descending order. **/
@@ -1001,6 +1001,9 @@ struct PageLocation {
   3: required i64 first_row_index
 }
 
+/**
+ * Optional offsets for each data page in a ColumnChunk.
+ */
 struct OffsetIndex {
   /**
    * PageLocations, ordered by increasing PageLocation.offset. It is required
@@ -1017,8 +1020,10 @@ struct OffsetIndex {
 }
 
 /**
- * Description for ColumnIndex.
- * Each <array-field>[i] refers to the page at OffsetIndex.page_locations[i]
+ * "Page Index": Optional statistics for each data page in a ColumnChunk.
+ *
+ * For each field in this structure, <field>[i] refers to the page at
+ * OffsetIndex.page_locations[i]
  */
 struct ColumnIndex {
   /**
@@ -1071,7 +1076,6 @@ struct ColumnIndex {
     * Same as repetition_level_histograms except for definitions levels.
     **/
    7: optional list<i64> definition_level_histograms;
-
 }
 
 struct AesGcmV1 {

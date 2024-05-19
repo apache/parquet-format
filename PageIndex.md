@@ -19,9 +19,11 @@
 
 # ColumnIndex Layout to Support Page Skipping
 
-This document describes the format for column index pages in the Parquet
-footer. These pages contain statistics for DataPages and can be used to skip
-pages when scanning data in ordered and unordered columns.
+In Parquet, a "Page Index" is optional metadata for a
+Column Chunk, containing statistics for DataPages that can be used
+to skip pages when scanning in ordered and unordered columns.
+The page index is stored in one or more ColumnIndex structures,
+defined in [`parquet.thrift`](src/main/thrift/parquet.thrift)
 
 ## Problem Statement
 In previous versions of the format, Statistics are stored for ColumnChunks in
