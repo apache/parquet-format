@@ -738,7 +738,7 @@ struct PageHeader {
 }
 
 /**
- * Sort order within a RowGroup
+ * Sort order within a RowGroup of a leaf column
  */
 struct SortingColumn {
   /** The ordinal position of the column (in this row group) **/
