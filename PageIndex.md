@@ -17,10 +17,10 @@
   - under the License.
   -->
 
-# ColumnIndex Layout to Support Page Skipping
+# Parquet page index: Layout to Support Page Skipping
 
 In Parquet, a *page index* is optional metadata for a
-Column Chunk, containing statistics for DataPages that can be used
+ColumnChunk, containing statistics for DataPages that can be used
 to skip those pages when scanning in ordered and unordered columns.
 The page index is stored using the OffsetIndex and ColumnIndex structures,
 defined in [`parquet.thrift`](src/main/thrift/parquet.thrift)
