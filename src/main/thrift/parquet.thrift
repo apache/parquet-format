@@ -1003,6 +1003,8 @@ struct PageLocation {
 
 /**
  * Optional offsets for each data page in a ColumnChunk.
+ *
+ * Forms part of the page index, along with OffsetIndex.
  */
 struct OffsetIndex {
   /**
@@ -1020,7 +1022,9 @@ struct OffsetIndex {
 }
 
 /**
- * "Page Index": Optional statistics for each data page in a ColumnChunk.
+ * Optional statistics for each data page in a ColumnChunk.
+ *
+ * Forms part the page index, along with OffsetIndex.
  *
  * For each field in this structure, <field>[i] refers to the page at
  * OffsetIndex.page_locations[i]
