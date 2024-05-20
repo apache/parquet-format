@@ -1004,7 +1004,7 @@ struct PageLocation {
 /**
  * Optional offsets for each data page in a ColumnChunk.
  *
- * Forms part of the page index, along with OffsetIndex.
+ * Forms part of the page index, along with ColumnIndex.
  */
 struct OffsetIndex {
   /**
