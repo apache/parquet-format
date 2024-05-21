@@ -242,19 +242,7 @@ struct SizeStatistics {
  * All fields are optional.
  */
 struct Statistics {
-   /**
-    * DEPRECATED: min and max value of the column. Use min_value and max_value.
-    *
-    * Values are encoded using PLAIN encoding, except that variable-length byte
-    * arrays do not include a length prefix.
-    *
-    * These fields encode min and max values determined by signed comparison
-    * only. New files should use the correct order for a column's logical type
-    * and store the values in the min_value and max_value fields.
-    *
-    * To support older readers, these may be set when the column order is
-    * signed.
-    */
+   /* DEPRECATED: do not use */
    1: optional binary max;
    2: optional binary min;
    /** count of null value in the column */
@@ -262,16 +250,19 @@ struct Statistics {
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
    /**
-    * Lower and upper bound values for the column, determined by its ColumnOrder.
+    * Only one pair of max_value/min_value, max1/min1, max2/min2, max4/min4,
+    * max8/min8 can be set. The pair is determined by the physical type of the
+    * column. Floating point values are bitcasted to integers. Variable length
+    * values are set in min_value/max_value.
+    *
+    * Min and Max are the lower and upper bound values for the column,
+    * respectively, as determined by its ColumnOrder.
     *
     * These may be the actual minimum and maximum values found on a page or column
     * chunk, but can also be (more compact) values that do not exist on a page or
     * column chunk. For example, instead of storing "Blart Versenwald III", a writer
     * may set min_value="B", max_value="C". Such more compact values must still be
     * valid values within the column's logical type.
-    *
-    * Values are encoded using PLAIN encoding, except that variable-length byte
-    * arrays do not include a length prefix.
     */
    5: optional binary max_value;
    6: optional binary min_value;
@@ -279,6 +270,14 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+   9: optional byte max1;
+   10: optional byte min1;
+   11: optional i16 max2;
+   12: optional i16 min2;
+   13: optional i32 max4;
+   14: optional i32 min4;
+   15: optional i64 max8;
+   16: optional i64 min8;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -490,7 +489,7 @@ enum Encoding {
   //  GROUP_VAR_INT = 1;
 
   /**
-   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
    * in a data page use RLE_DICTIONARY instead.
    * in a Dictionary page use PLAIN instead
@@ -772,15 +771,15 @@ struct PageEncodingStats {
  * Description for column metadata
  */
 struct ColumnMetaData {
-  /** Type of this column **/
-  1: required Type type
+  /* DEPRECATED: can be found in SchemaElement */
+  1: optional Type type
 
   /** Set of all encodings used for this column. The purpose is to validate
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
-  3: required list<string> path_in_schema
+  /* DEPRECATED: can be found in SchemaElement */
+  3: optional list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
@@ -833,6 +832,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /* The index into FileMetadata.schema (list<SchemaElement>) for this column */
+  17: optional i32 schema_index;
 }
 
 struct EncryptionWithFooterKey {
