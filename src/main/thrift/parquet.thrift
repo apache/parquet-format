@@ -581,7 +581,7 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a ColumnIndex is present, a page must begin at a record
+   * If a OffsetIndex is present, a page must begin at a record
    * boundary (repetition_level = 0). Otherwise, pages may begin
    * within a record (repetition_level > 0).
    **/
@@ -1005,8 +1005,8 @@ struct PageLocation {
   2: required i32 compressed_page_size
 
   /**
-   * Index within the RowGroup of the first row of the page. When a
-   * ColumnIndex is present, pages begin on record boundaries
+   * Index within the RowGroup of the first row of the page. When an
+   * OffsetIndex is present, pages must begin on record boundaries
    * (repetition_level = 0).
    */
   3: required i64 first_row_index
