@@ -238,6 +238,38 @@ struct SizeStatistics {
 }
 
 /**
+ * Bounding box of geometries in the representation of min/max value pair of
+ * coordinates from each axis. Values of Z and M are omitted for 2D geometries.
+ */
+struct BoundingBox {
+  1: optional double x_min;
+  2: optional double x_max;
+  3: optional double y_min;
+  4: optional double y_max;
+  5: optional double z_min;
+  6: optional double z_max;
+  7: optional double m_min;
+  8: optional double m_max;
+}
+
+/** Statistics specific to GEOMETRY logical type */
+struct GeometryStatistics {
+  /** Bounding box of geometries */
+  1: optional BoundingBox bbox;
+  /** Covering of geometries as a list of Google S2 cell ids */
+  2: list<i64> s2_cell_ids;
+  /** Covering of geometries as a list of Uber H3 indices */
+  3: list<i64> h3_indices;
+  /**
+   * The geometry types of all geometries, or an empty array if they are not
+   * known. It follows the same rule of `geometry_types` column metadata of
+   * GeoParquet. Accepted geometry types are: "Point", "LineString", "Polygon",
+   * "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection".
+   */
+  4: list<string> geometry_types;
+}
+
+/**
  * Statistics per row group and per page
  * All fields are optional.
  */
@@ -277,11 +309,8 @@ struct Statistics {
     * may set min_value="B", max_value="C". Such more compact values must still be
     * valid values within the column's logical type.
     *
-    * Values are encoded using PLAIN encoding, except that:
-    * 1) variable-length byte arrays do not include a length prefix.
-    * 2) geometry logical type with BoundingBoxOrder uses max_value/min_value pair
-    *    to store the bounding box for the column. Please refer to the definition
-    *    of BoundingBoxOrder for detail.
+    * Values are encoded using PLAIN encoding, except that variable-length byte
+    * arrays do not include a length prefix.
     */
    5: optional binary max_value;
    6: optional binary min_value;
@@ -289,6 +318,9 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+
+   /** statistics specific to geometry logical type */
+   9: optional GeometryStatistics geometry_stats;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -384,66 +416,69 @@ struct BsonType {
 }
 
 /**
- * A geometry can be any of the following subtypes.
- * The list of geospatial subtypes is taken from the OGC (Open Geospatial Consortium)
- * SFA (Simple Feature Access) Part 1- Common Architecture.
+ * Phyiscal type and encoding for the geometry type.
  */
-enum GeometrySubType {
-  POINT = 0;
-  LINESTRING = 1;
-  POLYGON = 2;
-  MULTIPOINT = 3;
-  MULTILINESTRING = 4;
-  MULTIPOLYGON = 5;
-  GEOMETRY_COLLECTION = 6;
+enum GeometryEncoding {
+  /**
+   * Allowed for phyiscal type: BYTE_ARRAY.
+   *
+   * Well-known binary (WKB) representations of geometries. It supports 2D or
+   * 3D geometries of the standard geometry types (Point, LineString, Polygon,
+   * MultiPoint, MultiLineString, MultiPolygon, and GeometryCollection). This
+   * is the preferred option for maximum portability.
+   *
+   * This encoding enables GeometryStatistics to be set in the column chunk
+   * and page index.
+   */
+  WKB = 0;
+
+  /**
+   * Encodings from POINT to MULTIPOLYGON below are specialized for single
+   * geometry type and inspired by GeoArrow (https://geoarrow.org/format.html)
+   * native encodings. It uses the separated (struct) representation of
+   * coordinates for single-geometry type encodings because this encoding
+   * results in useful column statistics when row groups and/or files contain
+   * related features.
+   *
+   * WARNING: GeometryStatistics cannot be enabled for these encodings because
+   * only leaf columns can have column statistics and page index.
+   *
+   * The actual coordinates of the geometries MUST be stored as native numbers,
+   * i.e. using the DOUBLE type in a (repeated) group of fields (exact
+   * repetition depending on the geometry type).
+   *
+   * For the POINT encoding, this results in a struct of two fields for x and y
+   * coordinates (in case of 2D geometries):
+   * optional group geometry {
+   *   required double x;
+   *   required double y;
+   * }
+   *
+   * For more detail, please refer to link below:
+   * https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#encoding
+   */
+  POINT = 1;
+  LINESTRING = 2;
+  POLYGON = 3;
+  MULTIPOINT = 4;
+  MULTILINESTRING = 5;
+  MULTIPOLYGON = 6;
 }
 
 /**
- * Interpretation for edges, i.e. whether the edge between points
- * represent a straight cartesian line or the shortest line on the sphere
- */
-enum Edges {
-  PLANAR = 0;
-  // SPHERICAL = 1; // not supported yet
-}
-
-/**
- * Well-Known Binary. This is a well-known and popular binary representation regulated
- * by the Open Geospatial Consortium (OGC). 
- */
-struct WKB {}
-/**
- * Encoding for geospatial data.
- */
-union GeospatialEncoding {
-  1: WKB WKB
-}
-
-/**
- * Geometry logical type annotation
- *
- * Allowed for physical types: BINARY (added in 2.11.0)
+ * Geometry logical type annotation (added in 2.11.0)
  */
 struct GeometryType {
   /**
-   * The subtype of the geometry.
-   * If set, all values in the column must be of the same subtype.
-   * If not set, the column may contain values of any subtype.
+   * Phyiscal type and encoding for the geometry type. Please refer to the
+   * definition of GeometryEncoding for more detail.
    */
-  1: optional GeometrySubType subtype;
+  1: required GeometryEncoding encoding;
   /**
-   * The dimension of the geometry.
-   * For now only 2D geometry is supported and the value must be 2 if set.
+   * Additional informative metadata.
+   * It can be used by GeoParquet to offload some of the column metadata.
    */
-  2: optional byte dimension;
-  /**
-   * Coordinate Reference System, i.e. mapping of how coordinates refer to
-   * precise locations on earth.
-   * For now only OGC:CRS84 is supported.
-   */
-  3: optional string crs;
-  4: required Edges edges;
-  5: required GeospatialEncoding encoding;
+  2: optional string metadata;
 }
 
 /**
@@ -1009,8 +1044,6 @@ struct RowGroup {
 
 /** Empty struct to signal the order defined by the physical or logical type */
 struct TypeDefinedOrder {}
-/** Empty struct to signal the order of GEOMETRY logical type */
-struct BoundingBoxOrder {}
 
 /**
  * Union to specify the order used for the min_value and max_value fields for a
@@ -1020,8 +1053,6 @@ struct BoundingBoxOrder {}
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
- * * BoundingBoxOrder - the column uses the order to build bounding box
- *                      (if the logical type is GEOMETRY).
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -1051,7 +1082,7 @@ union ColumnOrder {
    *   ENUM - unsigned byte-wise comparison
    *   LIST - undefined
    *   MAP - undefined
-   *   GEOMETRY - undefined, as geometry objects cannot be compared directly
+   *   GEOMETRY - undefined, use GeometryStatistics instead.
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
@@ -1080,23 +1111,6 @@ union ColumnOrder {
    *       `-0.0` should be written into the min statistics field.
    */
   1: TypeDefinedOrder TYPE_ORDER;
-
-  /**
-   * The order only applies to GEOMETRY logical type.
-   *
-   * Please note that geometry objects cannot be compared directly. This order aims to
-   * provide an approach to build a bounding box for geometry objects in the same page
-   * or column chunk.
-   *
-   * In this order, all 2D geometries are regarded as a collection of coordinate (x, y).
-   * For example, POINT has one coordinate, LINESTRING has two coordinates, and POLYGON
-   * might have three or more coordinates. A bounding box is the combination of x_min,
-   * x_max, y_min, and y_max of all coordinates from all geometry values. For simplexty,
-   * min_value field in the Statistics/ColumnIndex is encoded as the concatenation of
-   * PLAIN-encoded DOUBLE-typed x_min and y_min values. Similarly, max_value field is
-   * encoded as the concatenation of PLAIN-encoded DOUBLE-typed x_max and y_max values.
-   */
-  2: BoundingBoxOrder BBOX_ORDER;
 }
 
 struct PageLocation {
@@ -1168,9 +1182,6 @@ struct ColumnIndex {
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
-   *
-   * For GEOMETRY logical type, these values are the bounding box of the column.
-   * Please refer to the definition of BoundingBoxOrder for detail.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1180,8 +1191,6 @@ struct ColumnIndex {
    * which direction. This allows readers to perform binary searches in both
    * lists. Readers cannot assume that max_values[i] <= min_values[i+1], even
    * if the lists are ordered.
-   *
-   * For GEOMETRY type, UNORDERED is used at all times.
    */
   4: required BoundaryOrder boundary_order
 
@@ -1214,6 +1223,9 @@ struct ColumnIndex {
     * Same as repetition_level_histograms except for definitions levels.
     **/
    7: optional list<i64> definition_level_histograms;
+
+   /** A list containing statistics of GEOMETRY logical type for each page */
+   8: optional list<GeometryStatistics> geometry_stats;
 }
 
 struct AesGcmV1 {
