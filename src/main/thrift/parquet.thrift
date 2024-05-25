@@ -537,6 +537,39 @@ enum Encoding {
       Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
    */
   BYTE_STREAM_SPLIT = 9;
+
+  /** Encoding for variable length binary data that allows random access of values.
+    *
+    * This encoding designed for random access of BYTE_ARRAY values. It is mostly useful in cases
+    * for non-nullable BYTE_ARRAY columns where determining the exact offset of the value does not require
+    * parsing definition levels.
+    * 
+    * The layout consists of the following elements elements:
+    *   1.  byte_arrays - Byte Array values layed out contiguously.  The BYTE_ARRAYs are immediately contiguous the cumulative
+    *       offsets.  
+    *   2.  offsets: A contiguous set of signed N-byte little-endian unsigned integers
+    *       representing the end byte offset (exclusive) of a BYTE_ARRAY value from 
+    *       the the beginning of the page. For simplicity of implementation the 0 index is 
+    *       always as zero.
+    *   3.  The last byte indicates the number of bytes used for offsets (valid values are 1,2,3 and 4).
+    *       Implementations SHOULD try to use the smallest byte value that meets the length requirements.
+    * 
+    *   Note the order of lengths is reversed from DELTA_BINARY_PACKED to allow for byte array values to 
+    *   potentially allow for incremental compression in the case of Data Page V2 or other future data pages 
+    *   where values are compressed separately from nesting information.
+    *
+    *   The beginning offset of the offsets can be determined using the final offset element.
+    *
+    *   An individual byte array element can be found at an index using the following pseudo-code 
+    *   (real implementations SHOULD do bounds checking):
+    *
+    *      return byte_arrays[offsets[index] : offsets[index+1]]
+    *
+    * 
+    * Example encoding of "f", "oo", "bar1" (square brackets delimit the components listed):
+    *   [foobar1][0,1,3,7][1]
+    */
+    RANDOM_ACCESS_BYTE_ARRAY = 10;
 }
 
 /**
@@ -779,8 +812,12 @@ struct ColumnMetaData {
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
-  3: required list<string> path_in_schema
+  /** Path in schema 
+    *  Example of deprecated a field for PAR3
+    *  PAR1 Footer: Required 
+    *  PAR3 Footer: Deprecated (don't populate)
+    */
+  3: optional list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
@@ -792,7 +829,11 @@ struct ColumnMetaData {
   6: required i64 total_uncompressed_size
 
   /** total byte size of all compressed, and potentially encrypted, pages 
-   *  in this column chunk (including the headers) **/
+   *  in this column chunk (including the headers) 
+   * 
+   *  Fetching the range of min(dictionary_page_offset, data_page_offset) + total_compressed_size
+   *  should fetch all data in the the given column chunk
+   */
   7: required i64 total_compressed_size
 
   /** Optional key/value metadata **/
@@ -812,7 +853,7 @@ struct ColumnMetaData {
 
   /** Set of all encodings used for pages in this column chunk.
    * This information can be used to determine if all data pages are
-   * dictionary encoded for example **/
+   * dictionary encoded for example  **/
   13: optional list<PageEncodingStats> encoding_stats;
 
   /** Byte offset from beginning of file to Bloom filter data. **/
@@ -881,15 +922,21 @@ struct ColumnChunk {
   /** Crypto metadata of encrypted columns **/
   8: optional ColumnCryptoMetaData crypto_metadata
 
-  /** Encrypted column metadata for this chunk **/
+  /** Encrypted column metadata for this chunk 
+    *  
+    * PAR3: Not set see column_metadata_page on FileMetadata struct
+    **/
   9: optional binary encrypted_column_metadata
 }
 
 struct RowGroup {
   /** Metadata for each column chunk in this row group.
    * This list must have the same order as the SchemaElement list in FileMetaData.
+   *
+   *  PAR1: Required
+   *  PAR3: Not populated. Use columns_page on FileMetadata.
    **/
-  1: required list<ColumnChunk> columns
+  1: optional list<ColumnChunk> columns
 
   /** Total byte size of all the uncompressed column data in this row group **/
   2: required i64 total_byte_size
@@ -1116,6 +1163,33 @@ union EncryptionAlgorithm {
 }
 
 /**
+ * Description of location of a metadata page.
+ * 
+ * A metadata page is a data page used to store metadata about
+ * the data stored in the file. This is a key feature of PAR3
+ * footers which allow for deferred decoding of metadata.
+ *
+ * For common use cases the current recommendation is to use a 
+ * an encoding that supported random access (e.g. PLAIN for fixed types
+ * and RANDOM_ACCESS_BYTE_ARRAY for variable sized types). implementations
+ * SHOULD consider allowing configurability per page to allow for end-users
+ * to optimize size vs compute trade-offs that make sense for their use-case.
+ */
+struct MetadataPageLocation {
+   // Offset from the beginning of the PAR3 footer to the header
+   // of the data page.
+   1: optional i32 footer_offset
+
+   // The length of the serialized page (header + data) in bytes. This
+   // is redundant with information in the header but allow
+   // for more robust checks before doing any Thrift parsing.
+   2: optional i32 full_page_size
+  
+   // Optional compression applied to the page.
+   3: optional CompressionCodec compression
+}
+
+/**
  * Description for file metadata
  */
 struct FileMetaData {
@@ -1127,16 +1201,52 @@ struct FileMetaData {
    * are flattened to a list by doing a depth-first traversal.
    * The column metadata contains the path in the schema for that column which can be
    * used to map columns to nodes in the schema.
-   * The first element is the root **/
-  2: required list<SchemaElement> schema;
+   * The first element is the root
+   *
+   * PAR1: Required
+   * PAR3: Use schema_metadata_page
+   *
+   * TODO: This might be too much (i.e. leave as a list for PAR3), but potentially useful for 
+   * wide Schemas if a "schema index" is every added.
+   **/
+  2: optional list<SchemaElement> schema;
+
+  /** Required BYTE_ARRAY data where each element is REQUIRED. 
+    *
+    * Each element is a serialized SchemaElement.  The order and content should
+    * have a one to one correspondence with schema.
+    *
+    * If encryption is applied to the footer each element is encrypted individually.
+    */
+  10: optional MetadataPageLocation schema_page;
 
   /** Number of rows in this file **/
   3: required i64 num_rows
 
-  /** Row groups in this file **/
+  /** Row groups in this file 
+    * 
+    * TODO: Decide if this should be moved to a metadata page.
+    **/
   4: required list<RowGroup> row_groups
 
-  /** Optional key/value metadata **/
+  /** Required BYTE_ARRAY data where each element is REQUIRED. 
+    *
+    * Each element is a serialized ColumnChunk. The number of
+    * elements is M * N, where M is the number row groups in the file
+    * and N is the number of columns storing data. An columns metadata
+    * object is stored at `m*N + column index` where m is the row-group
+    * index.
+    *
+    * If encryption applies to the footer each element in page is encrypted
+    * individually.
+    *
+    * PAR1: Don't include
+    * PAR3: Required **/
+  11: optional MetadataPageLocation columns_page
+
+  /** Optional key/value metadata 
+    * TODO: Consider if this should be moved to use a data page as well
+    **/
   5: optional list<KeyValue> key_value_metadata
 
   /** String for application that wrote this file.  This should be in the format
@@ -1160,6 +1270,10 @@ struct FileMetaData {
    *
    * The obsolete min and max fields in the Statistics object are always sorted
    * by signed comparison regardless of column_orders.
+   * 
+   * TODO: consider moving to a data page.  While fast to decode, this potentially
+   * compresses/encodes extremely well since it is only a single  value at the 
+   * moment.
    */
   7: optional list<ColumnOrder> column_orders;
 
