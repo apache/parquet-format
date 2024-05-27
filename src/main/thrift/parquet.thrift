@@ -479,6 +479,8 @@ struct GeometryType {
    * It can be used by GeoParquet to offload some of the column metadata.
    */
   2: optional string metadata;
+  /** File-level statistics for geometries */
+  3: optional GeometryStatistics statistics;
 }
 
 /**
