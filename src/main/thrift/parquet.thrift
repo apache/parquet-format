@@ -1171,9 +1171,11 @@ union EncryptionAlgorithm {
  *
  * For common use cases the current recommendation is to use a 
  * an encoding that supported random access (e.g. PLAIN for fixed types
- * and RANDOM_ACCESS_BYTE_ARRAY for variable sized types). implementations
+ * and RANDOM_ACCESS_BYTE_ARRAY for variable sized types). Implementations
  * SHOULD consider allowing configurability per page to allow for end-users
  * to optimize size vs compute trade-offs that make sense for their use-case.
+ *
+ * Statistics for Metadata pages SHOULD NOT be written.
  */
 struct MetadataPageLocation {
    // Offset from the beginning of the PAR3 footer to the header
