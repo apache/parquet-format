@@ -60,14 +60,14 @@ enum ConvertedType {
    * values */
   LIST = 3;
 
-  /** an enum is converted into a binary field */
+  /** an enum is converted into a BYTE_ARRAY field */
   ENUM = 4;
 
   /**
    * A decimal value.
    *
-   * This may be used to annotate binary or fixed primitive types. The
-   * underlying byte array stores the unscaled value encoded as two's
+   * This may be used to annotate BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY primitive
+   * types. The underlying byte array stores the unscaled value encoded as two's
    * complement using big-endian byte order (the most significant byte is the
    * zeroth element). The value of the decimal is the value * 10^{-scale}.
    *
@@ -151,14 +151,14 @@ enum ConvertedType {
   /**
    * An embedded JSON document
    *
-   * A JSON document embedded within a single UTF8 column.
+   * A JSON document embedded within a single BYTE_ARRAY(UTF8)  column.
    */
   JSON = 19;
 
   /**
    * An embedded BSON document
    *
-   * A BSON document embedded within a single BINARY column.
+   * A BSON document embedded within a single BYTE_ARRAY column.
    */
   BSON = 20;
 
@@ -282,11 +282,11 @@ struct Statistics {
 }
 
 /** Empty structs to use as logical type annotations */
-struct StringType {}  // allowed for BINARY, must be encoded with UTF-8
+struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct UUIDType {}    // allowed for FIXED[16], must encoded raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
-struct EnumType {}    // allowed for BINARY, must be encoded with UTF-8
+struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
 struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
 
@@ -308,7 +308,7 @@ struct NullType {}    // allowed for any physical type, only null values stored
  * To maintain forward-compatibility in v1, implementations using this logical
  * type must also set scale and precision on the annotated SchemaElement.
  *
- * Allowed for physical types: INT32, INT64, FIXED, and BINARY
+ * Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
  */
 struct DecimalType {
   1: required i32 scale
@@ -360,7 +360,7 @@ struct IntType {
 /**
  * Embedded JSON logical type annotation
  *
- * Allowed for physical types: BINARY
+ * Allowed for physical types: BYTE_ARRAY
  */
 struct JsonType {
 }
@@ -368,7 +368,7 @@ struct JsonType {
 /**
  * Embedded BSON logical type annotation
  *
- * Allowed for physical types: BINARY
+ * Allowed for physical types: BYTE_ARRAY
  */
 struct BsonType {
 }
