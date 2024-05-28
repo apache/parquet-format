@@ -150,8 +150,8 @@ chunks they are interested in.  The columns chunks should then be read sequentia
   There is a desire to gradually rollout PAR3 footers to allow newer readers to take advantage of them, while
   older readers can still properly parse the file. This section outlines a strategy to do this.
 
-  As backgroud, Thrift structs are always serialized with a 0 trailing byte do delimit there ending.  
-  Therefore for PAR1 written before PAR3 was introduced are always expect the files to have the following 
+  As backgroud, Thrift structs are always serialized with a 0x00 trailing byte to delimit their ending.  
+  Therefore PAR1 files written before PAR3 was introduced should always have a 
   trailing 9 bytes [0x00, x, x, x, x, P, A, R, 1] (where x can be any value).  We also expect all compliant 
   Thrift parsers to only parse the first available FileMetadata message and stop consuming the stream once read. 
   Today, we don't believe that any Parquet readers validate that the entire "length in bytes of file metadata" 
