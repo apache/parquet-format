@@ -290,6 +290,108 @@ There are many places in the format for compatible extensions:
 - Encodings: Encodings are specified by enum and more can be added in the future.
 - Page types: Additional page types can be added and safely skipped.
 
+### Thrift extensions
+Thrift is used for metadata. The Thrift spec mandates that unknown fields are
+skipped. To facilitate extensions Parquet reserves field-id `32767` of *every*
+struct as an ignorable extension point. More specifically Parquet guarantees
+that field-id `32767` will *never* be seen in the official Thrift IDL. The type
+of this field is always `binary` for maximum extensibility and fast skipping by
+thrift parsers.
+
+Such extensions can easily be appended to an existing Thrift serialized message
+without any special APIs. Sample `C++` implementation is provided:
+
+```c++
+std::string AppendExtension(std::string thrift, std::string ext) {
+  auto append_uleb = [](uint32_t x, std::string* out) {
+    while (true) {
+      int c = x & 0x7F;
+      if ((x >>= 7) == 0) {
+        out->push_back(c);
+        return;
+      } else {
+        out->push_back(c | 0x80);
+      }
+    }
+  };
+  thrift.pop_back();  // remove the trailing 0
+  thrift += "\x08\xFF\xFF\x01";  // long form field header for 32767: binary
+  append_uleb(ext.size(), &thrift);
+  thrift += ext;
+  thrift += "\x00";  // add the trailing 0 back
+  return thrift;
+}
+```
+
+To facilitate independence of extensions between organizations the last 3 bytes
+of an extension contain a magic number. The current reserved magic numbers are:
+
+| Magic | Organization |
+|-------|--------------|
+| `PAR` | Reserved for the future when an extension replaces `PAR1` |
+| `PER` | Reserved for the future when an extension replaces `PARE` |
+| `ASF` | Apache |
+| `AWS` | Amazon |
+| `CDH` | Cloudera |
+| `CRM` | Salesforce |
+| `DBR` | Databricks |
+| `EXP` | Apache/Experimental |
+
+To reserve additional magic numbers, file a JIRA and send a PR.
+
+The magic is 3 bytes because it is always followed by the 0 byte, the thrift
+field stop byte. Together this defines a 4 byte magic number, which can be used
+in place of existing parquet magic numbers.
+
+#### An example FileMetaData replacement and migration plan
+
+Consider the case of extending `FileMetaData` a full replacement. That is
+the new encoding contains all the information of `FileMetaData` and readers
+that know about it can elide parsing the current thrift `FileMetaData`. This
+extension has additional considerations and requirements.
+
+First, observe that `FileMetaData` is located between the last column chunk
+and the 4-byte length plus 4-byte `PAR1` magic. Sophisticated parquet readers,
+typically read the tail of files speculatively and expect to find the full
+footer in that fetch. Thus our extension must be decodable from the end of the
+file, and without having to fetch the full old `FileMetaData` thrift encoding.
+As a corollary finding the bounds of the extension should not require thrift
+parsing.
+
+To satisfy these requirements we define our `FileMetaData` extension as:
+
+    N bytes: the new `FileMetaData` replacement - in some encoding
+    4 bytes: little endian crc32 of the previous N bytes
+    4 bytes: N in little endian
+    4 bytes: little endian crc32 of N
+    3 bytes: 3-byte magic extension from the table above
+
+Each field plays its role to satisfy the requirements. In reverse order:
+1. 3-byte magic extension: as per the specification. When this new
+`FileMetaData` replaces the old, we can replace the thrift `FileMetaData`
+including the trailing 8 bytes and replace them with our extension plus the
+null byte verbatim.
+2. `le32(N)` + `crc32(N)`: The pair of len and its crc32 is useful to validate
+that the length is correct. Otherwise we might be tripped to read an
+unspecified number of bytes only to later find their crc32 does not match.
+3. `crc32(bytes)`: The crc32 of the new `FileMetaData` itself is important to
+avoid reading corrupt or erroneous metadata.
+4. The bytes of the encoding. This should be in our new encoding, for the sake
+of argument flatbuffers, prefixed with an ID so that we as we experiment can
+distinguish different versions of metadata.
+
+The development and migration plan might look like:
+1. A period where the new `FileMetaData` will be written after the old, with a
+non-reserved 3 byte magic, say `DBR`.
+2. Once the format stabilizes and is considered final, it is brought to the
+parquet commitee for ratification.
+3. When ratified the extension is moved to an approved state and takes the
+reserved 3 byte magic `PAR`.
+4. After a long period of writing both old `FileMetaData` and new `FileMetaData`
+writers start writing the new `FileMetaData` only. As a result the format of
+parquet changes to end in the `PAR\0` preceeded by `crc32(N)`, `le32(N)`,
+`crc32(bytes)`, `bytes`.
+
 ## Testing
 
 The [apache/parquet-testing](https://github.com/apache/parquet-testing) contains a set of Parquet files for testing purposes.
