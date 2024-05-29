@@ -143,7 +143,7 @@ readers and writers for the format.  The types are:
 Logical types are used to extend the types that parquet can be used to store,
 by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
-example, strings are stored with the primitive type BYTE_ARRAY with a UTF8
+example, strings are stored with the primitive type BYTE_ARRAY with a STRING
 annotation. These annotations define how to further decode and interpret the data.
 Annotations are stored as `LogicalType` fields in the file metadata and are
 documented in [LogicalTypes.md][logical-types].

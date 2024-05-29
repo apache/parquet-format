@@ -23,7 +23,7 @@ Parquet Logical Type Definitions
 Logical types are used to extend the types that parquet can be used to store,
 by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
-example, strings are stored with the primitive type BYTE_ARRAY with a UTF8
+example, strings are stored with the primitive type BYTE_ARRAY with a STRING
 annotation.
 
 This file contains the specification for all logical types.
@@ -605,14 +605,14 @@ The following examples demonstrate two of the possible lists of string values.
 // List<String> (list non-null, elements nullable)
 required group my_list (LIST) {
   repeated group list {
-    optional binary element (UTF8);
+    optional binary element (STRING);
   }
 }
 
 // List<String> (list nullable, elements non-null)
 optional group my_list (LIST) {
   repeated group list {
-    required binary element (UTF8);
+    required binary element (STRING);
   }
 }
 ```
@@ -643,7 +643,7 @@ even though the repeated group is named `element`.
 ```
 optional group my_list (LIST) {
   repeated group element {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 ```
@@ -673,7 +673,7 @@ optional group my_list (LIST) {
 // List<Tuple<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
-    required binary str (UTF8);
+    required binary str (STRING);
     required int32 num;
   };
 }
@@ -681,14 +681,14 @@ optional group my_list (LIST) {
 // List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group array {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 
 // List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group my_list_tuple {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 ```
@@ -724,7 +724,7 @@ nullable integers:
 // Map<String, Integer>
 required group my_map (MAP) {
   repeated group key_value {
-    required binary key (UTF8);
+    required binary key (STRING);
     optional int32 value;
   }
 }
@@ -753,7 +753,7 @@ Examples that can be interpreted using these rules:
 // Map<String, Integer> (nullable map, non-null values)
 optional group my_map (MAP) {
   repeated group map {
-    required binary str (UTF8);
+    required binary str (STRING);
     required int32 num;
   }
 }
@@ -761,7 +761,7 @@ optional group my_map (MAP) {
 // Map<String, Integer> (nullable map, nullable values)
 optional group my_map (MAP_KEY_VALUE) {
   repeated group map {
-    required binary key (UTF8);
+    required binary key (STRING);
     optional int32 value;
   }
 }
