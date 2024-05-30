@@ -926,10 +926,7 @@ struct ColumnChunk {
   /** Crypto metadata of encrypted columns **/
   8: optional ColumnCryptoMetaData crypto_metadata
 
-  /** Encrypted column metadata for this chunk 
-    *  
-    * PAR3: Not set see column_metadata_page on FileMetadata struct
-    **/
+  /** Encrypted column metadata for this chunk **/
   9: optional binary encrypted_column_metadata
   /** 
     * The column order for this chunk.
@@ -1243,10 +1240,8 @@ struct FileMetaData {
     *
     * Each element is a serialized SchemaElement.  The order and content should
     * have a one to one correspondence with schema.
-    *
-    * If encryption is applied to the footer each element is encrypted individually.
     */
-  10: optional binary schema_page;
+  10: optional MetadataPage schema_page;
 
   /** Number of rows in this file **/
   3: required i64 num_rows
@@ -1258,6 +1253,7 @@ struct FileMetaData {
     **/
   4: optional list<RowGroup> row_groups
   /** Page has BYTE_ARRAY data where each element is REQUIRED. 
+    * 
     * Each element is a thrift serialized RowGroup.
     */
   10: optional MetadataPage row_groups_page
