@@ -243,42 +243,39 @@ struct SizeStatistics {
  */
 struct Statistics {
    /**
-    * DEPRECATED: min and max value of the column. Use min_value and max_value.
+    * max/min: deprecated, used to encoded signed orderable values, ignoring
+    *   the columns ColumnOrder
+    * max_value/min_value: PLAIN encoded values, sans length prefix if varlen
+    * max8/min8: up to 8-bytes:
+    *   FLOAT, DOUBLE: bitcasted to INT32 and INT64, respectively
+    *   FIXED_LEN_BYTE_ARRAY: up to 8 bytes, little endian
     *
-    * Values are encoded using PLAIN encoding, except that variable-length byte
-    * arrays do not include a length prefix.
+    * Only one pair of max_value/min_value or max8/min8 should be set.
     *
-    * These fields encode min and max values determined by signed comparison
-    * only. New files should use the correct order for a column's logical type
-    * and store the values in the min_value and max_value fields.
-    *
-    * To support older readers, these may be set when the column order is
-    * signed.
-    */
-   1: optional binary max;
-   2: optional binary min;
-   /** count of null value in the column */
-   3: optional i64 null_count;
-   /** count of distinct values occurring */
-   4: optional i64 distinct_count;
-   /**
-    * Lower and upper bound values for the column, determined by its ColumnOrder.
+    * Min and Max are the lower and upper bound values for the column,
+    * respectively, as determined by its ColumnOrder.
     *
     * These may be the actual minimum and maximum values found on a page or column
     * chunk, but can also be (more compact) values that do not exist on a page or
     * column chunk. For example, instead of storing "Blart Versenwald III", a writer
     * may set min_value="B", max_value="C". Such more compact values must still be
     * valid values within the column's logical type.
-    *
-    * Values are encoded using PLAIN encoding, except that variable-length byte
-    * arrays do not include a length prefix.
     */
+   /* DEPRECATED: do not use */
+   1: optional binary max;
+   2: optional binary min;
+   /** count of null value in the column */
+   3: optional i64 null_count;
+   /** count of distinct values occurring */
+   4: optional i64 distinct_count;
    5: optional binary max_value;
    6: optional binary min_value;
    /** If true, max_value is the actual maximum value for a column */
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+   9: optional i64 max8;
+   10: optional i64 min8;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -810,9 +807,13 @@ struct ColumnMetaData {
   /** optional statistics for this column chunk */
   12: optional Statistics statistics;
 
-  /** Set of all encodings used for pages in this column chunk.
+  /**
+   * DEPRECATED: use is_fully_dict_encoded instead
+   *
+   * Set of all encodings used for pages in this column chunk.
    * This information can be used to determine if all data pages are
-   * dictionary encoded for example **/
+   * dictionary encoded for example
+   */
   13: optional list<PageEncodingStats> encoding_stats;
 
   /** Byte offset from beginning of file to Bloom filter data. **/
@@ -833,6 +834,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /** If true, all data pages are dictionary encoded **/
+  17: optional bool is_fully_dict_encoded;
 }
 
 struct EncryptionWithFooterKey {
