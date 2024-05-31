@@ -238,35 +238,96 @@ struct SizeStatistics {
 }
 
 /**
+ * Interpretation for edges of GEOMETRY logical type, i.e. whether the edge
+ * between points represent a straight cartesian line or the shortest line on
+ * the sphere.
+ */
+enum Edges {
+  PLANAR = 0;
+  SPHERICAL = 1;
+}
+
+/**
+ * A custom WKB-encoded geometry data to be used in geometry statistics.
+ * The geometry may be a polygon to encode an s2 or h3 covering to provide
+ * vendor-agnostic coverings, or an evelope of geometries when a bounding
+ * box cannot be built (e.g. a geometry has spherical edges, or if an edge
+ * of geographic coordinates crosses the antimeridian).
+ */
+struct Geometry {
+  /** Bytes of a WKB-encoded geometry */
+  1: required binary geometry;
+  /**
+   * Edges of the geometry if it is a polygon. It may be different to the
+   * edges attribute from the GEOMETRY logical type.
+   */
+  2: optional Edges edges;
+}
+
+/**
  * Bounding box of geometries in the representation of min/max value pair of
  * coordinates from each axis. Values of Z and M are omitted for 2D geometries.
  */
 struct BoundingBox {
-  1: optional double x_min;
-  2: optional double x_max;
-  3: optional double y_min;
-  4: optional double y_max;
-  5: optional double z_min;
-  6: optional double z_max;
-  7: optional double m_min;
-  8: optional double m_max;
+  1: required double xmin;
+  2: required double xmax;
+  3: required double ymin;
+  4: required double ymax;
+  5: optional double zmin;
+  6: optional double zmax;
+  7: optional double mmin;
+  8: optional double mmax;
+}
+
+union Envelope {
+  1:  BoundingBox bbox    // A bounding box of geometries if it can be built.
+  2:  Geometry covering   // A covering polygon of geometries if bbox is unavailable.
+}
+
+/** S2 spatial index: http://s2geometry.io/ */
+struct S2Index {
+  /** Level of S2 cell ids. valid range is [0, 30] */
+  1: required i32 level;
+  /** Covering of geometries as a list of Google S2 cell ids */
+  2: required list<i64> cell_ids;
+}
+
+/** H3 spatial index: https://h3geo.org */
+struct H3Index {
+  /** Precision of H3 cell ids. valid range is [0, 15] */
+  1: required i32 precision;
+  /** Covering of geometries as a list of Uber H3 indices */
+  2: required list<i64> cell_ids;
 }
 
 /** Statistics specific to GEOMETRY logical type */
 struct GeometryStatistics {
-  /** Bounding box of geometries */
-  1: optional BoundingBox bbox;
-  /** Covering of geometries as a list of Google S2 cell ids */
-  2: list<i64> s2_cell_ids;
-  /** Covering of geometries as a list of Uber H3 indices */
-  3: list<i64> h3_indices;
+  /** Envelope of geometries */
+  1: optional Envelope envelope;
+
   /**
    * The geometry types of all geometries, or an empty array if they are not
    * known. It follows the same rule of `geometry_types` column metadata of
    * GeoParquet. Accepted geometry types are: "Point", "LineString", "Polygon",
    * "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection".
+   *
+   * In addition, the following rules are used:
+   * - In case of 3D geometries, a `" Z"` suffix gets added (e.g. `["Point Z"]`).
+   * - A list of multiple values indicates that multiple geometry types are
+   *   present (e.g. `["Polygon", "MultiPolygon"]`).
+   * - An empty array explicitly signals that the geometry types are not known.
+   * - The geometry types in the list must be unique (e.g. `["Point", "Point"]`
+   *   is not valid).
+   *
+   * Please refer to link below for more detail:
+   * https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
    */
-  4: list<string> geometry_types;
+  2: optional list<string> geometry_types;
+
+  // S2 and H3 are controversial from the discussion. Now they are commented
+  // out to show a possible approach for future extension.
+  // 3: optional S2Index s2;
+  // 4: optional H3Index h3;
 }
 
 /**
@@ -440,9 +501,6 @@ enum GeometryEncoding {
    * results in useful column statistics when row groups and/or files contain
    * related features.
    *
-   * WARNING: GeometryStatistics cannot be enabled for these encodings because
-   * only leaf columns can have column statistics and page index.
-   *
    * The actual coordinates of the geometries MUST be stored as native numbers,
    * i.e. using the DOUBLE type in a (repeated) group of fields (exact
    * repetition depending on the geometry type).
@@ -456,13 +514,20 @@ enum GeometryEncoding {
    *
    * For more detail, please refer to link below:
    * https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#encoding
+   *
+   * WARNING: GeometryStatistics cannot be enabled for these encodings because
+   * only leaf columns can have column statistics and page index. In this case,
+   * the statistics for the leaf columns contain equivalent information to the
+   * bounding box.
    */
-  POINT = 1;
-  LINESTRING = 2;
-  POLYGON = 3;
-  MULTIPOINT = 4;
-  MULTILINESTRING = 5;
-  MULTIPOLYGON = 6;
+  // Native encodings are controversial from the discussion. Now they are commented
+  // out to show a possible approach for future extension.
+  // POINT = 1;
+  // LINESTRING = 2;
+  // POLYGON = 3;
+  // MULTIPOINT = 4;
+  // MULTILINESTRING = 5;
+  // MULTIPOLYGON = 6;
 }
 
 /**
@@ -475,12 +540,19 @@ struct GeometryType {
    */
   1: required GeometryEncoding encoding;
   /**
+   * Coordinate Reference System, i.e. mapping of how coordinates refer to
+   * precise locations on earth, e.g. OGC:CRS84
+   */
+  2: optional string crs;
+  /**
+   * Edges of polygon.
+   */
+  3: optional Edges edges;
+  /**
    * Additional informative metadata.
    * It can be used by GeoParquet to offload some of the column metadata.
    */
-  2: optional string metadata;
-  /** File-level statistics for geometries */
-  3: optional GeometryStatistics statistics;
+  4: optional string metadata;
 }
 
 /**
