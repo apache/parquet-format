@@ -181,10 +181,10 @@ enum ConvertedType {
  * Representation of Schemas
  */
 enum FieldRepetitionType {
-  /** This field is required (can not be null) and each record has exactly 1 value. */
+  /** This field is required (can not be null) and each row has exactly 1 value. */
   REQUIRED = 0;
 
-  /** The field is optional (can be null) and each record has 0 or 1 values. */
+  /** The field is optional (can be null) and each row has 0 or 1 values. */
   OPTIONAL = 1;
 
   /** The field is repeated and can contain 0 or more values */
@@ -581,9 +581,9 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a OffsetIndex is present, a page must begin at a record
+   * If a OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
-   * within a record (repetition_level > 0).
+   * within a row (repetition_level > 0).
    **/
   1: required i32 num_values
 
@@ -633,7 +633,7 @@ struct DataPageHeaderV2 {
   2: required i32 num_nulls
   /**
    * Number of rows in this data page. Every page must begin at a
-   * record boundary (repetition_level = 0): records must **not** be
+   * row boundary (repetition_level = 0): rows must **not** be
    * split across page boundaries when using V2 data pages.
    **/
   3: required i32 num_rows
@@ -1006,7 +1006,7 @@ struct PageLocation {
 
   /**
    * Index within the RowGroup of the first row of the page. When an
-   * OffsetIndex is present, pages must begin on record boundaries
+   * OffsetIndex is present, pages must begin on row boundaries
    * (repetition_level = 0).
    */
   3: required i64 first_row_index
