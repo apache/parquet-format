@@ -46,7 +46,8 @@ and it is expected the change in step 2 will also be merged soon after.
 
 #### General guidelines/preferences on additions.
 
-1. To the greatest extent possible changes should have an option for backwards compatibility.
+1. To the greatest extent possible changes should have an option for forwards compatibility
+   (old readers can still read files).
 2. New encodings should be fully specified in this repository and ideally not rely on an external
    dependencies for implementation (i.e. Parquet is the source of truth for the encoding)
 3. New compression mechanisms must have a pure Java implementation that can be used as dependency
@@ -54,7 +55,7 @@ and it is expected the change in step 2 will also be merged soon after.
 
 ### Releases
 
-The parquet community aims to do releases of the format package only as needed when new features are introduced.
+The Parquet community aims to do releases of the format package only as needed when new features are introduced.
 If multiple new features are being proposed simultaneously some features might be consolidated into the same release.  Guidance is provided below on when implementations should enable features added to the specification.
 Do to confusion in the past over parquet versioning it is not expected that there will be a 3.0 release of the specification in the foreseeable future.
 
