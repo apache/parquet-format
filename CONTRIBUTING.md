@@ -57,7 +57,7 @@ and it is expected the change in step 2 will also be merged soon after.
 
 The Parquet community aims to do releases of the format package only as needed when new features are introduced.
 If multiple new features are being proposed simultaneously some features might be consolidated into the same release.  Guidance is provided below on when implementations should enable features added to the specification.
-Do to confusion in the past over parquet versioning it is not expected that there will be a 3.0 release of the specification in the foreseeable future.
+Due to confusion in the past over parquet versioning it is not expected that there will be a 3.0 release of the specification in the foreseeable future.
 
 ### Compatibility and Feature Enablement
 
