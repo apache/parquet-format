@@ -259,12 +259,20 @@ The sort order for `FLOAT16` is signed (with special handling of NANs and signed
 ### FIXED_SIZE_LIST
 
 The `FIXED_SIZE_LIST` annotation represents a fixed-size list of elements
-of a primitive data type. It must annotate a `binary` primitive type.
+of a primitive data type. It must annotate a `FIXED_LEN_BYTE_ARRAY` primitive type.
 
-The `binary` data is interpreted as a sequence of elements of
-the same primitive data type.
+The `FIXED_LEN_BYTE_ARRAY` data is interpreted as a fixed size sequence of
+elements of the same primitive data type.
 
 The sort order used for `FIXED_SIZE_LIST` is undefined.
+
+### VARIABLE_SIZE_LIST
+
+The `VARIABLE_SIZE_LIST` annotation represents a variable-size list of elements
+of a primitive data type. It must annotate a `BYTE_ARRAY` primitive type.
+
+The `BYTE_ARRAY` data is interpreted as a variable size sequence of elements of
+the same primitive data type.
 
 ## Temporal Types
 
