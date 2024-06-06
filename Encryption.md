@@ -115,7 +115,6 @@ authentication layer called GMAC. For applications running without AES accelerat
 (e.g. on Java versions before Java 9) and willing to compromise on content verification, 
 CTR cipher can provide a boost in encryption/decryption throughput.
 
-
 #### 4.1.3 Nonces and IVs
 GCM and CTR ciphers require a unique vector to be provided for each encrypted stream. 
 In this document, the unique input to GCM encryption is called nonce (“number used once”).
@@ -126,6 +125,26 @@ Parquet encryption uses the RBG-based (random bit generator) nonce construction 
 the section 8.2.2 of the NIST SP 800-38D document. For each encrypted module, Parquet generates a 
 unique nonce with a length of 12 bytes (96 bits). Notice: the NIST 
 specification uses a term “IV” for what is called “nonce” in the Parquet encryption design.
+
+
+#### 4.1.4 Invocation limit
+According to the section 8.3 of the NIST SP 800-38D document, one key can be used for up to 
+2^32 encryption operations with RGB-based nonces in the AES GCM cipher. If this limit is exceeded, 
+the data encryption can be broken. The bulk of modules in a parquet file are page headers and data 
+pages. Therefore, one encryption key must not be applied to more than 2^31 (~2 billion) pages. In 
+parquet files encrypted with multiple keys (footer and column keys), the invocation limit is 
+applied to each key separately.
+
+
+Parquet is a local library, with each instance running in a process unaware of other instances. 
+Therefore Parquet cannot be responsible for enforcing the key invocation limits. The 
+responsibility lies with higher layers implementing the distributed applications that launch 
+cluster nodes and supply them with parquet encryption keys.
+
+Parquet implementations should implement a local invocation counter for each encryption key, and 
+throw an exception when the counter exceeds 2^32. While this does not enforce a system-wide limit, 
+it helps in distributed systems that provide different keys to different nodes (or generate unique 
+keys in each node).
 
 
 ### 4.2 Parquet encryption algorithms
