@@ -36,7 +36,7 @@ The general steps for adding features to the format are as follows:
 
 1. Discuss changes on on the developer mailing list (dev@parquet.apache.org).  Often times it is helpful to link to a draft pull request to make the discussion concrete. This step is complete when there lazy consensus.
 
-2. One a change has lazy consensus two implementations of the feature
+2. Once a change has lazy consensus two implementations of the feature
 demonstrating interopability must also be provided.  One implementation MUST be [parquet-java](http://github.com/apache/parquet-java).  It is preferred that the second implementation be [parquet-cpp](https://github.com/apache/arrow) or [parquet-rs](https://github.com/apache/arrow-rs), however at the discretion of the PMC any
 open source Parquet implementation may be acceptable. Implementations
 whose contributors actively
