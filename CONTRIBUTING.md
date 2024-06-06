@@ -44,15 +44,15 @@ participate in the community (e.g. keep their feature matrix
 up-to-date on parquet-site) are more likely to be considered.
 
 Unless otherwise discussed, it is expected the implementations will
-develop from the main branch (i.e. packporting is not expected).
+develop from the main branch (i.e. backporting is not expected).
 
 In some cases in addition to library level implementations it is 
-expected the changes to be justified with integration into a
-processing engine to show there viability.
+expected the changes will be justified via integration into a
+processing engine to show their viability.
 
 3. After the first two steps are complete a formal vote is held on the Parquet mailing list to officially
 ratify the feature.  After the vote passes the format change is merged into the parquet-format repository
-and it is expected the change in step 2 will also be merged soon after. Before merging into Parquet-java a parquet-format release
+and it is expected the changes from step 2 will also be merged soon after. Before merging into Parquet-java a parquet-format release
 must be performed.
 
 #### General guidelines/preferences on additions.
