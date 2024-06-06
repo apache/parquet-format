@@ -32,6 +32,13 @@ https://github.com/apache/parquet-format/blob/master/LICENSE
 
 ### Additions/Changes to the Format
 
+Note: This section applies to actual functional changes to the
+specification. Fixing typos, grammar, and clarifying concepts
+that would not change the semantics of the specification can
+be done as long a comitter feels comfortable to merge them. When
+in doubt starting a discussion on the dev mailing list is 
+encouraged.
+
 The general steps for adding features to the format are as follows:
 
 1. Discuss changes on on the developer mailing list (dev@parquet.apache.org).  Often times it is helpful to link to a draft pull request to make the discussion concrete. This step is complete when there lazy consensus.
