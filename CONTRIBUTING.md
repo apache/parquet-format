@@ -107,7 +107,7 @@ The Parquet community hopes that new features are widely beneficial to users of
 Parquet, and therefore third-party implementations will adopt them quickly after
 they are introduced. It is assumed that most new features will be implemented
 behind a feature flag that defaults to "off" and at some future point the
-features are turned on by default. To avoid, compatibility issues across the
+features are turned on by default. To avoid compatibility issues across the
 ecosystem some amount of lead time is desirable to ensure a critical mass of
 Parquet implementations support a feature.  Therefore, the Parquet PMC gives the
 following guidance for changing a feature to be "on" by default:
