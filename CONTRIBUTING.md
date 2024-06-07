@@ -75,7 +75,7 @@ the main branch (i.e. backporting is not expected).
 1. To the greatest extent possible changes should have an option for forwards
    compatibility (old readers can still read files).
 2. New encodings should be fully specified in this repository and ideally not
-   rely on an external dependencies for implementation (i.e. Parquet is the
+   rely on an external dependencies for implementation (i.e. `parquet-format` is the
    source of truth for the encoding).
 3. New compression mechanisms must have a pure Java implementation that can be
    used as dependency in parquet-java.
