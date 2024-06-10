@@ -151,7 +151,7 @@ enum ConvertedType {
   /**
    * An embedded JSON document
    *
-   * A JSON document embedded within a single BYTE_ARRAY(UTF8)  column.
+   * A JSON document embedded within a single BYTE_ARRAY(STRING) column.
    */
   JSON = 19;
 
