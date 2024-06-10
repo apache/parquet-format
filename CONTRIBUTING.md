@@ -60,11 +60,12 @@ The general steps for adding features to the format are as follows:
    (e.g. keep their feature matrix up-to-date on parquet-site) are more likely
    to be considered. If discussed as a requirement in step one, demonstration
    of integration with a query engine is also required for this step. The
-   implementations must be made available publicly (e.g. as a pull request
-   against the target repository).
+   implementations must be made available publicly, and they should
+   be fit for inclusion (for example, they were submitted as a pull request
+   against the target repository and committers gave positive reviews).
 
-Unless otherwise discussed, it is expected the implementations will develop from
-the main branch (i.e. backporting is not expected).
+Unless otherwise discussed, it is expected the implementations will be developed
+from their respective main branch (i.e. backporting is not expected).
 
 3. After the first two steps are complete a formal vote is held on the Parquet
    mailing list to officially ratify the feature.  After the vote passes the
@@ -90,7 +91,7 @@ The Parquet PMC aims to do releases of the format package only as needed when
 new features are introduced. If multiple new features are being proposed
 simultaneously some features might be consolidated into the same release.
 Guidance is provided below on when implementations should enable features added
-to the specification.  Due to confusion in the past over parquet versioning it
+to the specification.  Due to confusion in the past over Parquet versioning it
 is not expected that there will be a 3.x release of the specification in the
 foreseeable future.
 
@@ -102,29 +103,29 @@ For the purposes of this discussion we classify features into the following buck
    should be readable under a newer version of the format.
 
 2. Forwards compatible. A file written under a newer version of the format with
-   the enabled feature can be read under an older version of the format, but
+   the feature enabled can be read under an older version of the format, but
    some information might be missing or performance might be suboptimal.
 
-3. Forward incompatible. A file written under a new version of the format with
+3. Forwards incompatible. A file written under a newer version of the format with
    the feature enabled cannot be read under an older version of the format (e.g.
-   Adding a new compression algorithm).
+   adding and using a new compression algorithm).
 
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
 they are introduced. It is assumed that writing new parts of the format, and
-especially forward incompatible features, will be configured with feature flag
-defaulted to "off" and at some future point the features are turned on by default
+especially forward incompatible features, will be configured with a feature flag
+defaulted to "off", and at some future point the feature is turned on by default
 (reading of the new feature will typically be enabled without configuration or
 defaulted to on). Some amount of lead time is desirable to ensure a critical
-mass of Parquet implementations support a feature to avoid compatability issues
+mass of Parquet implementations support a feature to avoid compatibility issues
 across the ecosystem.  Therefore, the Parquet PMC gives the following
 recommendations for managing features:
 
 1. Backwards compatibility is the concern of implementations but given the
    ubiquity of Parquet and the length of time it has been used, libraries should
-   support reading older version of the format to the greatest extent possible.
+   support reading older versions of the format to the greatest extent possible.
 
-2. Forward compatible features/changes may be used by default in implementations
+2. Forwards compatible features/changes may be enabled and used by default in implementations
    once the parquet-format containing those changes has been formally released.
    For features that may pose a significant performance regression to older
    format readers, libaries should consider delaying default enablement until 1
@@ -139,7 +140,7 @@ recommendations for managing features:
    implementations decide to do releases).
 
 For forward compatible changes which have a high chance of performance
-regression for older readers and forward incompatible changes implementations
+regression for older readers and forward incompatible changes, implementations
 should clearly document the compatibility issues and should consider logging a
 warning when such a feature is used. Additionally, while it is up to maintainers
 of individual implementations to make the best decision to serve their
