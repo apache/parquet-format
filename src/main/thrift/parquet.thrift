@@ -181,10 +181,10 @@ enum ConvertedType {
  * Representation of Schemas
  */
 enum FieldRepetitionType {
-  /** This field is required (can not be null) and each record has exactly 1 value. */
+  /** This field is required (can not be null) and each row has exactly 1 value. */
   REQUIRED = 0;
 
-  /** The field is optional (can be null) and each record has 0 or 1 values. */
+  /** The field is optional (can be null) and each row has 0 or 1 values. */
   OPTIONAL = 1;
 
   /** The field is repeated and can contain 0 or more values */
@@ -578,7 +578,13 @@ enum BoundaryOrder {
 
 /** Data page header */
 struct DataPageHeader {
-  /** Number of values, including NULLs, in this data page. **/
+  /**
+   * Number of values, including NULLs, in this data page.
+   *
+   * If a OffsetIndex is present, a page must begin at a row
+   * boundary (repetition_level = 0). Otherwise, pages may begin
+   * within a row (repetition_level > 0).
+   **/
   1: required i32 num_values
 
   /** Encoding used for this data page **/
@@ -625,7 +631,11 @@ struct DataPageHeaderV2 {
   /** Number of NULL values, in this data page.
       Number of non-null = num_values - num_nulls which is also the number of values in the data section **/
   2: required i32 num_nulls
-  /** Number of rows in this data page. which means pages change on record boundaries (r = 0) **/
+  /**
+   * Number of rows in this data page. Every page must begin at a
+   * row boundary (repetition_level = 0): rows must **not** be
+   * split across page boundaries when using V2 data pages.
+   **/
   3: required i32 num_rows
   /** Encoding used for data in this page **/
   4: required Encoding encoding
@@ -995,8 +1005,9 @@ struct PageLocation {
   2: required i32 compressed_page_size
 
   /**
-   * Index within the RowGroup of the first row of the page; this means pages
-   * change on record boundaries (r = 0).
+   * Index within the RowGroup of the first row of the page. When an
+   * OffsetIndex is present, pages must begin on row boundaries
+   * (repetition_level = 0).
    */
   3: required i64 first_row_index
 }
@@ -1190,4 +1201,3 @@ struct FileCryptoMetaData {
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }
-
