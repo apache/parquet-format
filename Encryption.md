@@ -136,7 +136,7 @@ one IV is ever repeated, then the implementation may be vulnerable"*. *"Complian
 requirement is crucial to the security of GCM"*.
 
 The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
-key shall not not be applied to more than 2^31 (~2 billion) pages. In Parquet files encrypted with 
+key shall not not be used for more than 2^31 (~2 billion) pages. In Parquet files encrypted with 
 multiple keys (footer and column keys), the constraint on the number of invocations is applied 
 to each key separately.
 
@@ -144,8 +144,8 @@ When running in the context of a larger system, any particular Parquet writer im
 does not have sufficient context to enforce key invocation limits system-wide. Therefore,
 the higher level system itself must arrange to supply keys appropriately to the various writer instances.
 
-Parquet writer implementations should have a local invocation counter for each encryption key.  
-If the counter exceeds 2^32, the implementation should return an error and produce no more cipherblocks. 
+Parquet writer implementations should have a local invocation counter for each encryption key. If the 
+counter exceeds 2^32, the implementation should return an error and produce no more cipherblocks. 
 While this does not enforce a system-wide limit, it helps in distributed systems that provide different 
 keys to different nodes (or generate unique keys in each node).
 
