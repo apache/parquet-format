@@ -115,7 +115,6 @@ authentication layer called GMAC. For applications running without AES accelerat
 (e.g. on Java versions before Java 9) and willing to compromise on content verification, 
 CTR cipher can provide a boost in encryption/decryption throughput.
 
-
 #### 4.1.3 Nonces and IVs
 GCM and CTR ciphers require a unique vector to be provided for each encrypted stream. 
 In this document, the unique input to GCM encryption is called nonce (“number used once”).
@@ -127,6 +126,28 @@ the section 8.2.2 of the NIST SP 800-38D document. For each encrypted module, Pa
 unique nonce with a length of 12 bytes (96 bits). Notice: the NIST 
 specification uses a term “IV” for what is called “nonce” in the Parquet encryption design.
 
+
+#### 4.1.4 Invocation limit
+According to the section 8.3 of the NIST SP 800-38D document, *"The total number of invocations 
+of the authenticated encryption function shall not exceed 2^32, including all IV lengths and 
+all instances of the authenticated encryption function with the given key"*. This restriction is
+related to the "uniqueness requirement of IVs and keys" (section 8 in the NIST spec) - *"if even 
+one IV is ever repeated, then the implementation may be vulnerable"*. *"Compliance with this 
+requirement is crucial to the security of GCM"*.
+
+The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
+key shall not not be used for more than 2^31 (~2 billion) pages. In Parquet files encrypted with 
+multiple keys (footer and column keys), the constraint on the number of invocations is applied 
+to each key separately.
+
+When running in the context of a larger system, any particular Parquet writer implementation likely
+does not have sufficient context to enforce key invocation limits system-wide. Therefore,
+the higher level system itself must arrange to supply keys appropriately to the various writer instances.
+
+Parquet writer implementations should have a local invocation counter for each encryption key. If the 
+counter exceeds 2^32, the implementation should return an error and produce no more cipherblocks. 
+While this does not enforce a system-wide limit, it helps in distributed systems that provide different 
+keys to different nodes (or generate unique keys in each node).
 
 ### 4.2 Parquet encryption algorithms
 
