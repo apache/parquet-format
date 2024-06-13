@@ -279,31 +279,15 @@ struct BoundingBox {
   8: optional double mmax;
 }
 
-union Envelope {
-  1:  BoundingBox bbox    // A bounding box of geometries if it can be built.
-  2:  Geometry covering   // A covering polygon of geometries if bbox is unavailable.
-}
-
-/** S2 spatial index: http://s2geometry.io/ */
-struct S2Index {
-  /** Level of S2 cell ids. valid range is [0, 30] */
-  1: required i32 level;
-  /** Covering of geometries as a list of Google S2 cell ids */
-  2: required list<i64> cell_ids;
-}
-
-/** H3 spatial index: https://h3geo.org */
-struct H3Index {
-  /** Precision of H3 cell ids. valid range is [0, 15] */
-  1: required i32 precision;
-  /** Covering of geometries as a list of Uber H3 indices */
-  2: required list<i64> cell_ids;
+struct Covering {
+  optional BoundingBox bbox    // A bounding box of geometries if it can be built.
+  optional Geometry covering   // A covering polygon of geometries if bbox is unavailable.
 }
 
 /** Statistics specific to GEOMETRY logical type */
 struct GeometryStatistics {
-  /** Envelope of geometries */
-  1: optional Envelope envelope;
+  /** Covering of geometries */
+  1: optional Covering covering;
 
   /**
    * The geometry types of all geometries, or an empty array if they are not
@@ -323,11 +307,6 @@ struct GeometryStatistics {
    * https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
    */
   2: optional list<string> geometry_types;
-
-  // S2 and H3 are controversial from the discussion. Now they are commented
-  // out to show a possible approach for future extension.
-  // 3: optional S2Index s2;
-  // 4: optional H3Index h3;
 }
 
 /**
@@ -493,41 +472,7 @@ enum GeometryEncoding {
    */
   WKB = 0;
 
-  /**
-   * Encodings from POINT to MULTIPOLYGON below are specialized for single
-   * geometry type and inspired by GeoArrow (https://geoarrow.org/format.html)
-   * native encodings. It uses the separated (struct) representation of
-   * coordinates for single-geometry type encodings because this encoding
-   * results in useful column statistics when row groups and/or files contain
-   * related features.
-   *
-   * The actual coordinates of the geometries MUST be stored as native numbers,
-   * i.e. using the DOUBLE type in a (repeated) group of fields (exact
-   * repetition depending on the geometry type).
-   *
-   * For the POINT encoding, this results in a struct of two fields for x and y
-   * coordinates (in case of 2D geometries):
-   * optional group geometry {
-   *   required double x;
-   *   required double y;
-   * }
-   *
-   * For more detail, please refer to link below:
-   * https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#encoding
-   *
-   * WARNING: GeometryStatistics cannot be enabled for these encodings because
-   * only leaf columns can have column statistics and page index. In this case,
-   * the statistics for the leaf columns contain equivalent information to the
-   * bounding box.
-   */
-  // Native encodings are controversial from the discussion. Now they are commented
-  // out to show a possible approach for future extension.
-  // POINT = 1;
-  // LINESTRING = 2;
-  // POLYGON = 3;
-  // MULTIPOINT = 4;
-  // MULTILINESTRING = 5;
-  // MULTIPOLYGON = 6;
+  // TODO: add native encoding from GeoParquet/GeoArrow
 }
 
 /**
