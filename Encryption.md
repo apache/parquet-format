@@ -128,24 +128,26 @@ specification uses a term “IV” for what is called “nonce” in the Parquet
 
 
 #### 4.1.4 Invocation limit
-According to the section 8.3 of the NIST SP 800-38D document, one key can be used for up to 
-2^32 encryption operations with RGB-based nonces in the AES GCM cipher. If this limit is exceeded, 
-the data encryption can be broken. The bulk of modules in a parquet file are page headers and data 
-pages. Therefore, one encryption key must not be applied to more than 2^31 (~2 billion) pages. In 
-parquet files encrypted with multiple keys (footer and column keys), the invocation limit is 
-applied to each key separately.
+According to the section 8.3 of the NIST SP 800-38D document, *"The total number of invocations 
+of the authenticated encryption function shall not exceed 2^32, including all IV lengths and 
+all instances of the authenticated encryption function with the given key"*. This restriction is
+related to the "uniqueness requirement of IVs and keys" (section 8 in the NIST spec) - *"if even 
+one IV is ever repeated, then the implementation may be vulnerable"*. *"Compliance with this 
+requirement is crucial to the security of GCM"*.
 
+The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
+key shall not not be applied to more than 2^31 (~2 billion) pages. In Parquet files encrypted with 
+multiple keys (footer and column keys), the constraint on the number of invocations is applied 
+to each key separately.
 
-Parquet is a local library, with each instance running in a process unaware of other instances. 
-Therefore Parquet cannot be responsible for enforcing the key invocation limits. The 
-responsibility lies with higher layers implementing the distributed applications that launch 
-cluster nodes and supply them with parquet encryption keys.
+When running in the context of a larger system, any particular Parquet writer implementation likely
+does not have sufficient context to enforce key invocation limits system-wide. Therefore,
+the higher level system itself must arrange to supply keys appropriately to the various writer instances.
 
-Parquet implementations should implement a local invocation counter for each encryption key, and 
-throw an exception when the counter exceeds 2^32. While this does not enforce a system-wide limit, 
-it helps in distributed systems that provide different keys to different nodes (or generate unique 
-keys in each node).
-
+Parquet writer implementations should have a local invocation counter for each encryption key.  
+If the counter exceeds 2^32, the implementation should return an error and produce no more cipherblocks. 
+While this does not enforce a system-wide limit, it helps in distributed systems that provide different 
+keys to different nodes (or generate unique keys in each node).
 
 ### 4.2 Parquet encryption algorithms
 
