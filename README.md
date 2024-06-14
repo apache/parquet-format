@@ -45,7 +45,7 @@ Parquet is built to be used by anyone. The Hadoop ecosystem is rich with data pr
 
 The `parquet-format` project contains format specifications and Thrift definitions of metadata required to properly read Parquet files.
 
-The `parquet-mr` project contains multiple sub-modules, which implement the core components of reading and writing a nested, column-oriented data stream, map this core onto the parquet format, and provide Hadoop Input/Output Formats, Pig loaders, and other java-based utilities for interacting with Parquet.
+The `parquet-java` project contains multiple sub-modules, which implement the core components of reading and writing a nested, column-oriented data stream, map this core onto the parquet format, and provide Hadoop Input/Output Formats, Pig loaders, and other java-based utilities for interacting with Parquet.
 
 The `parquet-compatibility` project contains compatibility tests that can be used to verify that implementations in different languages can read and write each other's files.
 
@@ -292,7 +292,7 @@ There are many places in the format for compatible extensions:
 
 ## Contributing
 Comment on the issue and/or contact [the parquet-dev mailing list](http://mail-archives.apache.org/mod_mbox/parquet-dev/) with your questions and ideas.
-Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-MR subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-MR project](https://github.com/apache/parquet-mr#how-to-contribute)
+Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-Java subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-Java project](https://github.com/apache/parquet-java#how-to-contribute)
 
 ## Code of Conduct
 
