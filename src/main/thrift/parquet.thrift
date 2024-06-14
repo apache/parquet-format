@@ -867,12 +867,21 @@ struct ColumnChunk {
     **/
   1: optional string file_path
 
-  /** Byte offset in file_path to the ColumnMetaData **/
+  /** Deprecated: Byte offset in file_path to the ColumnMetaData
+   *
+   * Past use of this field has been inconsistent, with some implementations
+   * using it to point to the ColumnMetaData and some using it to point to
+   * the first page in the column chunk. In many cases, the ColumnMetaData at this
+   * location is wrong. This field is now deprecated and should not be used.
+   * Writers should set this field to 0 if no ColumnMetaData has been written outside
+   * the footer.
+   */
   2: required i64 file_offset
 
-  /** Column metadata for this chunk. This is the same content as what is at
-   * file_path/file_offset.  Having it here has it replicated in the file
-   * metadata.
+  /** Column metadata for this chunk. Some writers may also replicate this at the
+   * location pointed to by file_path/file_offset.
+   * Note: while marked as optional, this field is in fact required by most major
+   * Parquet implementations. As such, writers MUST populate this field.
    **/
   3: optional ColumnMetaData meta_data
 

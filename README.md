@@ -89,29 +89,29 @@ more pages.
 This file and the [Thrift definition](src/main/thrift/parquet.thrift) should be read together to understand the format.
 
     4-byte magic number "PAR1"
-    <Column 1 Chunk 1 + Column Metadata>
-    <Column 2 Chunk 1 + Column Metadata>
+    <Column 1 Chunk 1 + Page Metadata>
+    <Column 2 Chunk 1 + Page Metadata>
     ...
-    <Column N Chunk 1 + Column Metadata>
-    <Column 1 Chunk 2 + Column Metadata>
-    <Column 2 Chunk 2 + Column Metadata>
+    <Column N Chunk 1 + Page Metadata>
+    <Column 1 Chunk 2 + Page Metadata>
+    <Column 2 Chunk 2 + Page Metadata>
     ...
-    <Column N Chunk 2 + Column Metadata>
+    <Column N Chunk 2 + Page Metadata>
     ...
-    <Column 1 Chunk M + Column Metadata>
-    <Column 2 Chunk M + Column Metadata>
+    <Column 1 Chunk M + Page Metadata>
+    <Column 2 Chunk M + Page Metadata>
     ...
-    <Column N Chunk M + Column Metadata>
+    <Column N Chunk M + Page Metadata>
     File Metadata
     4-byte length in bytes of file metadata (little endian)
     4-byte magic number "PAR1"
 
 In the above example, there are N columns in this table, split into M row
-groups.  The file metadata contains the locations of all the column metadata
+groups.  The file metadata contains the locations of all the column chunk
 start locations.  More details on what is contained in the metadata can be found
 in the Thrift definition.
 
-Metadata is written after the data to allow for single pass writing.
+File Metadata is written after the data to allow for single pass writing.
 
 Readers are expected to first read the file metadata to find all the column
 chunks they are interested in.  The columns chunks should then be read sequentially.
@@ -119,8 +119,8 @@ chunks they are interested in.  The columns chunks should then be read sequentia
  ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
 
 ## Metadata
-There are three types of metadata: file metadata, column (chunk) metadata and page
-header metadata.  All thrift structures are serialized using the TCompactProtocol.
+There are two types of metadata: file metadata and page header metadata.  All thrift structures
+are serialized using the TCompactProtocol.
 
  ![Metadata diagram](https://github.com/apache/parquet-format/raw/master/doc/images/FileFormat.gif)
 
