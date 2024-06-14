@@ -331,6 +331,7 @@ of an extension contain a magic number. The current reserved magic numbers are:
 | `CRM` | Salesforce |
 | `DBR` | Databricks |
 | `EXP` | Apache/Experimental |
+| `NVD` | Nvidia |
 
 To reserve additional magic numbers, file a JIRA and send a PR.
 
