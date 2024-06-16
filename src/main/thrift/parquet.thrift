@@ -240,7 +240,7 @@ struct SizeStatistics {
 /**
  * Interpretation for edges of GEOMETRY logical type, i.e. whether the edge
  * between points represent a straight cartesian line or the shortest line on
- * the sphere.
+ * the sphere. Please note that it only applies to polygons.
  */
 enum Edges {
   PLANAR = 0;
@@ -248,20 +248,17 @@ enum Edges {
 }
 
 /**
- * A custom WKB-encoded geometry data to be used in geometry statistics.
- * The geometry may be a polygon to encode an s2 or h3 covering to provide
- * vendor-agnostic coverings, or an evelope of geometries when a bounding
- * box cannot be built (e.g. a geometry has spherical edges, or if an edge
- * of geographic coordinates crosses the antimeridian).
+ * A custom WKB-encoded polygon or multi-polygon to represent a covering of
+ * geometries. For example, it may be a bounding box, or an evelope of geometries
+ * when a bounding box cannot be built (e.g. a geometry has spherical edges, or if
+ * an edge of geographic coordinates crosses the antimeridian). In addition, it can
+ * also be used to provide vendor-agnostic coverings like S2 or H3 grids.
  */
-struct Geometry {
+struct Covering {
   /** Bytes of a WKB-encoded geometry */
   1: required binary geometry;
-  /**
-   * Edges of the geometry if it is a polygon. It may be different to the
-   * edges attribute from the GEOMETRY logical type.
-   */
-  2: optional Edges edges;
+  /** Edges of the geometry, which is independent of edges from the logical type */
+  2: required Edges edges;
 }
 
 /**
@@ -279,15 +276,13 @@ struct BoundingBox {
   8: optional double mmax;
 }
 
-struct Covering {
-  optional BoundingBox bbox    // A bounding box of geometries if it can be built.
-  optional Geometry covering   // A covering polygon of geometries if bbox is unavailable.
-}
-
 /** Statistics specific to GEOMETRY logical type */
 struct GeometryStatistics {
-  /** Covering of geometries */
-  1: optional Covering covering;
+  /** A bounding box of geometries */
+  1: optional BoundingBox bbox;
+
+  /** A covering polygon of geometries */
+  2: optional Covering covering;
 
   /**
    * The geometry types of all geometries, or an empty array if they are not
@@ -306,7 +301,7 @@ struct GeometryStatistics {
    * Please refer to link below for more detail:
    * https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
    */
-  2: optional list<string> geometry_types;
+  3: optional list<string> geometry_types;
 }
 
 /**
@@ -456,7 +451,7 @@ struct BsonType {
 }
 
 /**
- * Phyiscal type and encoding for the geometry type.
+ * Physical type and encoding for the geometry type.
  */
 enum GeometryEncoding {
   /**
@@ -497,7 +492,7 @@ struct GeometryType {
    * Additional informative metadata.
    * It can be used by GeoParquet to offload some of the column metadata.
    */
-  4: optional string metadata;
+  4: optional binary metadata;
 }
 
 /**
