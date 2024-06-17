@@ -212,8 +212,8 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 `DECIMAL` annotation represents arbitrary-precision signed decimal numbers of
 the form `unscaledValue * 10^(-scale)`.
 
-The primitive type stores an unscaled integer value. For byte arrays, variable
-and fixed-length, the unscaled number must be encoded as two's complement using
+The primitive type stores an unscaled integer value. For BYTE_ARRAY and 
+FIXED_LEN_BYTE_ARRAY, the unscaled number must be encoded as two's complement using
 big-endian byte order (the most significant byte is the zeroth element). The
 scale stores the number of digits of that value that are to the right of the
 decimal point, and the precision stores the maximum number of digits supported
@@ -546,7 +546,7 @@ Embedded types do not have type-specific orderings.
 ### JSON
 
 `JSON` is used for an embedded JSON document. It must annotate a BYTE_ARRAY
-primitive type. The byte array data is interpreted as a UTF-8 encoded character
+primitive type. The BYTE_ARRAY data is interpreted as a UTF-8 encoded character
 string of valid JSON as defined by the [JSON specification][json-spec]
 
 [json-spec]: http://json.org/
@@ -556,7 +556,7 @@ The sort order used for `JSON` is unsigned byte-wise comparison.
 ### BSON
 
 `BSON` is used for an embedded BSON document. It must annotate a BYTE_ARRAY
-primitive type. The byte array data is interpreted as an encoded BSON document as
+primitive type. The BYTE_ARRAY data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
