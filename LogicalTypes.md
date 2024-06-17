@@ -23,7 +23,7 @@ Parquet Logical Type Definitions
 Logical types are used to extend the types that parquet can be used to store,
 by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
-example, strings are stored with the primitive type BYTE_ARRAY with a STRING
+example, strings are stored with the primitive type `BYTE_ARRAY` with a `STRING`
 annotation.
 
 This file contains the specification for all logical types.
@@ -60,7 +60,7 @@ Compatibility considerations are mentioned for each annotation in the correspond
 
 ### STRING
 
-`STRING` may only be used to annotate the BYTE_ARRAY primitive type and indicates
+`STRING` may only be used to annotate the `BYTE_ARRAY` primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
 The sort order used for `STRING` strings is unsigned byte-wise comparison.
@@ -71,7 +71,7 @@ The sort order used for `STRING` strings is unsigned byte-wise comparison.
 
 ### ENUM
 
-`ENUM` annotates the BYTE_ARRAY primitive type and indicates that the value
+`ENUM` annotates the `BYTE_ARRAY` primitive type and indicates that the value
 was converted from an enumerated type in another data model (e.g. Thrift, Avro, Protobuf).
 Applications using a data model lacking a native enum type should interpret `ENUM`
 annotated field as a UTF-8 encoded string. 
@@ -80,7 +80,7 @@ The sort order used for `ENUM` values is unsigned byte-wise comparison.
 
 ### UUID
 
-`UUID` annotates a 16-byte FIXED_LEN_BYTE_ARRAY primitive type. The value is
+`UUID` annotates a 16-byte `FIXED_LEN_BYTE_ARRAY` primitive type. The value is
 encoded using big-endian, so that `00112233-4455-6677-8899-aabbccddeeff` is encoded
 as the bytes `00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff`
 (This example is from [wikipedia's UUID page][wiki-uuid]).
@@ -212,8 +212,8 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 `DECIMAL` annotation represents arbitrary-precision signed decimal numbers of
 the form `unscaledValue * 10^(-scale)`.
 
-The primitive type stores an unscaled integer value. For BYTE_ARRAY and 
-FIXED_LEN_BYTE_ARRAY, the unscaled number must be encoded as two's complement using
+The primitive type stores an unscaled integer value. For `BYTE_ARRAY` and 
+`FIXED_LEN_BYTE_ARRAY`, the unscaled number must be encoded as two's complement using
 big-endian byte order (the most significant byte is the zeroth element). The
 scale stores the number of digits of that value that are to the right of the
 decimal point, and the precision stores the maximum number of digits supported
@@ -252,7 +252,7 @@ The `FLOAT16` annotation represents half-precision floating-point numbers in the
 
 Used in contexts where precision is traded off for smaller footprint and potentially better performance.
 
-The primitive type is a 2-byte FIXED_LEN_BYTE_ARRAY.
+The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
 
 The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
 
@@ -545,8 +545,8 @@ Embedded types do not have type-specific orderings.
 
 ### JSON
 
-`JSON` is used for an embedded JSON document. It must annotate a BYTE_ARRAY
-primitive type. The BYTE_ARRAY data is interpreted as a UTF-8 encoded character
+`JSON` is used for an embedded JSON document. It must annotate a `BYTE_ARRAY`
+primitive type. The `BYTE_ARRAY` data is interpreted as a UTF-8 encoded character
 string of valid JSON as defined by the [JSON specification][json-spec]
 
 [json-spec]: http://json.org/
@@ -555,8 +555,8 @@ The sort order used for `JSON` is unsigned byte-wise comparison.
 
 ### BSON
 
-`BSON` is used for an embedded BSON document. It must annotate a BYTE_ARRAY
-primitive type. The BYTE_ARRAY data is interpreted as an encoded BSON document as
+`BSON` is used for an embedded BSON document. It must annotate a `BYTE_ARRAY`
+primitive type. The `BYTE_ARRAY` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
