@@ -51,13 +51,13 @@ The general steps for adding features to the format are as follows:
 
 2. Once a change has lazy consensus, two implementations of the feature
    demonstrating interopability must also be provided.  One implementation MUST
-   be [parquet-java](http://github.com/apache/parquet-java).  It is preferred
+   be [`parquet-java`](http://github.com/apache/parquet-java).  It is preferred
    that the second implementation be
-   [parquet-cpp](https://github.com/apache/arrow) or
-   [parquet-rs](https://github.com/apache/arrow-rs), however at the discretion
+   [`parquet-cpp`](https://github.com/apache/arrow) or
+   [`parquet-rs`](https://github.com/apache/arrow-rs), however at the discretion
    of the PMC any open source Parquet implementation may be acceptable.
    Implementations whose contributors actively participate in the community
-   (e.g. keep their feature matrix up-to-date on parquet-site) are more likely
+   (e.g. keep their feature matrix up-to-date on the Parquet website) are more likely
    to be considered. If discussed as a requirement in step one, demonstration
    of integration with a query engine is also required for this step. The
    implementations must be made available publicly, and they should
@@ -67,15 +67,14 @@ The general steps for adding features to the format are as follows:
 Unless otherwise discussed, it is expected the implementations will be developed
 from their respective main branch (i.e. backporting is not expected).
 
-3. After the first two steps are complete a formal vote is held on the Parquet
-   mailing list to officially ratify the feature.  After the vote passes the
-   format change is merged into the parquet-format repository and it is expected
-   the changes from step 2 will also be merged soon after. Before merging into
-   Parquet-java a parquet-format release must be performed.
+3. After the first two steps are complete a formal vote is held on dev@parquet.apache.org to officially ratify the feature.  After the vote passes the
+   format change is merged into the `parquet-format` repository and it is expected
+   the changes from step 2 will also be merged soon after (implementations should not be merged until the addition has
+   been merged to `parquet-format`).
 
 #### General guidelines/preferences on additions.
 
-1. To the greatest extent possible changes should have an option for forwards
+1. To the greatest extent possible changes should have an option for forward
    compatibility (old readers can still read files).
 
 2. New encodings should be fully specified in this repository and ideally not
@@ -83,7 +82,7 @@ from their respective main branch (i.e. backporting is not expected).
    the source of truth for the encoding).
 
 3. New compression mechanisms must have a pure Java implementation that can be
-   used as dependency in parquet-java.
+   used as dependency in `parquet-java`.
 
 ### Releases
 
@@ -99,16 +98,18 @@ foreseeable future.
 
 For the purposes of this discussion we classify features into the following buckets:
 
-1. Backwards compatible. A file written under an older version of the format
+1. Backward compatible. A file written under an older version of the format
    should be readable under a newer version of the format.
 
-2. Forwards compatible. A file written under a newer version of the format with
+2. Forward compatible. A file written under a newer version of the format with
    the feature enabled can be read under an older version of the format, but
    some information might be missing or performance might be suboptimal.
 
-3. Forwards incompatible. A file written under a newer version of the format with
+3. Forward incompatible. A file written under a newer version of the format with
    the feature enabled cannot be read under an older version of the format (e.g.
-   adding and using a new compression algorithm).
+   adding and using a new compression algorithm). It is expected
+   any feature in this category will provide a signal to older readers, so they can unambiguously determine that they cannot
+   properly read the file (e.g. via changing the `PAR1` magic number).
 
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
@@ -121,41 +122,39 @@ mass of Parquet implementations support a feature to avoid compatibility issues
 across the ecosystem.  Therefore, the Parquet PMC gives the following
 recommendations for managing features:
 
-1. Backwards compatibility is the concern of implementations but given the
+1. Backward compatibility is the concern of implementations but given the
    ubiquity of Parquet and the length of time it has been used, libraries should
    support reading older versions of the format to the greatest extent possible.
 
-2. Forwards compatible features/changes may be enabled and used by default in implementations
+2. Forward compatible features/changes may be enabled and used by default in implementations
    once the parquet-format containing those changes has been formally released.
    For features that may pose a significant performance regression to older
    format readers, libaries should consider delaying default enablement until 1
    year after the release of the parquet-java implementation that contains the
    feature implementation.
 
-3. Forwards incompatible features/changes should not be turned on by default
+3. Forward incompatible features/changes should not be turned on by default
    until 2 years after the parquet-java implementation containing the feature is
    released. It is recommended that changing the default value for a forward
-   incompatible feature flag be done as part of a major release of an
-   implementation (it is out of the scope for this guidance on how and when
-   implementations decide to do releases).
+   incompatible feature flag should be clearly advertised to consumers (e.g. via a major version release if using Semantic Versioning, or highlighed in release notes).
 
 For forward compatible changes which have a high chance of performance
 regression for older readers and forward incompatible changes, implementations
-should clearly document the compatibility issues and should consider logging a
-warning when such a feature is used. Additionally, while it is up to maintainers
+should clearly document the compatibility issues. Additionally, while it is up to maintainers
 of individual implementations to make the best decision to serve their
 ecosystem, they are encouraged to start enabling features by default along the
-same timelines as parquet-java.  Parquet-java will aim to enable features by
-default based on the most conservative timelines outlined above.
+same timelines as `parquet-java`.  Parquet-java will wait to enable features by
+default until the most conservative timelines outlined above 
+have been exceeded.
 
 For features released prior to October 2024, target dates for each of these
-categories will be updated as part of the parquet-java 2.0 process based on a
+categories will be updated as part of the `parquet-java 2.0` release process based on a
 collected feature compatibility matrix.
 
-For each release of parquet-java or parquet-format that influences this guidance
+For each release of `parquet-java` or `parquet-format` that influences this guidance
 it is expected exact dates will be added to parquet-format to provide clarity to
-implementors (e.g. When parquet-java 2.X.X is released, any new format features
-it uses will be updated with concrete dates). As part of parquet-format
+implementors (e.g. When `parquet-java` 2.X.X is released, any new format features
+it uses will be updated with concrete dates). As part of `parquet-format`
 releases the compatibility matrix will be updated to contain the release date
 in the format. Implementations are also encouraged to provide implementation
 date/release version information when updating the feature matrix.
