@@ -286,22 +286,32 @@ struct GeometryStatistics {
 
   /**
    * The geometry types of all geometries, or an empty array if they are not
-   * known. It follows the same rule of `geometry_types` column metadata of
-   * GeoParquet. Accepted geometry types are: "Point", "LineString", "Polygon",
-   * "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection".
+   * known. This is borrowed from `geometry_types` column metadata of GeoParquet [1]
+   * except that values in the list are WKB (ISO variant) integer codes [2]. Table
+   * below shows the most common geometry types and their codes:
+   *
+   * | Type               | XY   | XYZ  | XYM  | XYZM |
+   * | :----------------- | :--- | :--- | :--- | :--: |
+   * | Point              | 0001 | 1001 | 2001 | 3001 |
+   * | LineString         | 0002 | 1002 | 2002 | 3002 |
+   * | Polygon            | 0003 | 1003 | 2003 | 3003 |
+   * | MultiPoint         | 0004 | 1004 | 2004 | 3004 |
+   * | MultiLineString    | 0005 | 1005 | 2005 | 3005 |
+   * | MultiPolygon       | 0006 | 1006 | 2006 | 3006 |
+   * | GeometryCollection | 0007 | 1007 | 2007 | 3007 |
    *
    * In addition, the following rules are used:
-   * - In case of 3D geometries, a `" Z"` suffix gets added (e.g. `["Point Z"]`).
    * - A list of multiple values indicates that multiple geometry types are
-   *   present (e.g. `["Polygon", "MultiPolygon"]`).
+   *   present (e.g. `[0003, 0006]`).
    * - An empty array explicitly signals that the geometry types are not known.
-   * - The geometry types in the list must be unique (e.g. `["Point", "Point"]`
+   * - The geometry types in the list must be unique (e.g. `[0001, 0001]`
    *   is not valid).
    *
-   * Please refer to link below for more detail:
-   * https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
+   * Please refer to links below for more detail:
+   * [1] https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
+   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
    */
-  3: optional list<string> geometry_types;
+  3: optional list<i32> geometry_types;
 }
 
 /**
@@ -480,14 +490,14 @@ struct GeometryType {
    */
   1: required GeometryEncoding encoding;
   /**
+   * Edges of polygon.
+   */
+  2: required Edges edges;
+  /**
    * Coordinate Reference System, i.e. mapping of how coordinates refer to
    * precise locations on earth, e.g. OGC:CRS84
    */
-  2: optional string crs;
-  /**
-   * Edges of polygon.
-   */
-  3: optional Edges edges;
+  3: optional string crs;
   /**
    * Additional informative metadata.
    * It can be used by GeoParquet to offload some of the column metadata.
