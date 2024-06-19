@@ -23,7 +23,8 @@ Parquet Logical Type Definitions
 Logical types are used to extend the types that parquet can be used to store,
 by specifying how the primitive types should be interpreted. This keeps the set
 of primitive types to a minimum and reuses parquet's efficient encodings. For
-example, strings are stored as byte arrays (binary) with a UTF8 annotation.
+example, strings are stored with the primitive type `BYTE_ARRAY` with a `STRING`
+annotation.
 
 This file contains the specification for all logical types.
 
@@ -59,7 +60,7 @@ Compatibility considerations are mentioned for each annotation in the correspond
 
 ### STRING
 
-`STRING` may only be used to annotate the binary primitive type and indicates
+`STRING` may only be used to annotate the `BYTE_ARRAY` primitive type and indicates
 that the byte array should be interpreted as a UTF-8 encoded character string.
 
 The sort order used for `STRING` strings is unsigned byte-wise comparison.
@@ -70,7 +71,7 @@ The sort order used for `STRING` strings is unsigned byte-wise comparison.
 
 ### ENUM
 
-`ENUM` annotates the binary primitive type and indicates that the value
+`ENUM` annotates the `BYTE_ARRAY` primitive type and indicates that the value
 was converted from an enumerated type in another data model (e.g. Thrift, Avro, Protobuf).
 Applications using a data model lacking a native enum type should interpret `ENUM`
 annotated field as a UTF-8 encoded string. 
@@ -79,9 +80,9 @@ The sort order used for `ENUM` values is unsigned byte-wise comparison.
 
 ### UUID
 
-`UUID` annotates a 16-byte fixed-length binary. The value is encoded using
-big-endian, so that `00112233-4455-6677-8899-aabbccddeeff` is encoded as the
-bytes `00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff`
+`UUID` annotates a 16-byte `FIXED_LEN_BYTE_ARRAY` primitive type. The value is
+encoded using big-endian, so that `00112233-4455-6677-8899-aabbccddeeff` is encoded
+as the bytes `00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff`
 (This example is from [wikipedia's UUID page][wiki-uuid]).
 
 The sort order used for `UUID` values is unsigned byte-wise comparison.
@@ -211,8 +212,8 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 `DECIMAL` annotation represents arbitrary-precision signed decimal numbers of
 the form `unscaledValue * 10^(-scale)`.
 
-The primitive type stores an unscaled integer value. For byte arrays, binary
-and fixed, the unscaled number must be encoded as two's complement using
+The primitive type stores an unscaled integer value. For `BYTE_ARRAY` and 
+`FIXED_LEN_BYTE_ARRAY`, the unscaled number must be encoded as two's complement using
 big-endian byte order (the most significant byte is the zeroth element). The
 scale stores the number of digits of that value that are to the right of the
 decimal point, and the precision stores the maximum number of digits supported
@@ -228,7 +229,7 @@ integer. A precision too large for the underlying type (see below) is an error.
   warning
 * `fixed_len_byte_array`: precision is limited by the array size. Length `n`
   can store &lt;= `floor(log_10(2^(8*n - 1) - 1))` base-10 digits
-* `binary`: `precision` is not limited, but is required. The minimum number of
+* `byte_array`: `precision` is not limited, but is required. The minimum number of
   bytes to store the unscaled value should be used.
 
 The sort order used for `DECIMAL` values is signed comparison of the represented
@@ -251,7 +252,7 @@ The `FLOAT16` annotation represents half-precision floating-point numbers in the
 
 Used in contexts where precision is traded off for smaller footprint and potentially better performance.
 
-The primitive type is a 2-byte fixed length binary.
+The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
 
 The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
 
@@ -544,8 +545,8 @@ Embedded types do not have type-specific orderings.
 
 ### JSON
 
-`JSON` is used for an embedded JSON document. It must annotate a `binary`
-primitive type. The `binary` data is interpreted as a UTF-8 encoded character
+`JSON` is used for an embedded JSON document. It must annotate a `BYTE_ARRAY`
+primitive type. The `BYTE_ARRAY` data is interpreted as a UTF-8 encoded character
 string of valid JSON as defined by the [JSON specification][json-spec]
 
 [json-spec]: http://json.org/
@@ -554,8 +555,8 @@ The sort order used for `JSON` is unsigned byte-wise comparison.
 
 ### BSON
 
-`BSON` is used for an embedded BSON document. It must annotate a `binary`
-primitive type. The `binary` data is interpreted as an encoded BSON document as
+`BSON` is used for an embedded BSON document. It must annotate a `BYTE_ARRAY`
+primitive type. The `BYTE_ARRAY` data is interpreted as an encoded BSON document as
 defined by the [BSON specification][bson-spec].
 
 [bson-spec]: http://bsonspec.org/spec.html
@@ -604,14 +605,14 @@ The following examples demonstrate two of the possible lists of string values.
 // List<String> (list non-null, elements nullable)
 required group my_list (LIST) {
   repeated group list {
-    optional binary element (UTF8);
+    optional binary element (STRING);
   }
 }
 
 // List<String> (list nullable, elements non-null)
 optional group my_list (LIST) {
   repeated group list {
-    required binary element (UTF8);
+    required binary element (STRING);
   }
 }
 ```
@@ -642,7 +643,7 @@ even though the repeated group is named `element`.
 ```
 optional group my_list (LIST) {
   repeated group element {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 ```
@@ -672,7 +673,7 @@ optional group my_list (LIST) {
 // List<Tuple<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
-    required binary str (UTF8);
+    required binary str (STRING);
     required int32 num;
   };
 }
@@ -680,14 +681,14 @@ optional group my_list (LIST) {
 // List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group array {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 
 // List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group my_list_tuple {
-    required binary str (UTF8);
+    required binary str (STRING);
   };
 }
 ```
@@ -723,7 +724,7 @@ nullable integers:
 // Map<String, Integer>
 required group my_map (MAP) {
   repeated group key_value {
-    required binary key (UTF8);
+    required binary key (STRING);
     optional int32 value;
   }
 }
@@ -752,7 +753,7 @@ Examples that can be interpreted using these rules:
 // Map<String, Integer> (nullable map, non-null values)
 optional group my_map (MAP) {
   repeated group map {
-    required binary str (UTF8);
+    required binary str (STRING);
     required int32 num;
   }
 }
@@ -760,7 +761,7 @@ optional group my_map (MAP) {
 // Map<String, Integer> (nullable map, nullable values)
 optional group my_map (MAP_KEY_VALUE) {
   repeated group map {
-    required binary key (UTF8);
+    required binary key (STRING);
     optional int32 value;
   }
 }
