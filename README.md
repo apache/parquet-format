@@ -290,6 +290,13 @@ There are many places in the format for compatible extensions:
 - Encodings: Encodings are specified by enum and more can be added in the future.
 - Page types: Additional page types can be added and safely skipped.
 
+## Compatibility
+Because of the many features that have been added to the Parquet format not all
+of the implementations was able to keep up. We introduced the list of "core
+features". This document is versioned by the Parquet format releases and defines
+a compliance level for the different implementations. See
+[CoreFeatures.md](CoreFeatures.md) for more details.
+
 ## Contributing
 Comment on the issue and/or contact [the parquet-dev mailing list](http://mail-archives.apache.org/mod_mbox/parquet-dev/) with your questions and ideas.
 Changes to this core format definition are proposed and discussed in depth on the mailing list. You may also be interested in contributing to the Parquet-Java subproject, which contains all the Java-side implementation and APIs. See the "How To Contribute" section of the [Parquet-Java project](https://github.com/apache/parquet-java#how-to-contribute)

@@ -1186,6 +1186,13 @@ struct FileMetaData {
    * Used only in encrypted files with plaintext footer. 
    */ 
   9: optional binary footer_signing_key_metadata
+
+  /**
+   * This field might be set with the version number of a parquet-format release
+   * if this file is created by using only the features listed in the related
+   * list of core features. See CoreFeatures.md for details.
+   */
+  10: optional string compliance_level
 }
 
 /** Crypto metadata for files with encrypted footer **/
