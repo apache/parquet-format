@@ -323,9 +323,6 @@ struct FixedSizeListType {        // allowed for FIXED_LEN_BYTE_ARRAY[num_values
     1: required Type type;        // see LogicalTypes.md
     2: required i32 num_values;
 }
-struct VariableSizeListType {     // allowed for BYTE_ARRAY, see LogicalTypes.md
-    1: required Type type;
-}
 
 /**
  * Logical type to annotate a column that is always null.
@@ -502,7 +499,6 @@ union LogicalType {
   17: GeometryType GEOMETRY                    // no compatible ConvertedType
   18: GeographyType GEOGRAPHY                  // no compatible ConvertedType
   19: FixedSizeListType FIXED_SIZE_LIST        // no compatible ConvertedType
-  20: VariableSizeListType VARIABLE_SIZE_LIST  // no compatible ConvertedType
 }
 
 /**
