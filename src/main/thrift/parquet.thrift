@@ -867,7 +867,12 @@ struct ColumnChunk {
     **/
   1: optional string file_path
 
-  /** Byte offset in file_path to the ColumnMetaData **/
+  /** Byte offset in file_path to the ColumnMetaData.
+   Note: most writers include the ColumnMetadata inline (via meta_data).
+   While the presence of this field implies that ColumnMetaData can be
+   stored separately in the file, this is is not supported by many implementations
+   which assume meta_data is set.
+   **/
   2: required i64 file_offset
 
   /** Column metadata for this chunk. This is the same content as what is at
