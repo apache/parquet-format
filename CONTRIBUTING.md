@@ -112,7 +112,7 @@ For the purposes of this discussion we classify features into the following buck
    adding and using a new compression algorithm). It is expected any feature in
    this category will provide a signal to older readers, so they can
    unambiguously determine that they cannot properly read the file (e.g. via
-   changing the `PAR1` magic number).
+   adding a new value to an existing enum).
 
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
