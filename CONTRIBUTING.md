@@ -165,8 +165,6 @@ the release date in the format. Implementations are also encouraged to provide
 implementation date/release version information when updating the feature
 matrix.
 
-End users of software are generally encouraged to follow the same guidance
-detailed above unless they have mechanisms for ensuring the version of all
-possible readers of the Parquet files support the feature they want to enable.
-One way of doing this is to cross-reference feature matrix and any relevant
-vendor documentation.
+End users of software are generally encouraged to consult the feature matrix
+and vendor documentation before enabling features that are not yet widely
+adopted.
