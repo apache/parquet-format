@@ -876,7 +876,7 @@ struct ColumnChunk {
    * Writers should set this field to 0 if no ColumnMetaData has been written outside
    * the footer.
    */
-  2: required i64 file_offset
+  2: required i64 file_offset = 0
 
   /** Column metadata for this chunk. Some writers may also replicate this at the
    * location pointed to by file_path/file_offset.
