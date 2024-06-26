@@ -84,7 +84,7 @@ from their respective main branch (i.e. backporting is not expected).
    the source of truth for the encoding).
 
 3. New compression mechanisms must have a pure Java implementation that can be
-   used as dependency in `parquet-java`.
+   used as a dependency in `parquet-java`.
 
 ### Releases
 
