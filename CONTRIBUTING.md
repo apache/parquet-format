@@ -34,7 +34,7 @@ https://github.com/apache/parquet-format/blob/master/LICENSE
 
 Note: This section applies to actual functional changes to the specification.
 Fixing typos, grammar, and clarifying concepts that would not change the
-semantics of the specification can be done as long a comitter feels comfortable
+semantics of the specification can be done as long as a committer feels comfortable
 to merge them. When in doubt starting a discussion on the dev mailing list is
 encouraged.
 
