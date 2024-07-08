@@ -256,6 +256,14 @@ The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
 
 The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
 
+### VARIABLE_SIZE_LIST
+
+The `VARIABLE_SIZE_LIST` annotation represents a variable-size list of elements
+of a primitive data type. It must annotate a `BYTE_ARRAY` primitive type.
+
+The `BYTE_ARRAY` data is interpreted as a variable size sequence of elements of
+the same primitive data type.
+
 ## Temporal Types
 
 ### DATE
