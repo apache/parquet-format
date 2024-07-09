@@ -43,11 +43,11 @@ The general steps for adding features to the format are as follows:
 1. Discuss changes on the developer mailing list (dev@parquet.apache.org).
    Often times it is helpful to link to a draft pull request to make the
    discussion concrete. This step is complete when there is lazy consensus. Part
-   of the consensus is whether it sufficient to provide 2 working
-   implementations as outlined in step 2 or if demonstration of the feature with
-   a down-stream query engine is necessary to justify the feature (e.g.
-   demonstrate performance improvements in Arrow's DataSet library or Apache
-   Data Fusion or another open source engine).
+   of the consensus is whether it is sufficient to provide two working
+   implementations as outlined in step 2, or if demonstration of the feature with
+   a downstream query engine is necessary to justify the feature (e.g.
+   demonstrate performance improvements in the Apache Arrow C++ Dataset library,
+   the Apache DataFusion query engine, or any other open source engine).
 
 2. Once a change has lazy consensus, two implementations of the feature
    demonstrating interopability must also be provided.  One implementation MUST
@@ -58,7 +58,7 @@ The general steps for adding features to the format are as follows:
    of the PMC any open source Parquet implementation may be acceptable.
    Implementations whose contributors actively participate in the community
    (e.g. keep their feature matrix up-to-date on the Parquet website) are more
-   likely to be considered. If discussed as a requirement in step one,
+   likely to be considered. If discussed as a requirement in step 1 above,
    demonstration of integration with a query engine is also required for this
    step. The implementations must be made available publicly, and they should be
    fit for inclusion (for example, they were submitted as a pull request against
