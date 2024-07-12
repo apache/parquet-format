@@ -40,19 +40,27 @@ encouraged.
 
 The general steps for adding features to the format are as follows:
 
-1. Design/scoping: The goal of this phase is to identify design goals of a feature and provide some demonstration that the feature meets those goals. This phase starts with a discussion of changes on the developer mailing list (dev@parquet.apache.org). Depending on the scope and goals of the feature the it can be useful to provide additional artifacts as part of a discussion. The artifacts can include a 
-design docuemnt, a draft pull request to make the
-   discussion concrete and/or an prototype implementation to demostrate the viability of implementation. This step is complete when there is lazy consensus. Part
-   of the consensus is whether it is sufficient to provide two working
-   implementations as outlined in step 2, or if demonstration of the feature with
-   a downstream query engine is necessary to justify the feature (e.g.
-   demonstrate performance improvements in the Apache Arrow C++ Dataset library,
-   the Apache DataFusion query engine, or any other open source engine).
+1. Design/scoping: The goal of this phase is to identify design goals of a
+   feature and provide some demonstration that the feature meets those goals.
+   This phase starts with a discussion of changes on the developer mailing list
+   (dev@parquet.apache.org). Depending on the scope and goals of the feature the
+   it can be useful to provide additional artifacts as part of a discussion. The
+   artifacts can include a design docuemnt, a draft pull request to make the
+   discussion concrete and/or an prototype implementation to demostrate the
+   viability of implementation. This step is complete when there is lazy
+   consensus. Part of the consensus is whether it is sufficient to provide two
+   working implementations as outlined in step 2, or if demonstration of the
+   feature with a downstream query engine is necessary to justify the feature
+   (e.g.  demonstrate performance improvements in the Apache Arrow C++ Dataset
+   library, the Apache DataFusion query engine, or any other open source
+   engine).
 
-2. Completeness: The goal of this phase is to ensure the feature is
-viable, there is no ambiguity in its specification by demonstrating compatibility between implementations. Once a change has lazy consensus, two implementations of the feature
-   demonstrating interopability must also be provided.  One implementation MUST
-   be [`parquet-java`](http://github.com/apache/parquet-java).  It is preferred
+2. Completeness: The goal of this phase is to ensure the feature is viable,
+   there is no ambiguity in its specification by demonstrating compatibility
+   between implementations. Once a change has lazy consensus, two
+   implementations of the feature demonstrating interopability must also be
+   provided.  One implementation MUST be
+   [`parquet-java`](http://github.com/apache/parquet-java).  It is preferred
    that the second implementation be
    [`parquet-cpp`](https://github.com/apache/arrow) or
    [`parquet-rs`](https://github.com/apache/arrow-rs), however at the discretion
@@ -63,12 +71,14 @@ viable, there is no ambiguity in its specification by demonstrating compatibilit
    demonstration of integration with a query engine is also required for this
    step. The implementations must be made available publicly, and they should be
    fit for inclusion (for example, they were submitted as a pull request against
-   the target repository and committers gave positive reviews). Reports on the benefits from closed source implementations
-   are welcome and can help lend weight to features desirability but
-   are not sufficient for acceptance of a new feature.
+   the target repository and committers gave positive reviews). Reports on the
+   benefits from closed source implementations are welcome and can help lend
+   weight to features desirability but are not sufficient for acceptance of a
+   new feature.
 
 Unless otherwise discussed, it is expected the implementations will be developed
-from their respective main branch (i.e. backporting is not required), to demonstrate that the feature is mergeable to its implementation.
+from their respective main branch (i.e. backporting is not required), to
+demonstrate that the feature is mergeable to its implementation.
 
 3. Ratification: After the first two steps are complete a formal vote is held on
    dev@parquet.apache.org to officially ratify the feature.  After the vote
@@ -110,8 +120,9 @@ For the purposes of this discussion we classify features into the following buck
 
 2. Forward compatible. A file written under a newer version of the format with
    the feature enabled can be read under an older version of the format, but
-   some metadata might be missing or performance might be suboptimal. Simply phrased, forward compatible means all
-   data can be read back in an older version of the format.
+   some metadata might be missing or performance might be suboptimal. Simply
+   phrased, forward compatible means all data can be read back in an older
+   version of the format.
 
 3. Forward incompatible. A file written under a newer version of the format with
    the feature enabled cannot be read under an older version of the format (e.g.
