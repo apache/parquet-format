@@ -62,10 +62,11 @@ The general steps for adding features to the format are as follows:
    demonstration of integration with a query engine is also required for this
    step. The implementations must be made available publicly, and they should be
    fit for inclusion (for example, they were submitted as a pull request against
-   the target repository and committers gave positive reviews).
+   the target repository and committers gave positive reviews). Reports on the benefits from closed source implementations
+   are welcome and help in deciding x
 
 Unless otherwise discussed, it is expected the implementations will be developed
-from their respective main branch (i.e. backporting is not expected).
+from their respective main branch (i.e. backporting is not required), to demonstrate that the feature is mergeable to its implementation.
 
 3. After the first two steps are complete a formal vote is held on
    dev@parquet.apache.org to officially ratify the feature.  After the vote
@@ -81,7 +82,9 @@ from their respective main branch (i.e. backporting is not expected).
 
 2. New encodings should be fully specified in this repository and ideally not
    rely on an external dependencies for implementation (i.e. `parquet-format` is
-   the source of truth for the encoding).
+   the source of truth for the encoding). If it does require an
+   external dependency, then the external dependency must have its
+   own specification separate from implementation.
 
 3. New compression mechanisms must have a pure Java implementation that can be
    used as a dependency in `parquet-java`.
@@ -105,7 +108,8 @@ For the purposes of this discussion we classify features into the following buck
 
 2. Forward compatible. A file written under a newer version of the format with
    the feature enabled can be read under an older version of the format, but
-   some information might be missing or performance might be suboptimal.
+   some metadata might be missing or performance might be suboptimal. Simply phrased, forward compatible means all
+   data can be read back in an older version of the format.
 
 3. Forward incompatible. A file written under a newer version of the format with
    the feature enabled cannot be read under an older version of the format (e.g.
