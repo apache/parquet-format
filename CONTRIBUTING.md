@@ -40,16 +40,17 @@ encouraged.
 
 The general steps for adding features to the format are as follows:
 
-1. Discuss changes on the developer mailing list (dev@parquet.apache.org).
-   Often times it is helpful to link to a draft pull request to make the
-   discussion concrete. This step is complete when there is lazy consensus. Part
+1. Design/scoping: The goal of this phase is to identify design goals of a feature and provide some demonstration that the feature meets those goals. This phase starts with a discussion of changes on the developer mailing list (dev@parquet.apache.org). Depending on the scope and goals of the feature the it can be useful to provide additional artifacts as part of a discussion. The artifacts can include a 
+design docuemnt, a draft pull request to make the
+   discussion concrete and/or an prototype implementation to demostrate the viability of implementation. This step is complete when there is lazy consensus. Part
    of the consensus is whether it is sufficient to provide two working
    implementations as outlined in step 2, or if demonstration of the feature with
    a downstream query engine is necessary to justify the feature (e.g.
    demonstrate performance improvements in the Apache Arrow C++ Dataset library,
    the Apache DataFusion query engine, or any other open source engine).
 
-2. Once a change has lazy consensus, two implementations of the feature
+2. Completeness: The goal of this phase is to ensure the feature is
+viable, there is no ambiguity in its specification by demonstrating compatibility between implementations. Once a change has lazy consensus, two implementations of the feature
    demonstrating interopability must also be provided.  One implementation MUST
    be [`parquet-java`](http://github.com/apache/parquet-java).  It is preferred
    that the second implementation be
@@ -63,12 +64,13 @@ The general steps for adding features to the format are as follows:
    step. The implementations must be made available publicly, and they should be
    fit for inclusion (for example, they were submitted as a pull request against
    the target repository and committers gave positive reviews). Reports on the benefits from closed source implementations
-   are welcome and help in deciding x
+   are welcome and can help lend weight to features desirability but
+   are not sufficient for acceptance of a new feature.
 
 Unless otherwise discussed, it is expected the implementations will be developed
 from their respective main branch (i.e. backporting is not required), to demonstrate that the feature is mergeable to its implementation.
 
-3. After the first two steps are complete a formal vote is held on
+3. Ratification: After the first two steps are complete a formal vote is held on
    dev@parquet.apache.org to officially ratify the feature.  After the vote
    passes the format change is merged into the `parquet-format` repository and
    it is expected the changes from step 2 will also be merged soon after
