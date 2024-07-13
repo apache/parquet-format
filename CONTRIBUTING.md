@@ -17,7 +17,7 @@
   - under the License.
   -->
 
-Recommendations and requirements for how to best contribute to Parquet. We strive to obey these as best as possible. As always, thanks for contributing--we hope these guidelines make it easier and shed some light on our approach and processes.
+Recommendations and requirements for how to best contribute to Parquet. We strive to obey these as best as possible. As always, thanks for contributing--we hope these guidelines make it easier and shed some light on our approach and processes. If you believe there should be a change or exception to these rules please bring it up for discussion on the developer mailing list (dev@parquet.apache.org).
 
 ### Key branches
 - `master` has the latest stable changes
@@ -90,8 +90,9 @@ demonstrate that the feature is mergeable to its implementation.
 #### General guidelines/preferences on additions.
 
 1. To the greatest extent possible changes should have an option for forward
-   compatibility (old readers can still read files). The 'compatibility and feature enablement' section below provides
-   more details on expectations for changes that break compatibility.
+   compatibility (old readers can still read files). The 'compatibility and
+   feature enablement' section below provides more details on expectations for
+   changes that break compatibility.
 
 2. New encodings should be fully specified in this repository and not
    rely on an external dependencies for implementation (i.e. `parquet-format` is
@@ -100,7 +101,7 @@ demonstrate that the feature is mergeable to its implementation.
    own specification separate from implementation.
 
 3. New compression mechanisms should have a pure Java implementation that can be
-   used as a dependency in `parquet-java`, exceptions may be 
+   used as a dependency in `parquet-java`, exceptions may be
    discussed on the mailing list to see if a non-native Java
    implementation is acceptable.
 
@@ -173,9 +174,9 @@ the same timelines as `parquet-java`.  Parquet-java will wait to enable features
 by default until the most conservative timelines outlined above have been
 exceeded. This timeline is an attempt to balance ensuring
 new features make there way into the ecosystem and avoiding
-breaking compatiblity for readers that are slower to adopt new standards. We encourage earlier adoption of new features when 
-an organization using Parquet can guarantee that
-all readers of the parquet files they produce can read a new 
+breaking compatiblity for readers that are slower to adopt new standards. We
+encourage earlier adoption of new features when an organization using Parquet
+can guarantee that all readers of the parquet files they produce can read a new
 feature.
 
 
