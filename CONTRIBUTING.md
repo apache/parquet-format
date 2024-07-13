@@ -170,15 +170,19 @@ regression for older readers and forward incompatible changes, implementations
 should clearly document the compatibility issues. Additionally, while it is up
 to maintainers of individual open-source implementations to make the best decision to serve
 their ecosystem, they are encouraged to start enabling features by default along
-the same timelines as `parquet-java`.  Parquet-java will wait to enable features
+the same timelines as `parquet-java`. Parquet-java will wait to enable features
 by default until the most conservative timelines outlined above have been
 exceeded. This timeline is an attempt to balance ensuring
-new features make there way into the ecosystem and avoiding
+new features make their way into the ecosystem and avoiding
 breaking compatiblity for readers that are slower to adopt new standards. We
 encourage earlier adoption of new features when an organization using Parquet
 can guarantee that all readers of the parquet files they produce can read a new
 feature.
 
+After turning a feature on by default implementations
+are encouraged to keep a configuration to turn off the feature.
+A recommendation for full deprecation will be made in a future
+iteration of this document.
 
 For features released prior to October 2024, target dates for each of these
 categories will be updated as part of the `parquet-java 2.0` release process
