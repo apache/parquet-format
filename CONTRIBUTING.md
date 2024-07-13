@@ -90,16 +90,19 @@ demonstrate that the feature is mergeable to its implementation.
 #### General guidelines/preferences on additions.
 
 1. To the greatest extent possible changes should have an option for forward
-   compatibility (old readers can still read files).
+   compatibility (old readers can still read files). The 'compatibility and feature enablement' section below provides
+   more details on expectations for changes that break compatibility.
 
-2. New encodings should be fully specified in this repository and ideally not
+2. New encodings should be fully specified in this repository and not
    rely on an external dependencies for implementation (i.e. `parquet-format` is
    the source of truth for the encoding). If it does require an
    external dependency, then the external dependency must have its
    own specification separate from implementation.
 
-3. New compression mechanisms must have a pure Java implementation that can be
-   used as a dependency in `parquet-java`.
+3. New compression mechanisms should have a pure Java implementation that can be
+   used as a dependency in `parquet-java`, exceptions may be 
+   discussed on the mailing list to see if a non-native Java
+   implementation is acceptable.
 
 ### Releases
 
@@ -164,11 +167,17 @@ recommendations for managing features:
 For forward compatible changes which have a high chance of performance
 regression for older readers and forward incompatible changes, implementations
 should clearly document the compatibility issues. Additionally, while it is up
-to maintainers of individual implementations to make the best decision to serve
+to maintainers of individual open-source implementations to make the best decision to serve
 their ecosystem, they are encouraged to start enabling features by default along
 the same timelines as `parquet-java`.  Parquet-java will wait to enable features
 by default until the most conservative timelines outlined above have been
-exceeded.
+exceeded. This timeline is an attempt to balance ensuring
+new features make there way into the ecosystem and avoiding
+breaking compatiblity for readers that are slower to adopt new standards. We encourage earlier adoption of new features when 
+an organization using Parquet can guarantee that
+all readers of the parquet files they produce can read a new 
+feature.
+
 
 For features released prior to October 2024, target dates for each of these
 categories will be updated as part of the `parquet-java 2.0` release process
