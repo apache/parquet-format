@@ -323,25 +323,9 @@ std::string AppendExtension(std::string thrift, std::string ext) {
 }
 ```
 
-To facilitate independence of extensions between organizations the last 3 bytes
-of an extension contain a magic number. The current reserved magic numbers are:
-
-| Magic | Organization |
-|-------|--------------|
-| `PAR` | Reserved for the future when an extension replaces `PAR1` |
-| `PER` | Reserved for the future when an extension replaces `PARE` |
-| `ASF` | Apache |
-| `AWS` | Amazon |
-| `CDH` | Cloudera |
-| `CRM` | Salesforce |
-| `DBR` | Databricks |
-| `EXP` | Apache/Experimental |
-
-To reserve additional magic numbers, file a JIRA and send a PR.
-
-The magic is 3 bytes because it is always followed by the 0 byte, the thrift
-field stop byte. Together this defines a 4 byte magic number, which can be used
-in place of existing parquet magic numbers.
+Implementers MUST make their extensions distinguishable. This can be achieved by
+appending/prepending a UUID to the extension bytes. The spec intentionally does
+not specify this mechanism to allow flexibility.
 
 #### An example FileMetaData replacement and migration plan
 
@@ -364,32 +348,29 @@ To satisfy these requirements we define our `FileMetaData` extension as:
     4 bytes: little endian crc32 of the previous N bytes
     4 bytes: N in little endian
     4 bytes: little endian crc32 of N
-    3 bytes: 3-byte magic extension from the table above
+   16 bytes: UUID for the extension: 38179DC1-DDA5-4CAD-9A82-C9079FF1D8BE
 
 Each field plays its role to satisfy the requirements. In reverse order:
-1. 3-byte magic extension: as per the specification. When this new
-`FileMetaData` replaces the old, we can replace the thrift `FileMetaData`
-including the trailing 8 bytes and replace them with our extension plus the
-null byte verbatim.
+1. 16-byte UUID. This distinguishes this extensions from other extensions.
 2. `le32(N)` + `crc32(N)`: The pair of len and its crc32 is useful to validate
 that the length is correct. Otherwise we might be tripped to read an
 unspecified number of bytes only to later find their crc32 does not match.
-3. `crc32(bytes)`: The crc32 of the new `FileMetaData` itself is important to
+1. `crc32(bytes)`: The crc32 of the new `FileMetaData` itself is important to
 avoid reading corrupt or erroneous metadata.
-4. The bytes of the encoding. This should be in our new encoding, for the sake
+1. The bytes of the encoding. This should be in our new encoding, for the sake
 of argument flatbuffers, prefixed with an ID so that we as we experiment can
 distinguish different versions of metadata.
 
 The development and migration plan might look like:
 1. A period where the new `FileMetaData` will be written after the old, with a
-non-reserved 3 byte magic, say `DBR`.
-2. Once the format stabilizes and is considered final, it is brought to the
+UUID 38179DC1-DDA5-4CAD-9A82-C9079FF1D8BE.
+1. Once the format stabilizes and is considered final, it is brought to the
 parquet commitee for ratification.
-3. When ratified the extension is moved to an approved state and takes the
-reserved 3 byte magic `PAR`.
-4. After a long period of writing both old `FileMetaData` and new `FileMetaData`
+1. When ratified the extension is moved to an approved state and the UUID is
+replaced by UUID F748C824-7AE0-4255-90B0-594DED364C5C.
+1. After a long period of writing both old `FileMetaData` and new `FileMetaData`
 writers start writing the new `FileMetaData` only. As a result the format of
-parquet changes to end in the `PAR\0` preceeded by `crc32(N)`, `le32(N)`,
+parquet changes to end in the `PAR3` preceeded by `crc32(N)`, `le32(N)`,
 `crc32(bytes)`, `bytes`.
 
 ## Testing
