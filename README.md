@@ -291,87 +291,44 @@ There are many places in the format for compatible extensions:
 - Page types: Additional page types can be added and safely skipped.
 
 ### Thrift extensions
-Thrift is used for metadata. The Thrift spec mandates that unknown fields are
-skipped. To facilitate extensions Parquet reserves field-id `32767` of *every*
-struct as an ignorable extension point. More specifically Parquet guarantees
-that field-id `32767` will *never* be seen in the official Thrift IDL. The type
-of this field is always `binary` for maximum extensibility and fast skipping by
-thrift parsers.
+Parquet Thrift IDL reserves field-id `32767` of every Thrift struct for extensions. The (Thrift) type of this field is always `binary`. These choices provide some desirable properties:
 
-Such extensions can easily be appended to an existing Thrift serialized message
-without any special APIs. Sample `C++` implementation is provided:
+* Existing readers will ignore these extensions without any modifications  
+* Existing readers will ignore the extension bytes with little processing overhead  
+* The content of the extension is freeform and can be encoded in any format. This format is not restricted to Thrift.  
+* Extensions can be appended to existing Thrift serialized structs [without requiring Thrift libraries](#appending-extensions-to-thrift) for manipulation (or changes to the thrift IDL).
+
+Because only one field-id is reserved the extension bytes themselves require disambiguation; otherwise readers will not be able to decode extensions safely. This is left to implementers which MUST put enough unique state in their extension bytes for disambiguation. This can be relatively easily achieved by adding a [UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the start or end of the extension bytes. The extension does not specify a disambiguation mechanism to allow more flexibility to implementers.
+
+Putting everything together in an example, if we would extend `FileMetaData` it would look like this on the wire.
+
+    N-1 bytes | Thrift compact protocol encoded FileMetadata (minus \0 thrift stop field)
+    4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
+    1-5 bytes | ULEB128(M) encoded size of the extension
+    M bytes   | extension bytes
+    1 byte    | \0 (thrift stop field)
+
+The choice to reserve only one field-id has an additional (and frankly unintended) property. It creates scarcity in the extension space and disincentivizes vendors from keeping their extensions private. As a vendor having an extension means one cannot use it in tandem with other extensions from other vendors even if such extensions are publicly known. The easiest path of interoperability and ability to further experiment is to push an extension through standardization and continue experimenting with other ideas internally on top of the (now) standardized version.
+
+#### Appending extensions to thrift
 
 ```c++
 std::string AppendExtension(std::string thrift, std::string ext) {
-  auto append_uleb = [](uint32_t x, std::string* out) {
-    while (true) {
-      int c = x & 0x7F;
-      if ((x >>= 7) == 0) {
-        out->push_back(c);
-        return;
-      } else {
-        out->push_back(c | 0x80);
-      }
-    }
-  };
-  thrift.pop_back();  // remove the trailing 0
-  thrift += "\x08\xFF\xFF\x01";  // long form field header for 32767: binary
-  append_uleb(ext.size(), &thrift);
+  thrift.pop_back();                // remove the stop field
+  thrift += "\x08";                 // binary
+  AppendUleb(32767, &thrift);       // field-id
+  AppendUleb(ext.size(), &thrift);  // field isze
   thrift += ext;
-  thrift += "\x00";  // add the trailing 0 back
+  thrift += "\x00";                 // add the stop field
   return thrift;
 }
 ```
 
-Implementers MUST make their extensions distinguishable. This can be achieved by
-appending/prepending a UUID to the extension bytes. The spec intentionally does
-not specify this mechanism to allow flexibility.
+#### Path to standardization
 
-#### An example FileMetaData replacement and migration plan
+So far the above specification shows how different vendors can add extensions without stepping on each other's toes. As long as extensions are private this works out ok.
 
-Consider the case of extending `FileMetaData` a full replacement. That is
-the new encoding contains all the information of `FileMetaData` and readers
-that know about it can elide parsing the current thrift `FileMetaData`. This
-extension has additional considerations and requirements.
-
-First, observe that `FileMetaData` is located between the last column chunk
-and the 4-byte length plus 4-byte `PAR1` magic. Sophisticated parquet readers,
-typically read the tail of files speculatively and expect to find the full
-footer in that fetch. Thus our extension must be decodable from the end of the
-file, and without having to fetch the full old `FileMetaData` thrift encoding.
-As a corollary finding the bounds of the extension should not require thrift
-parsing.
-
-To satisfy these requirements we define our `FileMetaData` extension as:
-
-    N bytes: the new `FileMetaData` replacement - in some encoding
-    4 bytes: little endian crc32 of the previous N bytes
-    4 bytes: N in little endian
-    4 bytes: little endian crc32 of N
-   16 bytes: UUID for the extension: 38179DC1-DDA5-4CAD-9A82-C9079FF1D8BE
-
-Each field plays its role to satisfy the requirements. In reverse order:
-1. 16-byte UUID. This distinguishes this extensions from other extensions.
-2. `le32(N)` + `crc32(N)`: The pair of len and its crc32 is useful to validate
-that the length is correct. Otherwise we might be tripped to read an
-unspecified number of bytes only to later find their crc32 does not match.
-1. `crc32(bytes)`: The crc32 of the new `FileMetaData` itself is important to
-avoid reading corrupt or erroneous metadata.
-1. The bytes of the encoding. This should be in our new encoding, for the sake
-of argument flatbuffers, prefixed with an ID so that we as we experiment can
-distinguish different versions of metadata.
-
-The development and migration plan might look like:
-1. A period where the new `FileMetaData` will be written after the old, with a
-UUID 38179DC1-DDA5-4CAD-9A82-C9079FF1D8BE.
-1. Once the format stabilizes and is considered final, it is brought to the
-parquet commitee for ratification.
-1. When ratified the extension is moved to an approved state and the UUID is
-replaced by UUID F748C824-7AE0-4255-90B0-594DED364C5C.
-1. After a long period of writing both old `FileMetaData` and new `FileMetaData`
-writers start writing the new `FileMetaData` only. As a result the format of
-parquet changes to end in the `PAR3` preceeded by `crc32(N)`, `le32(N)`,
-`crc32(bytes)`, `bytes`.
+Unavoidably (and desirably) some extensions will make it into the official specification. Depending on the nature of the extension, migration can take different paths. While it is out of the scope of this document to design all such migrations, we illustrate some of these paths in the [examples](ExtensionExamples.md).
 
 ## Testing
 
