@@ -313,6 +313,15 @@ The choice to reserve only one field-id has an additional (and frankly unintende
 #### Appending extensions to thrift
 
 ```c++
+void AppendUleb(uint32_t x, std::string* s) {
+  while (true) {
+    uint8_t c = x & 0x7F;
+    if (c < 0x80) return s->push_back(c);
+    s->push_back(c + 0x80);
+    x >>= 7;
+  }
+}
+
 std::string AppendExtension(std::string thrift, std::string ext) {
   thrift.pop_back();                // remove the stop field
   thrift += "\x08";                 // binary

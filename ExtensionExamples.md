@@ -1,6 +1,6 @@
 # Parquet extension examples
 
-To illustrate the applicability of the proposed specification we provide examples of fictional extensions to parquet and how migration can play out if/when the community decides to adopt them in the official specification.
+To illustrate the applicability of the extension mechanism we provide examples of fictional extensions to Parquet and how migration can play out if/when the community decides to adopt them in the official specification.
 
 ## Footer
 
@@ -15,7 +15,7 @@ In its private form the footer of a Parquet file will look like so:
     4 bytes   | little-endian crc32(flatbuffer)
     4 bytes   | little-endian size(flatbuffer)
     4 bytes   | little-endian crc32(size(flatbuffer))
-    16 bytes  | UUID1
+    16 bytes  | some-UUID
     1 byte    | \0 (thrift stop field)
     4 bytes   | PAR1
 
@@ -38,11 +38,11 @@ Once the design is ratified the new `FileMetaData` encoding is made final with t
     4 bytes   | little-endian crc32(flatbuffer)
     4 bytes   | little-endian size(flatbuffer)
     4 bytes   | little-endian crc32(size(flatbuffer))
-    16 bytes  | UUID2
+    16 bytes  | some-other-UUID
     1 byte    | \0 (thrift stop field)
     4 bytes   | PAR1
 
-After the migration period, the end of the parquet file may look like this:
+After the migration period, the end of the Parquet file may look like this:
 
     K bytes   | Flatbuffers representation (v1) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
