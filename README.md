@@ -290,54 +290,10 @@ There are many places in the format for compatible extensions:
 - Encodings: Encodings are specified by enum and more can be added in the future.
 - Page types: Additional page types can be added and safely skipped.
 
-### Thrift extensions
-Parquet Thrift IDL reserves field-id `32767` of every Thrift struct for extensions. The (Thrift) type of this field is always `binary`. These choices provide some desirable properties:
+### Thrift [extensions](Extensions.md)
 
-* Existing readers will ignore these extensions without any modifications  
-* Existing readers will ignore the extension bytes with little processing overhead  
-* The content of the extension is freeform and can be encoded in any format. This format is not restricted to Thrift.  
-* Extensions can be appended to existing Thrift serialized structs [without requiring Thrift libraries](#appending-extensions-to-thrift) for manipulation (or changes to the thrift IDL).
-
-Because only one field-id is reserved the extension bytes themselves require disambiguation; otherwise readers will not be able to decode extensions safely. This is left to implementers which MUST put enough unique state in their extension bytes for disambiguation. This can be relatively easily achieved by adding a [UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the start or end of the extension bytes. The extension does not specify a disambiguation mechanism to allow more flexibility to implementers.
-
-Putting everything together in an example, if we would extend `FileMetaData` it would look like this on the wire.
-
-    N-1 bytes | Thrift compact protocol encoded FileMetadata (minus \0 thrift stop field)
-    4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
-    1-5 bytes | ULEB128(M) encoded size of the extension
-    M bytes   | extension bytes
-    1 byte    | \0 (thrift stop field)
-
-The choice to reserve only one field-id has an additional (and frankly unintended) property. It creates scarcity in the extension space and disincentivizes vendors from keeping their extensions private. As a vendor having an extension means one cannot use it in tandem with other extensions from other vendors even if such extensions are publicly known. The easiest path of interoperability and ability to further experiment is to push an extension through standardization and continue experimenting with other ideas internally on top of the (now) standardized version.
-
-#### Appending extensions to thrift
-
-```c++
-void AppendUleb(uint32_t x, std::string* s) {
-  while (true) {
-    uint8_t c = x & 0x7F;
-    if (c < 0x80) return s->push_back(c);
-    s->push_back(c + 0x80);
-    x >>= 7;
-  }
-}
-
-std::string AppendExtension(std::string thrift, std::string ext) {
-  thrift.pop_back();                // remove the stop field
-  thrift += "\x08";                 // binary
-  AppendUleb(32767, &thrift);       // field-id
-  AppendUleb(ext.size(), &thrift);  // field isze
-  thrift += ext;
-  thrift += "\x00";                 // add the stop field
-  return thrift;
-}
-```
-
-#### Path to standardization
-
-So far the above specification shows how different vendors can add extensions without stepping on each other's toes. As long as extensions are private this works out ok.
-
-Unavoidably (and desirably) some extensions will make it into the official specification. Depending on the nature of the extension, migration can take different paths. While it is out of the scope of this document to design all such migrations, we illustrate some of these paths in the [examples](ExtensionExamples.md).
+Parquet Thrift IDL reserves field-id `32767` of every Thrift struct for extensions.
+The (Thrift) type of this field is always `binary`.
 
 ## Testing
 
