@@ -238,6 +238,89 @@ struct SizeStatistics {
 }
 
 /**
+ * Interpretation for edges of GEOMETRY logical type, i.e. whether the edge
+ * between points represent a straight cartesian line or the shortest line on
+ * the sphere. Please note that it only applies to polygons.
+ */
+enum Edges {
+  PLANAR = 0;
+  SPHERICAL = 1;
+}
+
+/**
+ * A custom WKB-encoded polygon or multi-polygon to represent a covering of
+ * geometries. For example, it may be a bounding box or an envelope of geometries
+ * when a bounding box cannot be built (e.g., a geometry has spherical edges, or if
+ * an edge of geographic coordinates crosses the antimeridian). In addition, it can
+ * also be used to provide vendor-agnostic coverings like S2 or H3 grids.
+ */
+struct Covering {
+  /**
+   * A type of covering. Currently accepted values: "WKB".
+   */
+  1: required string kind;
+  /** A payload specific to kind:
+   * - WKB: well-known binary of a POLYGON that completely covers the contents.
+   *   This will be interpreted according to the same CRS and edges defined by
+   *   the logical type.
+   */
+  2: required binary value;
+}
+
+/**
+ * Bounding box of geometries in the representation of min/max value pair of
+ * coordinates from each axis. Values of Z and M are omitted for 2D geometries.
+ */
+struct BoundingBox {
+  1: required double xmin;
+  2: required double xmax;
+  3: required double ymin;
+  4: required double ymax;
+  5: optional double zmin;
+  6: optional double zmax;
+  7: optional double mmin;
+  8: optional double mmax;
+}
+
+/** Statistics specific to GEOMETRY logical type */
+struct GeometryStatistics {
+  /** A bounding box of geometries */
+  1: optional BoundingBox bbox;
+
+  /** A list of coverings of geometries */
+  2: optional list<Covering> coverings;
+
+  /**
+   * The geometry types of all geometries, or an empty array if they are not
+   * known. This is borrowed from `geometry_types` column metadata of GeoParquet [1]
+   * except that values in the list are WKB (ISO variant) integer codes [2]. Table
+   * below shows the most common geometry types and their codes:
+   *
+   * | Type               | XY   | XYZ  | XYM  | XYZM |
+   * | :----------------- | :--- | :--- | :--- | :--: |
+   * | Point              | 0001 | 1001 | 2001 | 3001 |
+   * | LineString         | 0002 | 1002 | 2002 | 3002 |
+   * | Polygon            | 0003 | 1003 | 2003 | 3003 |
+   * | MultiPoint         | 0004 | 1004 | 2004 | 3004 |
+   * | MultiLineString    | 0005 | 1005 | 2005 | 3005 |
+   * | MultiPolygon       | 0006 | 1006 | 2006 | 3006 |
+   * | GeometryCollection | 0007 | 1007 | 2007 | 3007 |
+   *
+   * In addition, the following rules are used:
+   * - A list of multiple values indicates that multiple geometry types are
+   *   present (e.g. `[0003, 0006]`).
+   * - An empty array explicitly signals that the geometry types are not known.
+   * - The geometry types in the list must be unique (e.g. `[0001, 0001]`
+   *   is not valid).
+   *
+   * Please refer to links below for more detail:
+   * [1] https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
+   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
+   */
+  3: optional list<i32> geometry_types;
+}
+
+/**
  * Statistics per row group and per page
  * All fields are optional.
  */
@@ -279,6 +362,9 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+
+   /** statistics specific to geometry logical type */
+   9: optional GeometryStatistics geometry_stats;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -374,6 +460,56 @@ struct BsonType {
 }
 
 /**
+ * Physical type and encoding for the geometry type.
+ */
+enum GeometryEncoding {
+  /**
+   * Allowed for physical type: BYTE_ARRAY.
+   *
+   * Well-known binary (WKB) representations of geometries. It supports 2D or
+   * 3D geometries of the standard geometry types (Point, LineString, Polygon,
+   * MultiPoint, MultiLineString, MultiPolygon, and GeometryCollection). This
+   * is the preferred option for maximum portability.
+   *
+   * This encoding enables GeometryStatistics to be set in the column chunk
+   * and page index.
+   */
+  WKB = 0;
+
+  // TODO: add native encoding from GeoParquet/GeoArrow
+}
+
+/**
+ * Geometry logical type annotation (added in 2.11.0)
+ */
+struct GeometryType {
+  /**
+   * Physical type and encoding for the geometry type. Please refer to the
+   * definition of GeometryEncoding for more detail.
+   */
+  1: required GeometryEncoding encoding;
+  /**
+   * Edges of polygon.
+   */
+  2: required Edges edges;
+  /**
+   * Coordinate Reference System, i.e. mapping of how coordinates refer to
+   * precise locations on earth.
+   */
+  3: optional string crs;
+  /**
+   * Encoding used in the above crs field.
+   * Currently the only allowed value is "PROJJSON".
+   */
+  4: optional string crs_encoding;
+  /**
+   * Additional informative metadata.
+   * It can be used by GeoParquet to offload some of the column metadata.
+   */
+  5: optional binary metadata;
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -403,6 +539,7 @@ union LogicalType {
   13: BsonType BSON           // use ConvertedType BSON
   14: UUIDType UUID           // no compatible ConvertedType
   15: Float16Type FLOAT16     // no compatible ConvertedType
+  16: GeometryType GEOMETRY   // no compatible ConvertedType
 }
 
 /**
@@ -973,6 +1110,7 @@ union ColumnOrder {
    *   ENUM - unsigned byte-wise comparison
    *   LIST - undefined
    *   MAP - undefined
+   *   GEOMETRY - undefined, use GeometryStatistics instead.
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
@@ -1104,6 +1242,9 @@ struct ColumnIndex {
     * Same as repetition_level_histograms except for definitions levels.
     **/
    7: optional list<i64> definition_level_histograms;
+
+   /** A list containing statistics of GEOMETRY logical type for each page */
+   8: optional list<GeometryStatistics> geometry_stats;
 }
 
 struct AesGcmV1 {
