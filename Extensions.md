@@ -106,22 +106,21 @@ If/when the encoding is ratified, it is added to the official specification as a
 ## Appending extensions to thrift
 
 ```c++
-void AppendUleb(uint32_t x, std::string* s) {
+void AppendUleb(uint32_t x, std::string* out) {
   while (true) {
     uint8_t c = x & 0x7F;
-    if (c < 0x80) return s->push_back(c);
-    s->push_back(c + 0x80);
+    if (x < 0x80) return out->push_back(c);
+    out->push_back(c + 0x80);
     x >>= 7;
   }
-}
+};
 
-std::string AppendExtension(std::string thrift, std::string ext) {
-  thrift.pop_back();                // remove the stop field
-  thrift += "\x08";                 // binary
-  AppendUleb(32767, &thrift);       // field-id
-  AppendUleb(ext.size(), &thrift);  // field isze
+std::string AppendExtension(std::string thrift, const std::string& ext) {
+  thrift.back() = '\x08';      // replace stop field with binary type
+  AppendUleb(32767, &thrift);  // field-id
+  AppendUleb(ext.size(), &thrift);
   thrift += ext;
-  thrift += "\x00";                 // add the stop field
+  thrift += '\x00';  // add the stop field
   return thrift;
 }
 ```
