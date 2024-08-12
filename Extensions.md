@@ -46,14 +46,14 @@ In its private form the footer of a Parquet file will look like so:
     1 byte    | \0 (thrift stop field)
     4 bytes   | PAR1
 
-UUID1 is some UUID picked for this extension and it is used throughout (possibly internal) experimentation. It is put at the end to allow detection of the extension when parsed in reverse. The little-endian sizes and crc32s are also to the end to facilitate efficient parsing the footer in reverse without requiring parsing the Thrift compact protocol that precedes it.
+some-UUID is some UUID picked for this extension and it is used throughout (possibly internal) experimentation. It is put at the end to allow detection of the extension when parsed in reverse. The little-endian sizes and crc32s are also to the end to facilitate efficient parsing the footer in reverse without requiring parsing the Thrift compact protocol that precedes it.
 
 At some point the experiments conclude and the extension shared publicly with the community. The extension is proposed for inclusion to the standard with a migration plan to replace the existing `FileMetaData`.
 
 The community reviews the proposal and (potentially) proposes changes to the Flatbuffers IDL representation. In addition, because this extension is a *replacement* of an existing struct, it must:
 
 1. have some way of being extended in the future much like what it replaces. Because the extension mechanism only allows for a single extension, without this in place we cannot have footer extensions during the migration.  
-2. consider its intermediate form where both the **Thrift** `FileMetaData` and the **flatbuffer** `FileMetaData` will be present.  
+2. consider its intermediate form where both the **Thrift** `FileMetaData` and the **FlatBuffers** `FileMetaData` will be present.  
 3. consider its final form where the long form header for `32767: binary` may not be present.
 
 Once the design is ratified the new `FileMetaData` encoding is made final with the following migration plan. For the next N years writers will write both the Thrift and the flatbuffer `FileMetaData`. It will look much like its private form except the flatbuffer IDL may be different:
@@ -79,7 +79,7 @@ After the migration period, the end of the Parquet file may look like this:
 
 In this example, we see several design decisions for the extension at play:
 
-* There is a new UUID2 for the accepted change to the standard and now the Thrift `FileMetaData` cannot be extended itself.  
+* There is a new some-other-UUID for the accepted change to the standard and now the Thrift `FileMetaData` cannot be extended itself.  
 * The length of the footer and the crc32 of the length itself, guarantees that new readers will not overshoot reading bytes in case of corrupt bits in these critical 8 bytes of the file.  
 * The crc32 of the flatbuffer representation enhances Parquet to have crc32 for metadata as well which is arguably more important than crc32 for data.  
 * The new encoding itself, which MUST contain some way to be extended in the future (much like Thrift does with this specification).
@@ -99,7 +99,7 @@ In its private form Parquet files look like so:
               |             | Column c (old encoding)
     4 bytes   | PAR1
 
-The custom reader is compiled with thrift IDL with a binary for field with id 32767\. This is done to become extension aware and inspect the extension bytes looking for the UUID disambiguator. If that’s found it decodes the offsets from the rest of the bytes and reads the region of the file containing the new encoding.
+The custom reader is compiled with thrift IDL with a binary for field with id 32767. This is done to become extension aware and inspect the extension bytes looking for the UUID disambiguator. If that’s found it decodes the offsets from the rest of the bytes and reads the region of the file containing the new encoding.
 
 If/when the encoding is ratified, it is added to the official specification as an additional type in `Encodings` at which point the extension is no longer necessary, nor the duplicated data in the row group.
 
