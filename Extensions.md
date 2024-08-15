@@ -86,7 +86,7 @@ In this example, we see several design decisions for the extension at play:
 
 ### Encoding
 
-The community experiments with a new encoding extension. At the same time they want to keep the newly encoded Parquet files open for everyone to read. So they add a new encoding via an extension to the ColumnMetaData struct. The extension stores offsets in the Parquet file where the new and duplicate encoded data for this column lives. The new writer carefully places all the new encodings at the start of the row group and all the old encodings at the end of the row group. This layout minimizes disruption for readers unaware of the new encodings.
+The community experiments with a new encoding extension. At the same time they want to keep the newly encoded Parquet files open for everyone to read. So they add a new encoding via an extension to the `ColumnMetaData` struct. The extension stores offsets in the Parquet file where the new and duplicate encoded data for this column lives. The new writer carefully places all the new encodings at the start of the row group and all the old encodings at the end of the row group. This layout minimizes disruption for readers unaware of the new encodings.
 
 In its private form Parquet files look like so:
 
@@ -97,6 +97,13 @@ In its private form Parquet files look like so:
               |     0       | Column d
               |             | Column b (old encoding)
               |             | Column c (old encoding)
+              |             | FileMetaData
+              |             | ColumnMetaData: a
+              |             | ColumnMetaData: b
+    F bytes   |             | <extension-blob with offsets to new encoding>
+              |             | ColumnMetaData: c
+              |             | <extension-blob with offsets to new encoding>
+              |             | ColumnMetaData: d
     4 bytes   | PAR1
 
 The custom reader is compiled with thrift IDL with a binary for field with id 32767. This is done to become extension aware and inspect the extension bytes looking for the UUID disambiguator. If that’s found it decodes the offsets from the rest of the bytes and reads the region of the file containing the new encoding.
