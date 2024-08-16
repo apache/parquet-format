@@ -257,7 +257,11 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** count of null value in the column */
+   /** 
+    * count of null value in the column 
+    *
+    * Writers should write this field even if it is zero or in non-null columns.
+    */
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
