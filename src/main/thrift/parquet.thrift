@@ -260,7 +260,7 @@ struct Statistics {
    /** 
     * count of null value in the column 
     *
-    * Writers should write this field even if it is zero or in non-null columns.
+    * Writers SHOULD always write this field even if it is zero (a.k.a. no null value)
     */
    3: optional i64 null_count;
    /** count of distinct values occurring */
