@@ -1,4 +1,4 @@
-# Parquet Extensions
+# Binary Protocol Extensions
 
 The extension mechanism of the `binary` Thrift field-id `32767` has some desirable properties:
 

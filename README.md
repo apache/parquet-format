@@ -290,7 +290,7 @@ There are many places in the format for compatible extensions:
 - Encodings: Encodings are specified by enum and more can be added in the future.
 - Page types: Additional page types can be added and safely skipped.
 
-### Thrift [extensions](Extensions.md)
+### [Binary Protocol Extensions](BinaryProtocolExtensions.md)
 
 Parquet Thrift IDL reserves field-id `32767` of every Thrift struct for extensions.
 The (Thrift) type of this field is always `binary`.
