@@ -248,7 +248,7 @@ enum Edges {
 }
 
 /**
- * A custom WKB-encoded polygon or multi-polygon to represent a covering of
+ * A custom binary-encoded polygon or multi-polygon to represent a covering of
  * geometries. For example, it may be a bounding box or an envelope of geometries
  * when a bounding box cannot be built (e.g., a geometry has spherical edges, or if
  * an edge of geographic coordinates crosses the antimeridian). In addition, it can
@@ -259,10 +259,11 @@ struct Covering {
    * A type of covering. Currently accepted values: "WKB".
    */
   1: required string kind;
-  /** A payload specific to kind:
-   * - WKB: well-known binary of a POLYGON that completely covers the contents.
-   *   This will be interpreted according to the same CRS and edges defined by
-   *   the logical type.
+  /**
+   * A payload specific to kind:
+   * - WKB: well-known binary of a POLYGON or MULTI-POLYGON that completely
+   *   covers the contents. This will be interpreted according to the same CRS
+   *   and edges defined by the logical type.
    */
   2: required binary value;
 }
@@ -318,7 +319,7 @@ struct GeometryStatistics {
    *
    * Please refer to links below for more detail:
    * [1] https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
-   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.0.0/format-specs/geoparquet.md?plain=1#L91
+   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L159
    */
   3: optional list<i32> geometry_types;
 }
@@ -483,6 +484,11 @@ enum GeometryEncoding {
    *
    * This encoding enables GeometryStatistics to be set in the column chunk
    * and page index.
+   *
+   * Please note that we follow the same rule of WKB and coordinate axis order
+   * of GeoParquet, see detail below:
+   * [1] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
+   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
    */
   WKB = 0;
 
@@ -514,9 +520,10 @@ struct GeometryType {
   4: optional string crs_encoding;
   /**
    * Additional informative metadata.
-   * It can be used by GeoParquet to offload some of the column metadata.
+   * GeoParquet could offload its column metadata in a JSON-encoded UTF-8 string:
+   * https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L46
    */
-  5: optional binary metadata;
+  5: optional string metadata;
 }
 
 /**
