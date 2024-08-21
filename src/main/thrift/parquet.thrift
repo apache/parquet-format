@@ -258,12 +258,12 @@ struct Statistics {
    1: optional binary max;
    2: optional binary min;
    /** 
-    * count of null value in the column 
+    * Count of null values in the column.
     *
-    * Writers SHOULD always write this field even if it is zero (a.k.a. no null value)
-    * or is an not nullable column.
-    * Readers SHOULD distinct null_count == 0 or not having null_count. If null_count
-    * doesn't exists, Readers cannot gurantees null_count == 0.
+    * Writers SHOULD always write this field even if it is zero (i.e. no null value)
+    * or the column is not nullable.
+    * Readers SHOULD distinguish between null_count not being present and null_count == 0.
+    * If null_count is not present, readers SHOULD NOT assume null_count == 0.
     */
    3: optional i64 null_count;
    /** count of distinct values occurring */
