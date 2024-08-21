@@ -262,7 +262,7 @@ struct Statistics {
     *
     * Writers SHOULD always write this field even if it is zero (i.e. no null value)
     * or the column is not nullable.
-    * Readers SHOULD distinguish between null_count not being present and null_count == 0.
+    * Readers MUST distinguish between null_count not being present and null_count == 0.
     * If null_count is not present, readers SHOULD NOT assume null_count == 0.
     */
    3: optional i64 null_count;
