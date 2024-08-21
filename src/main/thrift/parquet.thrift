@@ -511,10 +511,48 @@ struct GeometryType {
   /**
    * Coordinate Reference System, i.e. mapping of how coordinates refer to
    * precise locations on earth.
+   *
+   * For example, OGC:CRS84 encoded in PROJJSON is set as below:
+   * {
+   *     "$schema": "https://proj.org/schemas/v0.5/projjson.schema.json",
+   *     "type": "GeographicCRS",
+   *     "name": "WGS 84 longitude-latitude",
+   *     "datum": {
+   *         "type": "GeodeticReferenceFrame",
+   *         "name": "World Geodetic System 1984",
+   *         "ellipsoid": {
+   *             "name": "WGS 84",
+   *             "semi_major_axis": 6378137,
+   *             "inverse_flattening": 298.257223563
+   *         }
+   *     },
+   *     "coordinate_system": {
+   *         "subtype": "ellipsoidal",
+   *         "axis": [
+   *         {
+   *             "name": "Geodetic longitude",
+   *             "abbreviation": "Lon",
+   *             "direction": "east",
+   *             "unit": "degree"
+   *         },
+   *         {
+   *             "name": "Geodetic latitude",
+   *             "abbreviation": "Lat",
+   *             "direction": "north",
+   *             "unit": "degree"
+   *         }
+   *         ]
+   *     },
+   *     "id": {
+   *         "authority": "OGC",
+   *         "code": "CRS84"
+   *     }
+   * }
    */
   3: optional string crs;
   /**
-   * Encoding used in the above crs field.
+   * Encoding used in the above crs field. If MUST be set if crs is set.
+   *
    * Currently the only allowed value is "PROJJSON".
    */
   4: optional string crs_encoding;
