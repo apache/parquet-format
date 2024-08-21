@@ -263,7 +263,7 @@ struct Statistics {
     * Writers SHOULD always write this field even if it is zero (i.e. no null value)
     * or the column is not nullable.
     * Readers MUST distinguish between null_count not being present and null_count == 0.
-    * If null_count is not present, readers SHOULD NOT assume null_count == 0.
+    * If null_count is not present, readers MUST NOT assume null_count == 0.
     */
    3: optional i64 null_count;
    /** count of distinct values occurring */
@@ -1091,7 +1091,16 @@ struct ColumnIndex {
    */
   4: required BoundaryOrder boundary_order
 
-  /** A list containing the number of null values for each page **/
+  /**
+   * A list containing the number of null values for each page 
+   *
+   * Writers SHOULD always write this field even if no null value
+   * or the column is not nullable.
+   * Readers MUST distinguish between null_counts not being present 
+   * and null_count is 0.
+   * If null_counts is not present, readers MUST NOT assume all 
+   * null_count is 0.
+   */
   5: optional list<i64> null_counts
 
   /**
