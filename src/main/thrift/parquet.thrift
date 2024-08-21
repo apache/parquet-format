@@ -261,6 +261,9 @@ struct Statistics {
     * count of null value in the column 
     *
     * Writers SHOULD always write this field even if it is zero (a.k.a. no null value)
+    * or is an not nullable column.
+    * Readers SHOULD distinct null_count == 0 or not having null_count. If null_count
+    * doesn't exists, Readers cannot gurantees null_count == 0.
     */
    3: optional i64 null_count;
    /** count of distinct values occurring */
