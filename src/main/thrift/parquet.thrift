@@ -1094,8 +1094,8 @@ struct ColumnIndex {
   /**
    * A list containing the number of null values for each page 
    *
-   * Writers SHOULD always write this field even if no null value
-   * or the column is not nullable.
+   * Writers SHOULD always write this field even if no null values
+   * are present or the column is not nullable.
    * Readers MUST distinguish between null_counts not being present 
    * and null_count being 0.
    * If null_counts are not present, readers MUST NOT assume all 
