@@ -510,9 +510,9 @@ struct GeometryType {
   2: required Edges edges;
   /**
    * Coordinate Reference System, i.e. mapping of how coordinates refer to
-   * precise locations on earth.
-   *
-   * For example, OGC:CRS84 encoded in PROJJSON is set as below:
+   * precise locations on earth. Writers are not required to set this field.
+   * Once crs is set, crs_encoding field below MUST be set together.
+   * For example, "OGC:CRS84" can be set in the form of PROJJSON as below:
    * {
    *     "$schema": "https://proj.org/schemas/v0.5/projjson.schema.json",
    *     "type": "GeographicCRS",
@@ -551,8 +551,7 @@ struct GeometryType {
    */
   3: optional string crs;
   /**
-   * Encoding used in the above crs field. If MUST be set if crs is set.
-   *
+   * Encoding used in the above crs field. It MUST be set if crs field is set.
    * Currently the only allowed value is "PROJJSON".
    */
   4: optional string crs_encoding;
