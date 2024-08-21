@@ -1098,7 +1098,7 @@ struct ColumnIndex {
    * or the column is not nullable.
    * Readers MUST distinguish between null_counts not being present 
    * and null_count being 0.
-   * If null_counts is not present, readers MUST NOT assume all 
+   * If null_counts are not present, readers MUST NOT assume all 
    * null counts are 0.
    */
   5: optional list<i64> null_counts
