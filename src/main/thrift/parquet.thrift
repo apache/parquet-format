@@ -1097,9 +1097,9 @@ struct ColumnIndex {
    * Writers SHOULD always write this field even if no null value
    * or the column is not nullable.
    * Readers MUST distinguish between null_counts not being present 
-   * and null_count is 0.
+   * and null_count being 0.
    * If null_counts is not present, readers MUST NOT assume all 
-   * null_count is 0.
+   * null counts are 0.
    */
   5: optional list<i64> null_counts
 
