@@ -240,7 +240,7 @@ struct SizeStatistics {
 /**
  * Interpretation for edges of GEOMETRY logical type, i.e. whether the edge
  * between points represent a straight cartesian line or the shortest line on
- * the sphere. Please note that it only applies to polygons.
+ * the sphere. It applies to all non-point geometry objects.
  */
 enum Edges {
   PLANAR = 0;
@@ -260,7 +260,7 @@ struct Covering {
    */
   1: required string kind;
   /**
-   * A payload specific to kind:
+   * A payload specific to kind. Below are the supported values:
    * - WKB: well-known binary of a POLYGON or MULTI-POLYGON that completely
    *   covers the contents. This will be interpreted according to the same CRS
    *   and edges defined by the logical type.
@@ -477,22 +477,20 @@ enum GeometryEncoding {
   /**
    * Allowed for physical type: BYTE_ARRAY.
    *
-   * Well-known binary (WKB) representations of geometries. It supports 2D or
-   * 3D geometries of the standard geometry types (Point, LineString, Polygon,
-   * MultiPoint, MultiLineString, MultiPolygon, and GeometryCollection). This
-   * is the preferred option for maximum portability.
+   * Well-known binary (WKB) representations of geometries.
    *
-   * This encoding enables GeometryStatistics to be set in the column chunk
-   * and page index.
+   * To be clear, we follow the same rule of WKB and coordinate axis order from
+   * GeoParquet [1][2]. It is the ISO WKB supporting XY, XYZ, XYM, XYZM and the
+   * standard geometry types (Point, LineString, Polygon, MultiPoint,
+   * MultiLineString, MultiPolygon, and GeometryCollection).
    *
-   * Please note that we follow the same rule of WKB and coordinate axis order
-   * of GeoParquet, see detail below:
+   * This is the preferred encoding for maximum portability. It also supports
+   * GeometryStatistics to be set in the column chunk and page index.
+   *
    * [1] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
    * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
    */
   WKB = 0;
-
-  // TODO: add native encoding from GeoParquet/GeoArrow
 }
 
 /**
@@ -500,12 +498,13 @@ enum GeometryEncoding {
  */
 struct GeometryType {
   /**
-   * Physical type and encoding for the geometry type. Please refer to the
-   * definition of GeometryEncoding for more detail.
+   * Physical type and encoding for the geometry type.
+   * Please refer to the definition of GeometryEncoding for more detail.
    */
   1: required GeometryEncoding encoding;
   /**
-   * Edges of polygon.
+   * Edges of geometry type.
+   * Please refer to the definition of Edges for more detail.
    */
   2: required Edges edges;
   /**
