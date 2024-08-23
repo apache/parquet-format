@@ -257,7 +257,14 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** count of null value in the column */
+   /** 
+    * Count of null values in the column.
+    *
+    * Writers SHOULD always write this field even if it is zero (i.e. no null value)
+    * or the column is not nullable.
+    * Readers MUST distinguish between null_count not being present and null_count == 0.
+    * If null_count is not present, readers MUST NOT assume null_count == 0.
+    */
    3: optional i64 null_count;
    /** count of distinct values occurring */
    4: optional i64 distinct_count;
@@ -1084,7 +1091,16 @@ struct ColumnIndex {
    */
   4: required BoundaryOrder boundary_order
 
-  /** A list containing the number of null values for each page **/
+  /**
+   * A list containing the number of null values for each page 
+   *
+   * Writers SHOULD always write this field even if no null values
+   * are present or the column is not nullable.
+   * Readers MUST distinguish between null_counts not being present 
+   * and null_count being 0.
+   * If null_counts are not present, readers MUST NOT assume all 
+   * null counts are 0.
+   */
   5: optional list<i64> null_counts
 
   /**
