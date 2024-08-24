@@ -250,7 +250,7 @@ enum Edges {
 /**
  * A custom binary-encoded polygon or multi-polygon to represent a covering of
  * geometries. For example, it may be a bounding box or an envelope of geometries
- * when a bounding box cannot be built (e.g., a geometry has spherical edges, or if
+ * when a bounding box cannot be built (e.g. a geometry has spherical edges, or if
  * an edge of geographic coordinates crosses the antimeridian). In addition, it can
  * also be used to provide vendor-agnostic coverings like S2 or H3 grids.
  */
@@ -291,7 +291,12 @@ struct GeometryStatistics {
   /** A bounding box of geometries */
   1: optional BoundingBox bbox;
 
-  /** A list of coverings of geometries */
+  /**
+   * A list of coverings of geometries.
+   * Note that It is allowed to have more than one covering of the same kind and
+   * implementation is free to use any of them. It is recommended to have at most
+   * one covering for each kind.
+   */
   2: optional list<Covering> coverings;
 
   /**
