@@ -142,6 +142,7 @@ void AppendUleb(uint32_t x, std::string* out) {
 };
 
 std::string AppendExtension(std::string thrift, const std::string& ext) {
+  assert(thrift.back() == '\x00');   // there was a stop field in the first place
   thrift.back() = '\x08';      // replace stop field with binary type
   AppendUleb(32767, &thrift);  // field-id
   AppendUleb(ext.size(), &thrift);
