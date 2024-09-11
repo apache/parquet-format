@@ -271,9 +271,8 @@ struct Covering {
 /**
  * Bounding box of geometries in the representation of min/max value pair of
  * coordinates from each axis. Values of Z and M are omitted for 2D geometries.
- * Filter pushdown on geometries are only safe for planar spatial predicate
- * but it is recommended that the writer always generates bounding box statistics,
- * regardless of whether the geometries are planar or spherical.
+ * Filter pushdown on geometries using this is only safe for planar spatial
+ * filters.
  */
 struct BoundingBox {
   1: required double xmin;
