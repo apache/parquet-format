@@ -290,6 +290,11 @@ There are many places in the format for compatible extensions:
 - Encodings: Encodings are specified by enum and more can be added in the future.
 - Page types: Additional page types can be added and safely skipped.
 
+### [Binary Protocol Extensions](BinaryProtocolExtensions.md)
+
+Parquet Thrift IDL reserves field-id `32767` of every Thrift struct for extensions.
+The (Thrift) type of this field is always `binary`.
+
 ## Testing
 
 The [apache/parquet-testing](https://github.com/apache/parquet-testing) contains a set of Parquet files for testing purposes.
