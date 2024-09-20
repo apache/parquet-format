@@ -497,6 +497,9 @@ enum GeometryEncoding {
    *
    * [1] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
    * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
+   * [3] https://portal.ogc.org/files/?artifact_id=18241
+   * [4] https://www.iso.org/standard/60343.html
+   * [5] https://www.geopackage.org/spec130/#gpb_spec
    */
   WKB = 0;
 }
