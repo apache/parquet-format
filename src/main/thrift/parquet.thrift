@@ -258,8 +258,9 @@ enum Edges {
  * A custom binary-encoded polygon or multi-polygon to represent a covering of
  * geometries. For example, it may be a bounding box or an envelope of geometries
  * when a bounding box cannot be built (e.g. a geometry has spherical edges, or if
- * an edge of geographic coordinates crosses the antimeridian). In addition, it can
- * also be used to provide vendor-agnostic coverings like S2 or H3 grids.
+ * an edge of geographic coordinates crosses the antimeridian). It may be
+ * extended in future versions to provide vendor-agnostic coverings like
+ * vectors of cells on a discrete global grid (e.g., S2 or H3 cells).
  */
 struct Covering {
   /**
