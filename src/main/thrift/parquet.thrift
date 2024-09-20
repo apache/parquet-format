@@ -238,6 +238,36 @@ struct SizeStatistics {
 }
 
 /**
+ * Physical type and encoding for the geometry type.
+ */
+enum GeometryEncoding {
+  /**
+   * Allowed for physical type: BYTE_ARRAY.
+   *
+   * Well-known binary (WKB) representations of geometries.
+   *
+   * To be clear, we follow the same rule of WKB and coordinate axis order from
+   * GeoParquet [1][2]. Geometries SHOULD be encoded as ISO WKB [3][4]
+   * supporting XY, XYZ, XYM, XYZM and the standard geometry types
+   * Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon,
+   * and GeometryCollection). Coordinate order is always (x, y) where x is
+   * easting or longitude and y is northing or latitude. This ordering explicitly
+   * overrides the axis order as specified in the CRS following the GeoPackage
+   * specification [5].
+   *
+   * This is the preferred encoding for maximum portability. It also supports
+   * GeometryStatistics to be set in the column chunk and page index.
+   *
+   * [1] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
+   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
+   * [3] https://portal.ogc.org/files/?artifact_id=18241
+   * [4] https://www.iso.org/standard/60343.html
+   * [5] https://www.geopackage.org/spec130/#gpb_spec
+   */
+  WKB = 0;
+}
+
+/**
  * Interpretation for edges of elements of a GEOMETRY logical type. In other
  * words, whether a point between two vertices should be interpolated in
  * its XY dimensions as if it were a Cartesian line connecting the two
@@ -249,7 +279,7 @@ struct SizeStatistics {
  * Because most systems currently assume planar edges and do not support
  * spherical edges, planar should be used as the default value.
  */
-enum Edges {
+enum EdgeInterpolation {
   PLANAR = 0;
   SPHERICAL = 1;
 }
@@ -483,36 +513,6 @@ struct BsonType {
 }
 
 /**
- * Physical type and encoding for the geometry type.
- */
-enum GeometryEncoding {
-  /**
-   * Allowed for physical type: BYTE_ARRAY.
-   *
-   * Well-known binary (WKB) representations of geometries.
-   *
-   * To be clear, we follow the same rule of WKB and coordinate axis order from
-   * GeoParquet [1][2]. Geometries SHOULD be encoded as ISO WKB [3][4]
-   * supporting XY, XYZ, XYM, XYZM and the standard geometry types 
-   * Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon,
-   * and GeometryCollection). Coordinate order is always (x, y) where x is
-   * easting or longitude and y is northing or latitude. This ordering explicitly
-   * overrides the axis order as specified in the CRS following the GeoPackage
-   * specification [5].
-   *
-   * This is the preferred encoding for maximum portability. It also supports
-   * GeometryStatistics to be set in the column chunk and page index.
-   *
-   * [1] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
-   * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
-   * [3] https://portal.ogc.org/files/?artifact_id=18241
-   * [4] https://www.iso.org/standard/60343.html
-   * [5] https://www.geopackage.org/spec130/#gpb_spec
-   */
-  WKB = 0;
-}
-
-/**
  * Geometry logical type annotation (added in 2.11.0)
  */
 struct GeometryType {
@@ -522,10 +522,12 @@ struct GeometryType {
    */
   1: required GeometryEncoding encoding;
   /**
-   * Edges of geometry type.
+   * Interpretation for edges of elements of a GEOMETRY logical type, i.e. whether
+   * the interpolation between points along an edge represents a straight cartesian
+   * line or the shortest line on the sphere.
    * Please refer to the definition of Edges for more detail.
    */
-  2: required Edges edges;
+  2: required EdgeInterpolation edges;
   /**
    * Coordinate Reference System, i.e. mapping of how coordinates refer to
    * precise locations on earth. Writers are not required to set this field.
@@ -574,11 +576,12 @@ struct GeometryType {
    */
   4: optional string crs_encoding;
   /**
-   * Additional informative metadata.
-   * GeoParquet could offload its column metadata in a JSON-encoded UTF-8 string:
-   * https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L46
+   * Additional informative metadata as a list of key-value pair of UTF-8 string.
+   * It is not strictly required by the low-level Parquet implementation for
+   * features like statistics or filter pushdown. Using a list of key-value pair
+   * provides maximum flexibility for adding future informative metadata.
    */
-  5: optional string metadata;
+  5: optional list<KeyValue> key_value_metadata;
 }
 
 /**
