@@ -238,9 +238,16 @@ struct SizeStatistics {
 }
 
 /**
- * Interpretation for edges of GEOMETRY logical type, i.e. whether the edge
- * between points represent a straight cartesian line or the shortest line on
- * the sphere. It applies to all non-point geometry objects.
+ * Interpretation for edges of elements of a GEOMETRY logical type. In other
+ * words, whether a point between two vertices should be interpolated in
+ * its XY dimensions as if it were a Cartesian line connecting the two
+ * vertices (planar) or the shortest spherical arc between the longitude
+ * and latitude represented by the two vertices (spherical). This value
+ * applies to all non-point geometry objects and is independent of the
+ * coordinate reference system.
+ *
+ * Because most systems currently assume planar edges and do not support
+ * spherical edges, planar should be used as the default value.
  */
 enum Edges {
   PLANAR = 0;
