@@ -484,9 +484,13 @@ enum GeometryEncoding {
    * Well-known binary (WKB) representations of geometries.
    *
    * To be clear, we follow the same rule of WKB and coordinate axis order from
-   * GeoParquet [1][2]. It is the ISO WKB supporting XY, XYZ, XYM, XYZM and the
-   * standard geometry types (Point, LineString, Polygon, MultiPoint,
-   * MultiLineString, MultiPolygon, and GeometryCollection).
+   * GeoParquet [1][2]. Geometries SHOULD be encoded as ISO WKB [3][4]
+   * supporting XY, XYZ, XYM, XYZM and the standard geometry types 
+   * Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon,
+   * and GeometryCollection). Coordinate order is always (x, y) where x is
+   * easting or longitude and y is northing or latitude. This ordering explicitly
+   * overrides the axis order as specified in the CRS following the GeoPackage
+   * specification [5].
    *
    * This is the preferred encoding for maximum portability. It also supports
    * GeometryStatistics to be set in the column chunk and page index.
