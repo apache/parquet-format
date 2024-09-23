@@ -356,6 +356,11 @@ struct RowGroup {
 }
 ```
 
+The integrity of this field is protected by footer (FileMetaData) authenticated encryption. Therefore, 
+the reader implementations can use either a local row group counter (ordinal) or the `RowGroup.ordinal`
+field as an input to AAD suffix calculation. The latter option can be helpful when different reader 
+threads process different row groups in the same parquet file.
+
 A `crypto_metadata` field is set in each ColumnChunk in the encrypted columns. ColumnCryptoMetaData 
 is a union - the actual structure is chosen depending on whether the column is encrypted with the 
 footer encryption key, or with a column-specific key. For the latter, a key metadata can be specified.
