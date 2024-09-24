@@ -356,7 +356,7 @@ struct RowGroup {
 }
 ```
 
-The integrity of this field is protected by footer (FileMetaData) authenticated encryption. Therefore, 
+The integrity of this field is protected by authenticated encryption of the footer (FileMetaData). Therefore, 
 the reader implementations can use either a local row group counter (ordinal) or the `RowGroup.ordinal`
 field as an input to AAD suffix calculation. The latter option can be helpful when different reader 
 threads process different row groups in the same parquet file.
