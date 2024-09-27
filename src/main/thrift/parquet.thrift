@@ -577,9 +577,13 @@ struct GeometryType {
   4: optional string crs_encoding;
   /**
    * Additional informative metadata as a list of key-value pair of UTF-8 string.
+   *
    * It is not strictly required by the low-level Parquet implementation for
    * features like statistics or filter pushdown. Using a list of key-value pair
    * provides maximum flexibility for adding future informative metadata.
+   *
+   * GeoParquet could store its column metadata in this field:
+   * https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L46
    */
   5: optional list<KeyValue> key_value_metadata;
 }
