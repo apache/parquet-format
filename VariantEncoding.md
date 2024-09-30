@@ -1,7 +1,7 @@
 # Variant Binary Encoding
 
 > [!IMPORTANT]
-> This specification is still under active development, and has not been formally adopted.
+> **This specification is still under active development, and has not been formally adopted.**
 
 A Variant represents a type that contain one of:
 - Primitive: A type and corresponding value (e.g. INT, STRING)
