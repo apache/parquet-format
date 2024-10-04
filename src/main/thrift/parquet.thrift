@@ -279,43 +279,26 @@ enum GeometryEncoding {
  * Because most systems currently assume planar edges and do not support
  * spherical edges, planar should be used as the default value.
  */
-enum EdgeInterpolation {
+enum Edges {
   PLANAR = 0;
   SPHERICAL = 1;
 }
 
 /**
- * A custom binary-encoded polygon or multi-polygon to represent a covering of
- * geometries. For example, it may be a bounding box or an envelope of geometries
- * when a bounding box cannot be built (e.g. a geometry has spherical edges, or if
- * an edge of geographic coordinates crosses the antimeridian). It may be
- * extended in future versions to provide vendor-agnostic coverings like
- * vectors of cells on a discrete global grid (e.g., S2 or H3 cells).
- */
-struct Covering {
-  /**
-   * A type of covering. Currently accepted values: "WKB".
-   */
-  1: required string kind;
-  /**
-   * A payload specific to kind. Below are the supported values:
-   * - WKB: well-known binary of a POLYGON or MULTI-POLYGON that completely
-   *   covers the contents. This will be interpreted according to the same CRS
-   *   and edges defined by the logical type.
-   */
-  2: required binary value;
-}
-
-/**
  * Bounding box of geometries in the representation of min/max value pair of
- * coordinates from each axis. Values of Z and M are omitted for 2D geometries.
- * Filter pushdown on geometries using this is only safe for planar spatial
- * filters.
+ * coordinates from each axis when Edges is planar. Values of Z and M are omitted
+ * for 2D geometries. When Edges is spherical, the bounding box is in the form of
+ * [westmost, eastmost, southmost, northmost], with necessary min/max values for
+ * Z and M if needed.
  */
 struct BoundingBox {
+  /** Westmost value if edges = spherical **/
   1: required double xmin;
+  /** Eastmost value if edges = spherical **/
   2: required double xmax;
+  /** Southmost value if edges = spherical **/
   3: required double ymin;
+  /** Northmost value if edges = spherical **/
   4: required double ymax;
   5: optional double zmin;
   6: optional double zmax;
@@ -327,14 +310,6 @@ struct BoundingBox {
 struct GeometryStatistics {
   /** A bounding box of geometries */
   1: optional BoundingBox bbox;
-
-  /**
-   * A list of coverings of geometries.
-   * Note that It is allowed to have more than one covering of the same kind and
-   * implementation is free to use any of them. It is recommended to have at most
-   * one covering for each kind.
-   */
-  2: optional list<Covering> coverings;
 
   /**
    * The geometry types of all geometries, or an empty array if they are not
@@ -363,7 +338,7 @@ struct GeometryStatistics {
    * [1] https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
    * [2] https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L159
    */
-  3: optional list<i32> geometry_types;
+  2: optional list<i32> geometry_types;
 }
 
 /**
@@ -527,65 +502,24 @@ struct GeometryType {
    * line or the shortest line on the sphere.
    * Please refer to the definition of Edges for more detail.
    */
-  2: required EdgeInterpolation edges;
+  2: required Edges edges;
   /**
-   * Coordinate Reference System, i.e. mapping of how coordinates refer to
-   * precise locations on earth. Writers are not required to set this field.
-   * Once crs is set, crs_encoding field below MUST be set together.
-   * For example, "OGC:CRS84" can be set in the form of PROJJSON as below:
-   * {
-   *     "$schema": "https://proj.org/schemas/v0.5/projjson.schema.json",
-   *     "type": "GeographicCRS",
-   *     "name": "WGS 84 longitude-latitude",
-   *     "datum": {
-   *         "type": "GeodeticReferenceFrame",
-   *         "name": "World Geodetic System 1984",
-   *         "ellipsoid": {
-   *             "name": "WGS 84",
-   *             "semi_major_axis": 6378137,
-   *             "inverse_flattening": 298.257223563
-   *         }
-   *     },
-   *     "coordinate_system": {
-   *         "subtype": "ellipsoidal",
-   *         "axis": [
-   *         {
-   *             "name": "Geodetic longitude",
-   *             "abbreviation": "Lon",
-   *             "direction": "east",
-   *             "unit": "degree"
-   *         },
-   *         {
-   *             "name": "Geodetic latitude",
-   *             "abbreviation": "Lat",
-   *             "direction": "north",
-   *             "unit": "degree"
-   *         }
-   *         ]
-   *     },
-   *     "id": {
-   *         "authority": "OGC",
-   *         "code": "CRS84"
-   *     }
-   * }
+   * CRS (coordinate reference system) is a mapping of how coordinates refer to
+   * precise locations on earth. A crs is specified by a string, which is a Parquet
+   * file metadata field whose value is the crs representation. An additional field
+   * with the suffix '.type' describes the encoding of this CRS representation.
+   *
+   * For example, if a geometry column (e.g., 'geom1') uses the CRS 'OGC:CRS84', the
+   * writer may create 2 file metadata fields: 'geom1_crs' and 'geom1_crs.type', and
+   * set the 'crs' field to 'geom1_crs'. The 'geom1_crs' field will contain the
+   * PROJJSON representation of OGC:CRS84
+   * (https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#ogccrs84-details),
+   * and the 'geom1_crs.type' field will contain the string 'PROJJSON'.
+   *
+   * Multiple geometry columns can refer to the same CRS metadata field
+   * (e.g., 'geom1_crs') if they share the same CRS.
    */
   3: optional string crs;
-  /**
-   * Encoding used in the above crs field. It MUST be set if crs field is set.
-   * Currently the only allowed value is "PROJJSON".
-   */
-  4: optional string crs_encoding;
-  /**
-   * Additional informative metadata as a list of key-value pair of UTF-8 string.
-   *
-   * It is not strictly required by the low-level Parquet implementation for
-   * features like statistics or filter pushdown. Using a list of key-value pair
-   * provides maximum flexibility for adding future informative metadata.
-   *
-   * GeoParquet could store its column metadata in this field:
-   * https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L46
-   */
-  5: optional list<KeyValue> key_value_metadata;
 }
 
 /**
