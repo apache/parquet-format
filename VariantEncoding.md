@@ -30,7 +30,7 @@ A Variant represents a type that contain one of:
 A Variant is encoded with 2 binary values, the [value](#value-encoding) and the [metadata](#metadata-encoding).
 
 There are a fixed number of allowed primitive types, provided in the table below.
-These represent a commonly supported subset of the [logical types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md) allowed by the Parquet.
+These represent a commonly supported subset of the [logical types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md) allowed by the Parquet format.
 
 The Variant Binary Encoding allows representation of semi-structured data (e.g. JSON) in a form that can be efficiently queried by path.
 The design is intended to allow efficient access to nested data even in the presence of very wide or deep structures.
