@@ -767,6 +767,72 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+## EXTENSION
+
+Extension types allow the Parquet type system to be open-ended. An extension
+type can be used to signal a third-party type that has no equivalent in the
+core Parquet type system.
+
+Extension types will typically be specified by third-party communities, or
+be vendor-specific. An extension type specification will typically contain
+the following elements:
+
+1. The extension type must be identified by a dotted name with the first name
+   component clearly denoting the authority that defined the type. The
+   `parquet.` namespace is reserved for use by the Parquet community and
+   must not be used for third-party extension types.
+
+2. The extension type must define which parameters it takes, if any. It must
+   define a binary serialization to store those parameters in the Parquet schema.
+   It is recommended (but not required) that the serialization is a UTF-8 encoding
+   of a JSON object.
+
+3. The extension type must define which kind of node it annotates: leaf
+   or non-leaf. If non-leaf, the allowed subtree shape must be defined.
+
+4. If the extension type annotates leaf nodes, it must define the allowed
+   physical type(s).
+
+5. If the extension type annotates leaf nodes, it should also optionally
+   define its sort order (see the `ColumnOrder` definition in the Thrift
+   format). If it does not, then the extension type is unordered.
+
+### Reading extension types
+
+An extension type is identified by its name. A reader will typically have
+a collection of extension types that it knows about; it may also offer a way
+for the user to register additional extension types.
+
+When a reader encounters an extension type in a Parquet schema, it should try
+to match it by name to its known extension types. If it does not recognize
+the extension type, then it should read it as the underlying physical type
+and should not try to interpret the column's statistics. It may however
+preserve the extension type information when transmitting the data to other
+systems, or for round-tripping purposes.
+
+### Examples
+
+The fictional ParquetNet community defines a IPv6 extension type
+with the following characteristics:
+
+1. Name: `parquetnet.ipv6`
+2. Parameters: none, the serialization is always empty
+3. Node type: only leaf
+4. Physical type: only FIXED_LEN_BYTE_ARRAY(16)
+5. Sort order: binary lexicographic order (the IP addresses use big-endian encoding)
+
+The fictional ParquetScience community defines a double-precision fixed-shaped
+tensor type with the following characteristics:
+
+1. Name: `parquetsci.f64tensor`
+2. Parameters: the number of dimensions `ndim` (an integer), and the shape of the
+   tensor elements (a tuple of `ndim` integers). It is serialized as a JSON
+   object thusly: `{"ndim": 3, "shape": (4, 5, 6)}`
+3. Node type: only leaf
+4. Physical type: only FIXED_LEN_BYTE_ARRAY(nbytes) where `nbytes` is 8 times
+   the shape's product
+5. Sort order: unordered
+
 ## UNKNOWN (always null)
 
 Sometimes, when discovering the schema of existing data, values are always null

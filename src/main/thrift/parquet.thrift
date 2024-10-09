@@ -288,6 +288,27 @@ struct Statistics {
    8: optional bool is_min_value_exact;
 }
 
+/**
+ * An extension type description
+ *
+ * Extension types allow for third-party semantics not provided by the core
+ * Parquet type system.
+ *
+ * `name` is a dotted name reliably identifying the extension type.
+ * Names beginning with "parquet." are reserved for standardization within
+ * the Parquet project.
+ *
+ * If the extension type is parametric, then `serialization` is an encoding
+ * of the extension type's parameters. It is recommended (but not required)
+ * that the parameters are serialized as a JSON object in UTF-8 encoding.
+ *
+ * If the extension type is not parametric, then `serialization` is empty.
+ */
+struct ExtensionTypeDescription {
+  1: required string name
+  2: optional binary serialization
+}
+
 /** Empty structs to use as logical type annotations */
 struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct UUIDType {}    // allowed for FIXED[16], must encoded raw UUID bytes
@@ -381,6 +402,21 @@ struct BsonType {
 }
 
 /**
+ * Extension type annotation
+ *
+ * `type_index` is an index into `FileMetaData.extension_types`. This
+ * indirection allows for efficient representation of schemas with many
+ * columns of a given extension type.
+ *
+ * Each extension type specification will define the set of allowed physical
+ * types (for example, a hypothetical IPv6 extension type would require
+ * FIXED_LEN_BYTE_ARRAY(16)).
+ */
+struct ExtensionType {
+  1: required i32 type_index
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -410,6 +446,7 @@ union LogicalType {
   13: BsonType BSON           // use ConvertedType BSON
   14: UUIDType UUID           // no compatible ConvertedType
   15: Float16Type FLOAT16     // no compatible ConvertedType
+  16: ExtensionType EXTENSION // no compatible ConvertedType
 }
 
 /**
@@ -956,7 +993,6 @@ struct TypeDefinedOrder {}
  * for this column should be ignored.
  */
 union ColumnOrder {
-
   /**
    * The sort orders for logical types are:
    *   UTF8 - unsigned byte-wise comparison
@@ -980,6 +1016,7 @@ union ColumnOrder {
    *   ENUM - unsigned byte-wise comparison
    *   LIST - undefined
    *   MAP - undefined
+   *   EXTENSION - extension type-specific
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
@@ -1211,6 +1248,13 @@ struct FileMetaData {
    * Used only in encrypted files with plaintext footer. 
    */ 
   9: optional binary footer_signing_key_metadata
+
+  /**
+   * A list of all extension types used in the Parquet schema, if any.
+   * The entries in this list are referenced through the `ExtensionType.type_index`
+   * of each ExtensionType field.
+   */
+  10: optional list<ExtensionTypeDescription> extension_types
 }
 
 /** Crypto metadata for files with encrypted footer **/
