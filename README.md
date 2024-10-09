@@ -118,6 +118,51 @@ chunks they are interested in.  The columns chunks should then be read sequentia
 
  ![File Layout](https://raw.github.com/apache/parquet-format/master/doc/images/FileLayout.gif)
 
+ ### PAR3 File Footers
+
+ PAR3 file footer footer format designed to better support wider-schemas and more control
+ over the various footer size vs compute trade-offs.  Its format is as follows:
+   - Serialized Thrift FileMetadata Structure
+   - (Optional) 4 byte CRC32 of the serialized Thrift FileMetadata.
+   - 4-byte length in bytes (little endian) of all preceding elements in the footer.
+   - 4-byte little-endian flag field to indicate features that require special parsing of the footer.
+     Readers MUST raise an error if there is an unrecognized flag.  Current flags:
+
+     * 0x01 - Footer encryption enabled (when set the encryption information is written before 
+        FileMeta structure as in the PAR1 footer).
+     * 0x02 - CRC32 of FileMetadata Footer.
+
+   - 4-byte magic number "PAR3"
+
+  When parsing the footer implementations SHOULD read at least the last 12 bytes of the footer. Then
+  read in the entirety of the footer based on the length of all preceding elements. This prevents further
+  I/O cost for accessing metadata stored in the data pages. PAR3 footers can fully replace PAR1 footers.
+  If a file is written with only PAR3 footer, implementation MUST write PAR3 as the first four bytes in 
+  they file. PAR3 footers can also be written in a backwards compatible way after PAR1 Metadata 
+  (see next section for details).
+
+  #### Dual Mode PAR1 and PAR3 footers
+
+  The following section defines a layout that allows PAR1
+  and PAR3 headers to co-exist in a single logical footer
+  but allow legacy readers to still read files.
+
+  The laout consists of the following:
+    - Serialized PAR1 FileMetadata Thrift object
+    - PAR3 footer as described above
+    - 4 byte little-endian length in bytes of all 
+      preceding elements.
+    - 4-byte magic number "PAR1"
+
+  Readers aware of PAR3 can check for the "PAR3" magic number
+  beginning 12 bytes from the end of the file (This should
+  be unambiguous because thrift serialization of structs 
+  use 0x00 as a field end delimiter).
+  (TODO: decide if one of the alternatives of embedding
+  the footer as a unknown field FileMetadata desirable as discussed in [Alkis's doc](https://docs.google.com/document/d/1PQpY418LkIDHMFYCY8ne_G-CFpThK15LLpzWYbc7rFU/edit))
+
+  When embedded into a PAR1 file no modification to the magic number at the beginning of the file is mandated.
+
 ## Metadata
 There are two types of metadata: file metadata and page header metadata.  All thrift structures
 are serialized using the TCompactProtocol.
