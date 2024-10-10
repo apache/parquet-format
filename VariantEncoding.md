@@ -93,6 +93,7 @@ Next, is an `offset` list, which contains `dictionary_size + 1` values.
 Each `offset` is a little-endian value of `offset_size` bytes, and represents the starting byte offset of the i-th string in `bytes`.
 The first `offset` value will always be `0`, and the last `offset` value will always be the total length of `bytes`.
 The last part of the metadata is `bytes`, which stores all the string values in the dictionary.
+All string values must be UTF-8 encoded strings.
 
 ## Metadata encoding grammar
 
@@ -107,7 +108,7 @@ offset_size_minus_one: 2-bit value providing the number of bytes per dictionary 
 dictionary_size: `offset_size` bytes. little-endian value indicating the number of strings in the dictionary
 dictionary: <offset>* <bytes>
 offset: `offset_size` bytes. little-endian value indicating the starting position of the ith string in `bytes`. The list should contain `dictionary_size + 1` values, where the last value is the total length of `bytes`.
-bytes: dictionary string values
+bytes: dictionary string UTF-8 encoded values
 ```
 
 Notes:
@@ -209,7 +210,7 @@ The [primitive types table](#encoding-types) shows the encoding format for each 
 
 ### Value Data for Short string (`basic_type`=1)
 
-When `basic_type` is `1`, `value_data` is the sequence of bytes that represents the string.
+When `basic_type` is `1`, `value_data` is the sequence of UTF-8 encoded bytes that represents the string.
 
 ### Value Data for Object (`basic_type`=2)
 
@@ -337,7 +338,7 @@ object_header: (is_large << 4 | field_id_size_minus_one << 2 | field_offset_size
 array_header: (is_large << 2 | field_offset_size_minus_one)
 value_data:  <primitive_val> | <short_string_val> | <object_val> | <array_val>
 primitive_val: see table for binary representation
-short_string_val: bytes
+short_string_val: UTF-8 encoded bytes
 object_val: <num_elements> <field_id>* <field_offset>* <fields>
 array_val: <num_elements> <field_offset>* <fields>
 num_elements: a 1 or 4 byte little-endian value (depending on is_large in <object_header>/<array_header>)
@@ -403,11 +404,16 @@ The *Logical Type* column indicates logical equivalence of physically encoded ty
 For example, a user expression operating on a string value containing "hello" should behave the same, whether it is encoded with the short string optimization, or long string encoding.
 Similarly, user expressions operating on an *int8* value of 1 should behave the same as a decimal16 with scale 2 and unscaled value 100.
 
-# Field ID order and uniqueness
+# String values must be UTF-8 encoded
+All strings within the Variant binary format must be UTF-8 encoded.
+This includes the dictionary key string values, the "short string" values, and the "long string" values.
+
+# Object field ID order and uniqueness
 
 For objects, field IDs and offsets must be listed in the order of the corresponding field names, sorted lexicographically.
-Note that the fields themselves are not required to follow this order.
+Note that the field values themselves are not required to follow this order.
 As a result, offsets will not necessarily be listed in ascending order.
+The field values are not required to be in the same order as the field IDs, to enable flexibility when constructing Variant values.
 
 An implementation may rely on this field ID order in searching for field names.
 E.g. a binary search on field IDs (combined with metadata lookups) may be used to find a field with a given field.
