@@ -506,7 +506,7 @@ struct GeometryType {
   /**
    * CRS (coordinate reference system) is a mapping of how coordinates refer to
    * precise locations on earth. A crs is specified by a string, which is a Parquet
-   * file metadata field whose value is the crs representation. An additional field
+   * file metadata field whose value is the CRS representation. An additional field
    * with the suffix '.type' describes the encoding of this CRS representation.
    *
    * For example, if a geometry column (e.g., 'geom1') uses the CRS 'OGC:CRS84', the
