@@ -861,6 +861,16 @@ Note that geometry statistics in the page index is not supported yet.
 
 ##### Bounding Box
 
+A geometry has at least two coordinate dimensions: X and Y for 2D coordinates
+of each point.
+
+A geometry can optionally have Z and / or M values associated with each point
+in the geometry. The Z value introduces the third dimension coordinate. The Z
+values usually are used to indicate the height, or elevation. M values are an
+opportunity for a geometry to express a fourth dimension as a coordinate value.
+These values can be used as a linear reference value (e.g., highway milepost
+value), a timestamp, or some other value as defined by the CRS.
+
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Values of Z and M are omitted
 for 2D geometries.
@@ -924,7 +934,6 @@ Consortium)](https://www.ogc.org/standard/sfa/).
 
 The version of the OGC standard first used here is 1.2.1, but future versions
 may also used if the WKB representation remains wire-compatible.
-
 
 ## UNKNOWN (always null)
 
