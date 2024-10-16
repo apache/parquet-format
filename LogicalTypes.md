@@ -796,6 +796,10 @@ Physical type and encoding for the `GEOMETRY` type. Supported values:
 - `WKB`: `GEOMETRY` type with `WKB` encoding can only be used to annotate the
          `BYTE_ARRAY` primitive type. See [WKB](#well-known-binary-wkb).
 
+Note that geometry encoding is required for `GEOMETRY` type. In order to correctly
+interpret geometry data, writer implementations SHOULD always set this field, and
+reader implementations SHOULD fail for an unknown geometry encoding value.
+
 ##### Well-known binary (WKB)
 
 Well-known binary (WKB) representations of geometries, see [Geospatial Notes](#geospatial-notes).
@@ -830,6 +834,10 @@ This value applies to all non-point geometry objects and is independent of the
 Because most systems currently assume planar edges and do not support spherical
 edges, `PLANAR` should be used as the default value.
 
+Note that edges is required for `GEOMETRY` type. In order to correctly
+interpret geometry data, writer implementations SHOULD always set this field,
+and reader implementations SHOULD fail for an unknown edges value.
+
 #### Coordinate Reference System
 
 CRS (coordinate reference system) is a mapping of how coordinates refer to
@@ -855,39 +863,45 @@ Multiple geometry columns can refer to the same CRS metadata field
 
 #### Geometry Statistics
 
-`GeometryStatistics` is an optional field of `Statistics` for `GEOMETRY` type.
-It contains [Bounding Box](#bounding-box) and [Geometry Types](#geometry-types).
-Note that geometry statistics in the page index is not supported yet.
+`GeometryStatistics` is a struct to store geometry statistics of a column chunk
+of `GEOMETRY` type. It is an optional field of `ColumnMetaData` and contains
+[Bounding Box](#bounding-box) and [Geometry Types](#geometry-types).
 
 ##### Bounding Box
 
 A geometry has at least two coordinate dimensions: X and Y for 2D coordinates
-of each point.
+of each point. A geometry can optionally have Z and / or M values associated
+with each point in the geometry.
 
-A geometry can optionally have Z and / or M values associated with each point
-in the geometry. The Z value introduces the third dimension coordinate. The Z
-values usually are used to indicate the height, or elevation. M values are an
-opportunity for a geometry to express a fourth dimension as a coordinate value.
-These values can be used as a linear reference value (e.g., highway milepost
-value), a timestamp, or some other value as defined by the CRS.
+The Z values introduce the third dimension coordinate. Usually they are used
+to indicate the height, or elevation.
+
+M values are an opportunity for a geometry to express a fourth dimension as
+a coordinate value. These values can be used as a linear reference value
+(e.g., highway milepost value), a timestamp, or some other value as defined
+by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
-min/max value pair of coordinates from each axis. Values of Z and M are omitted
-for 2D geometries.
+min/max value pair of coordinates from each axis. Note that X and Y Values
+are always present. Z and M are omitted for 2D geometries.
 
 ```thrift
 struct BoundingBox {
-  /** Min value when edges = PLANAR, westmost value if edges = SPHERICAL */
+  /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
   1: required double xmin;
-  /** Max value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  /** Max Y value when edges = PLANAR, eastmost value if edges = SPHERICAL */
   2: required double xmax;
-  /** Min value when edges = PLANAR, southmost value if edges = SPHERICAL */
+  /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
   3: required double ymin;
-  /** Max value when edges = PLANAR, northmost value if edges = SPHERICAL */
+  /** Max Y value when edges = PLANAR, northmost value if edges = SPHERICAL */
   4: required double ymax;
+  /** Min Z value if the axis exists */
   5: optional double zmin;
+  /** Max Z value if the axis exists */
   6: optional double zmax;
+  /** Min M value if the axis exists */
   7: optional double mmin;
+  /** Max M value if the axis exists */
   8: optional double mmax;
 }
 ```

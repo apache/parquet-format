@@ -242,17 +242,21 @@ struct SizeStatistics {
  * coordinates from each axis.
  */
 struct BoundingBox {
-  /** Min value when edges = PLANAR, westmost value if edges = SPHERICAL */
+  /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
   1: required double xmin;
-  /** Max value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  /** Max Y value when edges = PLANAR, eastmost value if edges = SPHERICAL */
   2: required double xmax;
-  /** Min value when edges = PLANAR, southmost value if edges = SPHERICAL */
+  /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
   3: required double ymin;
-  /** Max value when edges = PLANAR, northmost value if edges = SPHERICAL */
+  /** Max Y value when edges = PLANAR, northmost value if edges = SPHERICAL */
   4: required double ymax;
+  /** Min Z value if the axis exists */
   5: optional double zmin;
+  /** Max Z value if the axis exists */
   6: optional double zmax;
+  /** Min M value if the axis exists */
   7: optional double mmin;
+  /** Max M value if the axis exists */
   8: optional double mmax;
 }
 
@@ -313,9 +317,6 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
-
-   /** statistics specific to geometry logical type */
-   9: optional GeometryStatistics geometry_stats;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -429,10 +430,12 @@ enum Edges {
 /**
  * GEOMETRY logical type annotation (added in 2.11.0)
  *
- * GeometryEncoding and Edges are required. CRS is optional.
+ * GeometryEncoding and Edges are required. In order to correctly interpret
+ * geometry data, writer implementations SHOULD always them, and reader
+ * implementations SHOULD fail for unknown values.
  *
- * Once CRS is set, it MUST be a key to an entry in the `key_value_metadata`
- * field of `FileMetaData`.
+ * CRS is optional. Once CRS is set, it MUST be a key to an entry in the
+ * `key_value_metadata` field of `FileMetaData`.
  *
  * See LogicalTypes.md for detail.
  */
@@ -913,6 +916,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /** Optional statistics specific to GEOMETRY logical type */
+  17: optional GeometryStatistics geometry_stats;
 }
 
 struct EncryptionWithFooterKey {
