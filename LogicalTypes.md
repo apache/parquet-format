@@ -889,7 +889,7 @@ are always present. Z and M are omitted for 2D geometries.
 struct BoundingBox {
   /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
   1: required double xmin;
-  /** Max Y value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  /** Max X value when edges = PLANAR, eastmost value if edges = SPHERICAL */
   2: required double xmax;
   /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
   3: required double ymin;
