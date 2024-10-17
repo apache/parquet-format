@@ -91,7 +91,7 @@ optional group variant_col {
 # Parquet Layout
 
 The `array` and `object` fields represent Variant array and object types, respectively.
-Arrays must use the three-level list structure described in https://github.com/apache/parquet-format/blob/master/LogicalTypes.md.
+Arrays must use the three-level list structure described in [LogicalTypes.md](LogicalTypes.md).
 
 An `object` field must be a group.
 Each field name of this inner group corresponds to the Variant value's object field name.
@@ -143,6 +143,17 @@ There are two main motivations for including the `variant_value` column:
 1) In a case where there are rare type mismatches (for example, a numeric field with rare strings like “n/a”), we allow the field to be shredded, which could still be a significant performance benefit compared to fetching and decoding the full value/metadata binary.
 2) Since there is a single schema per file, there would be no easy way to recover from a type mismatch encountered late in a file write. Parquet files can be large, and buffering all file data before starting to write could be expensive. Including a variant column for every field guarantees we can adhere to the requested shredding schema.
 
+# Top-level metadata
+
+Any values stored in a shredded `variant_value` field may have dictionary IDs referring to the metadata.
+There is one metadata value for the entire Variant record, and that is stored in the top-level `metadata` field.
+This means any `variant_value` values in the shredded representation is only the "value" portion of the [Variant Binary Encoding](VariantEncoding.md).
+
+The metadata is kept at the top-level, instead of shredding the metadata with the shredded variant values because:
+* Simplified shredding scheme and specification. No need for additional struct-of-binary values, or custom concatenated binary scheme for `variant_value`.
+* Simplified and good performance for write shredding. No need to rebuild the metadata, or re-encode IDs for `variant_value`.
+* Simplified and good performance for Variant reconstruction. No need to re-encode IDs for `variant_value`.
+
 # Data Skipping
 
 Shredded columns are expected to store statistics in the same format as a normal Parquet column.
@@ -154,11 +165,14 @@ This specification is not strict about what values may be stored in `variant_val
 # Shredding Semantics
 
 Reconstruction of Variant value from a shredded representation is not expected to produce a bit-for-bit identical binary to the original unshredded value.
-For example, the order of fields in the binary may change, as may the physical representation of scalar values.
+For example, in a reconstructed Variant value, the order of object field values may be different from the original binary.
+This is allowed since the [Variant Binary Encoding](VariantEncoding.md#object-field-id-order-and-uniqueness) does not require an ordering of the field values, but the field IDs will still be ordered lexicographically according to the corresponding field names.
 
+The physical representation of scalar values may also be different in the reconstructed Variant binary.
 In particular, the [Variant Binary Encoding](VariantEncoding.md) considers all integer and decimal representations to represent a single logical type.
+This flexibility enables shredding to be applicable in more scenarios, while maintaining all information and values losslessly.
 As a result, it is valid to shred a decimal into a decimal column with a different scale, or to shred an integer as a decimal, as long as no numeric precision is lost.
-For example, it would be valid to write the value 123 to a Decimal(9, 2) column, but the value 1.234 would need to be written to the **variant_value** column.
+For example, it would be valid to write the value 123 to a Decimal(9, 2) column, but the value 1.234 would need to be written to the `variant_value` column.
 When reconstructing, it would be valid for a reader to reconstruct 123 as an integer, or as a Decimal(9, 2).
 Engines should not depend on the physical type of a Variant value, only the logical type.
 
