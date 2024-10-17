@@ -91,7 +91,7 @@ optional group variant_col {
 # Parquet Layout
 
 The `array` and `object` fields represent Variant array and object types, respectively.
-Arrays must use the three-level list structure described in [LogicalTypes.md](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists).
+Arrays must use the three-level list structure described in [LogicalTypes.md](LogicalTypes.md).
 
 An `object` field must be a group.
 Each field name of this inner group corresponds to the Variant value's object field name.

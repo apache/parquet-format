@@ -108,7 +108,7 @@ offset_size_minus_one: 2-bit value providing the number of bytes per dictionary 
 dictionary_size: `offset_size` bytes. little-endian value indicating the number of strings in the dictionary
 dictionary: <offset>* <bytes>
 offset: `offset_size` bytes. little-endian value indicating the starting position of the ith string in `bytes`. The list should contain `dictionary_size + 1` values, where the last value is the total length of `bytes`.
-bytes: dictionary string UTF-8 encoded values
+bytes: UTF-8 encoded dictionary string values
 ```
 
 Notes:
