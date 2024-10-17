@@ -238,6 +238,37 @@ struct SizeStatistics {
 }
 
 /**
+ * Bounding box of geometries in the representation of min/max value pair of
+ * coordinates from each axis.
+ */
+struct BoundingBox {
+  /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
+  1: required double xmin;
+  /** Max X value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  2: required double xmax;
+  /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
+  3: required double ymin;
+  /** Max Y value when edges = PLANAR, northmost value if edges = SPHERICAL */
+  4: required double ymax;
+  /** Min Z value if the axis exists */
+  5: optional double zmin;
+  /** Max Z value if the axis exists */
+  6: optional double zmax;
+  /** Min M value if the axis exists */
+  7: optional double mmin;
+  /** Max M value if the axis exists */
+  8: optional double mmax;
+}
+
+/** Statistics specific to GEOMETRY logical type */
+struct GeometryStatistics {
+  /** A bounding box of geometries */
+  1: optional BoundingBox bbox;
+  /** Geometry type codes of all geometries, or an empty list if not known */
+  2: optional list<i32> geometry_types;
+}
+
+/**
  * Statistics per row group and per page
  * All fields are optional.
  */
@@ -380,6 +411,40 @@ struct JsonType {
 struct BsonType {
 }
 
+/** Physical type and encoding for the geometry type */
+enum GeometryEncoding {
+  /**
+   * Allowed for physical type: BYTE_ARRAY.
+   *
+   * Well-known binary (WKB) representations of geometries.
+   */
+  WKB = 0;
+}
+
+/** Interpretation for edges of elements of a GEOMETRY type */
+enum Edges {
+  PLANAR = 0;
+  SPHERICAL = 1;
+}
+
+/**
+ * GEOMETRY logical type annotation (added in 2.11.0)
+ *
+ * GeometryEncoding and Edges are required. In order to correctly interpret
+ * geometry data, writer implementations SHOULD always them, and reader
+ * implementations SHOULD fail for unknown values.
+ *
+ * CRS is optional. Once CRS is set, it MUST be a key to an entry in the
+ * `key_value_metadata` field of `FileMetaData`.
+ *
+ * See LogicalTypes.md for detail.
+ */
+struct GeometryType {
+  1: required GeometryEncoding encoding;
+  2: required Edges edges;
+  3: optional string crs;
+}
+
 /**
  * LogicalType annotations to replace ConvertedType.
  *
@@ -410,6 +475,7 @@ union LogicalType {
   13: BsonType BSON           // use ConvertedType BSON
   14: UUIDType UUID           // no compatible ConvertedType
   15: Float16Type FLOAT16     // no compatible ConvertedType
+  16: GeometryType GEOMETRY   // no compatible ConvertedType
 }
 
 /**
@@ -850,6 +916,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /** Optional statistics specific to GEOMETRY logical type */
+  17: optional GeometryStatistics geometry_stats;
 }
 
 struct EncryptionWithFooterKey {
@@ -980,6 +1049,7 @@ union ColumnOrder {
    *   ENUM - unsigned byte-wise comparison
    *   LIST - undefined
    *   MAP - undefined
+   *   GEOMETRY - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
