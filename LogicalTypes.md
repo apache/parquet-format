@@ -563,6 +563,23 @@ defined by the [BSON specification][bson-spec].
 
 The sort order used for `BSON` is unsigned byte-wise comparison.
 
+### VARIANT
+
+`VARIANT` is used for a Variant value. It must annotate a group. The group must
+contain a `binary` field named `metadata`, and a `binary` field named `value`.
+The `VARIANT` annotated group can be used to store either an unshredded Variant
+value, or a shredded Variant value.
+
+* The top level must be a group annotated with `VARIANT` that contains a
+  `binary` field named `metadata`, and a `binary` field named `value`.
+* Additional fields which start with `_` (underscore) can be ignored.
+* If `metadata` and `value` are the only fields in the group, then the group
+  is an unshredded Variant value. The `metadata` and `value` fields are
+  interpreted as an encoded Variant value as defined by the
+  [Variant binary encoding specification](VariantEncoding.md).
+* If the group contains additional fields, it is a shredded Variant, and must
+  adhere to the scheme detailed in the [Variant shredding specification](VariantShredding.md).
+
 ## Nested Types
 
 This section specifies how `LIST` and `MAP` can be used to encode nested types

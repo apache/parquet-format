@@ -23,7 +23,7 @@
 > **This specification is still under active development, and has not been formally adopted.**
 
 The Variant type is designed to store and process semi-structured data efficiently, even with heterogeneous values.
-Query engines encode each Variant value in a self-describing format, and store it as a group containing `value` and `metadata` binary fields in Parquet.
+Query engines encode each Variant value in a self-describing format, and store it as a `VARIANT` annotated group containing `value` and `metadata` binary fields in Parquet.
 Since data is often partially homogenous, it can be beneficial to extract certain fields into separate Parquet columns to further improve performance.
 We refer to this process as **shredding**.
 Each Parquet file remains fully self-describing, with no additional metadata required to read or fully reconstruct the Variant data from the file.
@@ -33,7 +33,7 @@ This document focuses on the shredding semantics, Parquet representation, implic
 For now, it does not discuss which fields to shred, user-facing API changes, or any engine-specific considerations like how to use shredded columns.
 The approach builds upon the [Variant Binary Encoding](VariantEncoding.md), and leverages the existing Parquet specification.
 
-At a high level, we replace the `value` field of the Variant Parquet group with one or more fields called `object`, `array`, `typed_value`, and `variant_value`.
+At a high level, we replace the `value` field of the `VARIANT` annotated Parquet group with one or more fields called `object`, `array`, `typed_value`, and `variant_value`.
 These represent a fixed schema suitable for constructing the full Variant value for each row.
 
 Shredding allows a query engine to reap the full benefits of Parquet's columnar representation, such as more compact data encoding, min/max statistics for data skipping, and I/O and CPU savings from pruning unnecessary fields not accessed by a query (including the non-shredded Variant binary data).
@@ -58,7 +58,7 @@ An `variant_value` may also be populated if an object can be partially represent
 The `metadata` column is unchanged from its unshredded representation, and may be referenced in `variant_value` fields in the shredded data.
 
 ```
-optional group variant_col {
+optional group variant_col (VARIANT) {
  required binary metadata;
  optional binary variant_value;
  optional group object {
@@ -226,7 +226,7 @@ It contains an array of objects, containing an `a` field shredded as an array, a
 The corresponding Parquet schema with “a” and “b” as leaf types is:
 
 ```
-optional group variant_col {
+optional group variant_col (VARIANT) {
  required binary metadata;
  optional binary variant_value;
  optional group array (LIST) {
@@ -289,9 +289,9 @@ The second array element can be fully shredded, but the first and third cannot b
 
 # Backward and forward compatibility
 
-Shredding is an optional feature of Variant, and readers must continue to be able to read a group containing only a `value` and `metadata` field.
+Shredding is an optional feature of Variant, and readers must continue to be able to read a `VARIANT` annotated group containing only a `value` and `metadata` field.
 
-Any fields in the same group as `typed_value`/`variant_value` that start with `_` (underscore) can be ignored.
+Any fields in the same `VARIANT` annotated group as `typed_value`/`variant_value` that start with `_` (underscore) can be ignored.
 This is intended to allow future backwards-compatible extensions.
 In particular, the field names `_metadata_key_paths` and any name starting with `_spark` are reserved, and should not be used by other implementations.
 Any extra field names that do not start with an underscore should be assumed to be backwards incompatible, and readers should fail when reading such a schema.

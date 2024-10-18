@@ -42,7 +42,7 @@ This document describes the Variant Binary Encoding scheme.
 [VariantShredding.md](VariantShredding.md) describes the details of the Variant shredding scheme.
 
 # Variant in Parquet
-A Variant value in Parquet is represented by a group with 2 fields, named `value` and `metadata`.
+A Variant value in Parquet is represented by a group annotated with `VARIANT`, with 2 fields, named `value` and `metadata`.
 Both fields `value` and `metadata` are of type `binary`, and cannot be `null`.
 
 # Metadata encoding
