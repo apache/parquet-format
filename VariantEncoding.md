@@ -43,20 +43,20 @@ The [Variant Shredding spec](VariantShredding.md) describes the details of shred
 
 ## Variant in Parquet
 
-A Variant value in Parquet is represented by a group with 2 fields, named `variant_value` and `metadata`.
+A Variant value in Parquet is represented by a group with 2 fields, named `value` and `metadata`.
 The Variant group must be annotated with the `VARIANT` logical type.
 Both fields `value` and `metadata` are of type `binary`.
 The `metadata` field is required and must be a valid Variant metadata, as defined below.
-The `variant_value` field is optional.
-When present, the `variant_value` field must be a valid Variant value, as defined below. 
-The `variant_value` field may be null only when parts of the Variant value are shredded according to the Variant Shreedding spec.
+The `value` field is optional.
+When present, the `value` field must be a valid Variant value, as defined below. 
+The `value` field may be null only when parts of the Variant value are shredded according to the Variant Shreedding spec.
 
 This is the expected representation in Parquet:
 
 ```
 optional group variant_event (VARIANT) {
   required binary metadata;
-  optional binary variant_value;
+  optional binary value;
 }
 ```
 
