@@ -570,15 +570,33 @@ contain a `binary` field named `metadata`, and a `binary` field named `value`.
 The `VARIANT` annotated group can be used to store either an unshredded Variant
 value, or a shredded Variant value.
 
-* The top level must be a group annotated with `VARIANT` that contains a
-  `binary` field named `metadata`, and a `binary` field named `value`.
+* The Variant group must be annotated with the `VARIANT` logical type.
+* Both fields `value` and `metadata` must be of type `binary`.
+* The `metadata` field is required and must be a valid Variant metadata component,
+  as defined by the [Variant binary encoding specification](VariantEncoding.md).
+* When present, the `value` field must be a valid Variant value component,
+  as defined by the [Variant binary encoding specification](VariantEncoding.md).
+* The `value` field is required for unshredded Variant values.
+* The `value` field is optional and may be null only when parts of the Variant
+  value are shredded according to the [Variant shredding specification](VariantShredding.md).
 * Additional fields which start with `_` (underscore) can be ignored.
-* If `metadata` and `value` are the only fields in the group, then the group
-  is an unshredded Variant value. The `metadata` and `value` fields are
-  interpreted as an encoded Variant value as defined by the
-  [Variant binary encoding specification](VariantEncoding.md).
-* If the group contains additional fields, it is a shredded Variant, and must
-  adhere to the scheme detailed in the [Variant shredding specification](VariantShredding.md).
+
+This is the expected representation of an unshredded Variant in Parquet:
+```
+optional group variant_unshredded (VARIANT) {
+  required binary metadata;
+  required binary value;
+}
+```
+
+This is an example representation of a shredded Variant in Parquet:
+```
+optional group variant_shredded (VARIANT) {
+  required binary metadata;
+  optional binary value;
+  optional int64 typed_value;
+}
+```
 
 ## Nested Types
 
