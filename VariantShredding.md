@@ -65,16 +65,16 @@ The series of measurements `34, null, "n/a", 100` would be stored as:
 Both `value` and `typed_value` are optional fields used together to encode a single value.
 Values in the two fields must be interpreted according to the following table:
 
-| `value`  | `typed_value` | Meaning |
-|----------|---------------|---------|
-| null     | null          | The value is missing |
+| `value`  | `typed_value` | Meaning                                                  |
+|----------|---------------|----------------------------------------------------------|
+| null     | null          | The value is missing                                     |
 | non-null | null          | The value is present and may be any type, including null |
-| null     | non-null      | The value is present and the shredded type |
-| non-null | non-null      | The value is present and a partially shredded object |
+| null     | non-null      | The value is present and is the shredded type            |
+| non-null | non-null      | The value is present and a partially shredded object     |
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
-If both fields are non-null and either is not an object, the value is invalid. Readers must either fail or return the `value`.
+If both fields are non-null and either is not an object, the value is invalid. Readers must either fail or return the `typed_value`.
 
 ### Shredded Value Types
 
