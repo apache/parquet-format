@@ -39,24 +39,34 @@ Another motivation for the representation is that (aside from metadata) each nes
 For example, in a Variant containing an Array of Variant values, the representation of an inner Variant value, when paired with the metadata of the full variant, is itself a valid Variant.
 
 This document describes the Variant Binary Encoding scheme.
-The [Variant Shredding spec](VariantShredding.md) describes the details of shredding Variant values as typed Parquet columns.
+The [Variant Shredding specification](VariantShredding.md) describes the details of shredding Variant values as typed Parquet columns.
 
 ## Variant in Parquet
 
 A Variant value in Parquet is represented by a group with 2 fields, named `value` and `metadata`.
-The Variant group must be annotated with the `VARIANT` logical type.
-Both fields `value` and `metadata` are of type `binary`.
-The `metadata` field is required and must be a valid Variant metadata, as defined below.
-The `value` field is optional.
-When present, the `value` field must be a valid Variant value, as defined below. 
-The `value` field may be null only when parts of the Variant value are shredded according to the Variant Shreedding spec.
 
-This is the expected representation in Parquet:
+* The Variant group must be annotated with the `VARIANT` logical type.
+* Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY` in the Parquet thrift definition).
+* The `metadata` field is required and must be a valid Variant metadata, as defined below.
+* The `value` field is required for unshredded Variant values.
+* The `value` field is optional when parts of the Variant value are shredded according to the [Variant Shredding specification](VariantShredding.md).
+* When present, the `value` field must be a valid Variant value, as defined below. 
+
+This is the expected unshredded representation in Parquet:
 
 ```
-optional group variant_event (VARIANT) {
+optional group variant_name (VARIANT) {
+  required binary metadata;
+  required binary value;
+}
+```
+
+This is an example representation of a shredded Variant in Parquet:
+```
+optional group shredded_variant_name (VARIANT) {
   required binary metadata;
   optional binary value;
+  optional int64 typed_value;
 }
 ```
 
