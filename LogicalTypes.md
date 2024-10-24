@@ -566,12 +566,14 @@ The sort order used for `BSON` is unsigned byte-wise comparison.
 ### VARIANT
 
 `VARIANT` is used for a Variant value. It must annotate a group. The group must
-contain a `binary` field named `metadata`, and a `binary` field named `value`.
+contain a field named `metadata` and a field named `value`. Both fields must have
+type `binary`, which is also called `BYTE_ARRAY` in the Parquet thrift definition.
 The `VARIANT` annotated group can be used to store either an unshredded Variant
 value, or a shredded Variant value.
 
 * The Variant group must be annotated with the `VARIANT` logical type.
-* Both fields `value` and `metadata` must be of type `binary`.
+* Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY`
+  in the Parquet thrift definition).
 * The `metadata` field is required and must be a valid Variant metadata component,
   as defined by the [Variant binary encoding specification](VariantEncoding.md).
 * When present, the `value` field must be a valid Variant value component,
@@ -579,7 +581,6 @@ value, or a shredded Variant value.
 * The `value` field is required for unshredded Variant values.
 * The `value` field is optional and may be null only when parts of the Variant
   value are shredded according to the [Variant shredding specification](VariantShredding.md).
-* Additional fields which start with `_` (underscore) can be ignored.
 
 This is the expected representation of an unshredded Variant in Parquet:
 ```
