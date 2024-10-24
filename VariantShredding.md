@@ -46,7 +46,7 @@ Each `value` field may have an associated shredded field named `typed_value` tha
 
 For example, a Variant field, `measurement` may be shredded as long values by adding `typed_value` with type `int64`:
 ```
-optional group measurement (VARIANT) {
+required group measurement (VARIANT) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
@@ -75,6 +75,9 @@ Values in the two fields must be interpreted according to the following table:
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
 If both fields are non-null and either is not an object, the value is invalid. Readers must either fail or return the `typed_value`.
+
+If a Variant is missing in a context where a value is required, readers must either fail or return a Variant null: basic type 0 (primitive) and physical type 0 (null).
+For example, if a Variant is required (like `measurement` above) and both `value` and `typed_value` are null, the returned `value` must be `00` (Variant null).
 
 ### Shredded Value Types
 
