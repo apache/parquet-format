@@ -25,20 +25,12 @@
 The Variant type is designed to store and process semi-structured data efficiently, even with heterogeneous values.
 Query engines encode each Variant value in a self-describing format, and store it as a group containing required `value` and `metadata` binary fields in Parquet.
 Since data is often partially homogenous, it can be beneficial to extract certain fields into separate Parquet columns to further improve performance.
-We refer to this process as **shredding**.
-Each Parquet file remains fully self-describing, with no additional metadata required to read or fully reconstruct the Variant data from the file.
-Combining shredding with a binary residual provides the flexibility to represent complex, evolving data with an unbounded number of unique fields while limiting the size of file schemas, and retaining the performance benefits of a columnar format.
+This process is **shredding**.
 
-This document focuses on the shredding semantics, Parquet representation, implications for readers and writers, as well as the Variant reconstruction.
-For now, it does not discuss which fields to shred, user-facing API changes, or any engine-specific considerations like how to use shredded columns.
-The approach builds upon the [Variant Binary Encoding](VariantEncoding.md), and leverages the existing Parquet specification.
+Shredding enables the use of of Parquet's columnar representation for more compact data encoding, the use of column statistics for data skipping, and partial projections from Parquet's columnar layout.
 
-Shredding allows a query engine to reap the full benefits of Parquet's columnar representation, such as more compact data encoding, min/max statistics for data skipping, and I/O and CPU savings from pruning unnecessary fields not accessed by a query (including the non-shredded Variant binary data).
-Without shredding, any query that accesses a Variant column must fetch all bytes of the full binary buffer.
-With shredding, readers can get nearly equivalent performance as in a relational (scalar) data model.
-
-For example, `SELECT variant_get(variant_event, '$.event_ts', 'timestamp') FROM tbl` only needs to access `event_ts`, and the file scan could avoid fetching the rest of the Variant value if this field was shredded into a separate column in the Parquet schema.
-Similarly, for the query `SELECT * FROM tbl WHERE variant_get(variant_event, '$.event_type', 'string') = 'signup'`, the scan could first decode the shredded `event_type` column, and only fetch/decode the full Variant event value for rows that pass the filter.
+For example, the query `SELECT variant_get(event, '$.event_ts', 'timestamp') FROM tbl` only needs to load field `event_ts`, and shredding can enable columnar projection that ignores the rest of the `event` Variant.
+Similarly, for the query `SELECT * FROM tbl WHERE variant_get(event, '$.event_type', 'string') = 'signup'`, the `event_type` shredded column metadata can be used for skipping and to lazily load the rest of the Variant.
 
 ## Variant Metadata
 
