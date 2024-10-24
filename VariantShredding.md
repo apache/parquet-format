@@ -43,9 +43,9 @@ Similarly, for the query `SELECT * FROM tbl WHERE variant_get(variant_event, '$.
 ## Variant Metadata
 
 Variant metadata is stored in the top-level Variant group in a binary `metadata` column regardless of whether the Variant value is shredded.
-All `value` columns within the Variant must use the same `metadata`.
 
-All fields for a variant, whether shredded or not, must be present in the metadata.
+All `value` columns within the Variant must use the same `metadata`.
+All field names of a Variant, whether shredded or not, must be present in the metadata.
 
 ## Value Shredding
 
@@ -61,14 +61,24 @@ optional group measurement (VARIANT) {
 }
 ```
 
+The series of measurements `34, null, "n/a", 100` would be stored as:
+
+| Value   | `metadata`       | `value`               | `typed_value` |
+|---------|------------------|-----------------------|---------------|
+| 34      | `01 00` v1/empty | null                  | `34`          |
+| null    | `01 00` v1/empty | `00` (null)           | null          |
+| "n/a"   | `01 00` v1/empty | `13 6E 2F 61` (`n/a`) | null          |
+| 100     | `01 00` v1/empty | null                  | `100`         |
+
 Both `value` and `typed_value` are optional fields used together to encode a single value.
 Values in the two fields must be interpreted according to the following table:
 
-| `value` | `typed_value` | Meaning |
-| null            | null          | The value is missing |
-| non-null        | null          | The value is present and may be any type, including null |
-| null            | non-null      | The value is present and the shredded type |
-| non-null        | non-null      | The value is present and a partially shredded object |
+| `value`  | `typed_value` | Meaning |
+|----------|---------------|---------|
+| null     | null          | The value is missing |
+| non-null | null          | The value is present and may be any type, including null |
+| null     | non-null      | The value is present and the shredded type |
+| non-null | non-null      | The value is present and a partially shredded object |
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
@@ -102,7 +112,7 @@ Shredded values must use the following Parquet types:
 
 Primitive values can be shredded using the equivalent Parquet primitive type from the table above for `typed_object`.
 
-Unless the value is shredded in an object field, `typed_value` or `value` (but not both) must be non-null.
+Unless the value is shredded as an object (see [Objects](#objects)), `typed_value` or `value` (but not both) must be non-null.
 
 #### Arrays
 
@@ -111,7 +121,8 @@ Arrays can be shredded using a 3-level Parquet list for `typed_value`.
 If the value is not an array, `typed_value` must be null.
 If the value is an array, `value` must be null.
 
-The list `element` must be a required group that contains a `variant_type` (`binary`) and may contain a shredded `typed_value` field.
+The list `element` must be a required group that contains optional `value` and `typed_value` fields.
+The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` cannot represent it.
 
 For example, a `tags` Variant may be shredded as a list of strings using the following definition:
 ```
@@ -129,8 +140,18 @@ optional group tags (VARIANT) {
 }
 ```
 
-All elements of an array must be non-null, since `array` elements cannote be missing.
-Either `typed_value` or `value` (but not both) must be non-null.
+All elements of an array must be non-null because `array` elements in a Variant cannot be missing.
+That is, either `typed_value` or `value` (but not both) must be non-null.
+Null elements must be encoded in `value` as Variant null: basic type 0 (primitive) and physical type 0 (null).
+
+The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "drama", "romance"], null` would be stored as:
+
+| Array                            | `value`     | `typed_value `| `typed_value...value` | `typed_value...typed_value`    |
+|----------------------------------|-------------|---------------|-----------------------|--------------------------------|
+| `["comedy", "drama"]`            | null        | non-null      | [null, null]          | [`comedy`, `drama`]            |
+| `["horror", null]`               | null        | non-null      | [null, `00`]          | [`horror`, null]               |
+| `["comedy", "drama", "romance"]` | null        | non-null      | [null, null, null]    | [`comedy`, `drama`, `romance`] |
+| null                             | `00` (null) | null          |                       |                                |
 
 #### Objects
 
@@ -139,9 +160,10 @@ Fields of an object can be shredded using a Parquet group for `typed_value` that
 If the value is not an object, `typed_value` must be null.
 
 If the value is a partially shredded object, the `value` must not contain the shredded fields.
-If shredded fields are present in the variant object, it is invalid and readers must either fail or use the values from the `value`.
+If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded values.
 
 Each shredded field in the `typed_value` group is represented as a required group that contains optional `value` and `typed_value` fields.
+The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
@@ -165,10 +187,27 @@ optional group event (VARIANT) {
 The group for each named field must be required.
 
 A field's `value` and `typed_value` are set to null (missing) to indicate that the field does not exist in the variant.
+To encode a field that is present with a null value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
 
-Statistics for the `typed_value` column can be used for row group or page skipping when `value` is always null.
+The series of objects below would be stored as:
+
+| Event object                                                                       | `value`                           | `typed_value` | `typed_value.event_type.value` | `typed_value.event_type.typed_value` | `typed_value.event_ts.value` | `typed_value.event_ts.typed_value` | Notes                                         |
+|------------------------------------------------------------------------------------|-----------------------------------|---------------|--------------------------------|--------------------------------------|------------------------------|------------------------------------|-----------------------------------------------|
+| `{"event_type": "noop", "event_ts": 1729794114937}`                                | null                              | non-null      | null                           | `noop`                               | null                         | 1729794114937                      | Fully shredded object                         |
+| `{"event_type": "login", "event_ts": 1729794146402, "email": "user@example.com"}`  | `{"email": "user@example.com"}`   | non-null      | null                           | `login`                              | null                         | 1729794146402                      | Partially shredded object                     |
+| `{"error_msg": "malformed: ..."}`                                                  | `{"error_msg", "malformed: ..."}` | null          |                                |                                      |                              |                                    | Object with no shredding                      |
+| `"malformed: not an object"`                                                       | `malformed: not an object`        | null          |                                |                                      |                              |                                    | Not an object (stored as Variant string)      |
+| `{"event_ts": 1729794240241, "click": "_button"}`                                  | `{"click": "_button"}`            | non-null      | null                           | null                                 | null                         | 1729794240241                      | Field `event_type` is missing                 |
+| `{"event_type": null, "event_ts": 1729794954163}`                                  | null                              | non-null      | `00` (field exists, is null)   | null                                 | null                         | 1729794954163                      | Field `event_type` is present and is null     |
+| null                                                                               | `00` (null)                       | null          |                                |                                      |                              |                                    | Object/value is null                          |
+| missing                                                                            | null                              | null          |                                |                                      |                              |                                    | Object/value is missing                       |
+| INVALID                                                                            | `{"event_type": "login"}`         | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: Shredded field is present in `value` |
 
 ## Nesting
+
+The `typed_value` associated with any Variant `value` field can be any shredded type according to the rules above.
+
+For example, the `event` object above may also shred sub-fields as object (`location`) or array (`tags`).
 
 ```
 optional group event (VARIANT) {
@@ -211,153 +250,82 @@ optional group event (VARIANT) {
 }
 ```
 
+# Data Skipping
 
-| Variant Value | Top-level value | b.variant_value | a.typed_value | a.variant_value | b.object.c.typed_value | b.object.c.variant_value | Notes | 
-|---------------|-------------------------|-----------------|---------------|-----------------|------------------------|--------------------------|-------|
-| {a: 123, b: {c: "hello"}} | null | null | 123 | null | hello | null | All values shredded |
-| {a: 1.23, b: {c: "123"}} | null | null | null | 1.23 | 123 | null | a is not an integer |
-| {a: 123, b: {c: null}} | null | null | null | 123 | null | null | b.object.c set to non-null to indicate VariantNull |
-| {a: 123, b: {}} | null | null | null | 123 | null | null | b.object.c set to null, to indicate that c is missing |
-| {a: 123, d: 456} | {d: 456} | null | 123 | null | null | null | Extra field d is stored as value |
-| [{a: 1, b: {c: 2}}, {a: 3, b: {c: 4}}] | [{a: 1, b: {c: 2}}, {a: 3, b: {c: 4}}] | null | null | null | null | null | Not an object |
+Statistics for `typed_value` columns can be used for file, row group, or page skipping when `value` is always null (missing).
 
-## Data Skipping
+When the corresponding `value` column is all nulls, all values must be the shredded `typed_value` field's type.
+Because the type is known, comparisons with values of that type are valid.
+`IS NULL`/`IS NOT NULL` and `IS NAN`/`IS NOT NAN` filter results are also valid.
 
-Shredded columns are expected to store statistics in the same format as a normal Parquet column.
-In general, the engine can only skip a row group or page if all rows in the `value` field are null, since it is possible for a `variant_get` expression to successfully cast a value from the `variant_value` to the target type.
-For example, if `typed_value` is of type `int64`, then the string "123" might be contained in `value`, which would not be reflected in statistics, but could be retained by a filter like `where variant_get(col, "$.field", "long") = 123`.
-If `value` is all-null, then the engine can prune pages or row groups based on `typed_value`.
-This specification is not strict about what values may be stored in `value` rather than `typed_value`, so it is not safe to skip rows based on `typed_value` unless the corresponding `variant_value` column is all-null, or the engine has specific knowledge of the behavior of the writer that produced the shredded data.
+Comparisons with values of other types are not necessarily valid and data should not be skipped.
+
+Casting behavior for Variant is delegated to processing engines.
+For example, the interpretation of a string as a timestamp may depend on the engine's SQL session time zone.
 
 ## Reconstructing a Variant
 
-It is possible to recover a full Variant value using a recursive algorithm, where the initial call is to `ConstructVariant` with the top-level fields, which are assumed to be null if they are not present in the schema.
+It is possible to recover a full Variant value using a recursive algorithm, where the initial call is to `construct_variant` with the top-level Variant group fields.
 
-```
-# Constructs a Variant from `value`, `object`, `array` and `typed_value`.
-# Only one of object, array and typed_value may be non-null.
-def ConstructVariant(value, object, array, typed_value):
-  if object is null and array is null and typed_value is null and value is null: return VariantNull 
-  if object is not null:
-    return ConstructObject(value, object)
-  elif array is not null:
-    return ConstructArray(array)
-  elif typed_value is not null:
-    return cast(typed_value as Variant)
-  else:
-    value
+```python
+def construct_variant(metadata, value, typed_value):
+    """Constructs a Variant from value and typed_value"""
+    if typed_value is not null:
+        if isinstance(typed_value, dict):
+            # this is a shredded object
+            object_fields = {
+                name: construct_variant(metadata, field.value, field.typed_value)
+                for (name, field) in typed_value
+            }
 
-# Construct an object from an `object` group, and a (possibly null) Variant value
-def ConstructObject(value, object):
-  # If value is present and is not an Object, then the result is ambiguous.
-  assert(value is null or is_object(variant_value))
-  # Null fields in the object are missing from the reconstructed Variant.
-  nonnull_object_fields = object.fields.filter(field -> field is not null)
-  all_keys = Union(value.keys, non_null_object_fields)
-  return VariantObject(all_keys.map { key ->
-    if key in object: (key, ConstructVariant(object[key].value, object[key].object, object[key].array, object[key].typed_value))
-    else: (key, value[key])
-  })
+            if value is not null:
+                # this is a partially shredded object
+                assert isinstance(value, VariantObject), "partially shredded value must be an object"
+                assert typed_value.keys().isdisjoint(value.keys()), "object keys must be disjoint"
 
-def ConstructArray(array):
-  newVariantArray = VariantArray()
-  for i in range(array.size):
-    newVariantArray.append(ConstructVariant(array[i].value, array[i].object, array[i].array, array[i].typed_value)
-```
+                # union the shredded fields and non-shredded fields
+                return VariantObject(metadata, object_fields).union(VariantObject(metadata, value))
 
-## Nested Parquet Example
+            else:
+                return VariantObject(metadata, object_fields)
 
-This section describes a more deeply nested example, using a top-level array as the shredding type.
+        elif isinstance(typed_value, list):
+            # this is a shredded array
+            assert value is null, "shredded array must not conflict with variant value"
 
-Below is a sample of JSON that would be fully shredded in this example.
-It contains an array of objects, containing an `a` field shredded as an array, and a `b` field shredded as an integer.
+            elements = [
+                construct_variant(metadata, elem.value, elem.typed_value)
+                for elem in list(typed_value)
+            ]
+            return VariantArray(metadata, elements)
 
-```
-[
-  {
-    "a": [1, 2, 3],
-    "b": 100
-  },
-  {
-    "a": [4, 5, 6],
-    "b": 200
-  }
-]
-```
+        else:
+            # this is a shredded primitive
+            assert value is null, "shredded primitive must not conflict with variant value"
 
+            return primitive_to_variant(typed_value)
 
-The corresponding Parquet schema with "a" and "b" as leaf types is:
+    elif value is not null:
+        return Variant(metadata, value)
 
-```
-optional group variant_col {
- required binary metadata;
- optional binary value;
- optional group array (LIST) {
-  repeated group list {
-   optional group element {
-    optional binary value;
-    optional group object {
-     optional group a {
-      optional binary value;
-      optional group array (LIST) {
-       repeated group list {
-        optional group element {
-         optional int64 typed_value;
-         optional binary value;
-        }
-       }
-      }
-     }
-     optional group b {
-      optional int64 typed_value;
-      optional binary value;
-     }
-    }
-   }
-  }
- }
-}
+    else:
+        # value is missing
+        return None
+
+def primitive_to_variant(typed_value):
+    if isinstance(typed_value, int):
+        return VariantInteger(typed_value)
+    elif isinstance(typed_value, str):
+        return VariantString(typed_value)
+    ...
 ```
 
-In the above example schema, if "a" is an array containing a mix of integer and non-integer values, the engine will shred individual elements appropriately into either `typed_value` or `value`.
-If the top-level Variant is not an array (for example, an object), the engine cannot shred the value and it will store it in the top-level `value`.
-Similarly, if "a" is not an array, it will be stored in the `value` under "a".
-
-Consider the following example:
-
-```
-[
-  {
-    "a": [1, 2, 3],
-    "b": 100,
-    "c": "unexpected"
-  },
-  {
-    "a": [4, 5, 6],
-    "b": 200
-  },
-  "not an object"
-]
-```
-
-The second array element can be fully shredded, but the first and third cannot be. The contents of `variant_col.array[*].value` would be as follows:
-
-```
-[
-  { "c": "unexpected" },
-  NULL,
-  "not an object"
-]
-```
 
 ## Backward and forward compatibility
 
-Shredding is an optional feature of Variant, and readers must continue to be able to read a group containing only a `value` and `metadata` field.
-
-Any fields in the same group as `typed_value`/`value` that start with `_` (underscore) can be ignored.
-This is intended to allow future backwards-compatible extensions.
-In particular, the field names `_metadata_key_paths` and any name starting with `_spark` are reserved, and should not be used by other implementations.
-Any extra field names that do not start with an underscore should be assumed to be backwards incompatible, and readers should fail when reading such a schema.
+Shredding is an optional feature of Variant, and readers must continue to be able to read a group containing only `value` and `metadata` fields.
 
 Engines without shredding support are not expected to be able to read Parquet files that use shredding.
-Since different files may contain conflicting schemas (e.g. a `typed_value` column with incompatible types in two files), it may not be possible to infer or specify a single schema that would allow all Parquet files for a table to be read.
+Different files may contain conflicting schemas.
+That is, files may contain different `typed_value` columns for the same Variant with incompatible types.
+It may not be possible to infer or specify a single shredded schema that would allow all Parquet files for a table to be read without reconstructing the value as a Variant.
