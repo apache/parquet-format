@@ -70,7 +70,7 @@ Values in the two fields must be interpreted according to the following table:
 | null     | null          | The value is missing                                     |
 | non-null | null          | The value is present and may be any type, including null |
 | null     | non-null      | The value is present and is the shredded type            |
-| non-null | non-null      | The value is present and a partially shredded object     |
+| non-null | non-null      | The value is present and is a partially shredded object  |
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
@@ -262,7 +262,7 @@ It is possible to recover a full Variant value using a recursive algorithm, wher
 ```python
 def construct_variant(metadata, value, typed_value):
     """Constructs a Variant from value and typed_value"""
-    if typed_value is not null:
+    if typed_value is not None:
         if isinstance(typed_value, dict):
             # this is a shredded object
             object_fields = {
@@ -270,7 +270,7 @@ def construct_variant(metadata, value, typed_value):
                 for (name, field) in typed_value
             }
 
-            if value is not null:
+            if value is not None:
                 # this is a partially shredded object
                 assert isinstance(value, VariantObject), "partially shredded value must be an object"
                 assert typed_value.keys().isdisjoint(value.keys()), "object keys must be disjoint"
@@ -283,7 +283,7 @@ def construct_variant(metadata, value, typed_value):
 
         elif isinstance(typed_value, list):
             # this is a shredded array
-            assert value is null, "shredded array must not conflict with variant value"
+            assert value is None, "shredded array must not conflict with variant value"
 
             elements = [
                 construct_variant(metadata, elem.value, elem.typed_value)
@@ -293,11 +293,11 @@ def construct_variant(metadata, value, typed_value):
 
         else:
             # this is a shredded primitive
-            assert value is null, "shredded primitive must not conflict with variant value"
+            assert value is None, "shredded primitive must not conflict with variant value"
 
             return primitive_to_variant(typed_value)
 
-    elif value is not null:
+    elif value is not None:
         return Variant(metadata, value)
 
     else:
