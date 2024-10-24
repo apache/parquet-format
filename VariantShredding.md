@@ -23,7 +23,7 @@
 > **This specification is still under active development, and has not been formally adopted.**
 
 The Variant type is designed to store and process semi-structured data efficiently, even with heterogeneous values.
-Query engines encode each Variant value in a self-describing format, and store it as a group containing required `value` and `metadata` binary fields in Parquet.
+Query engines encode each Variant value in a self-describing format, and store it as a group containing `value` and `metadata` binary fields in Parquet.
 Since data is often partially homogenous, it can be beneficial to extract certain fields into separate Parquet columns to further improve performance.
 This process is **shredding**.
 
