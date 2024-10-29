@@ -392,6 +392,10 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
 | Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
 | String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
+| TimeNTZ              | time without time zone      | `21`    | TIME(false, MICROS)          | 8-byte little-endian                                                                                                 |
+| Timestamp_ns         | timestamp                   | `22`    | TIMESTAMP(true, NANOS)       | 8-byte little-endian                                                                                                 |
+| TimestampNTZ_ns      | timestamp without time zone | `23`    | TIMESTAMP(false, NANOS)      | 8-byte little-endian                                                                                                 |
+| UUID                 | uuid                        | `24`    | UUID                         | 16 bytes                                                                                                             |
 
 | Decimal Precision     | Decimal value type |
 |-----------------------|--------------------|
