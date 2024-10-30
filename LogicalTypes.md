@@ -691,14 +691,12 @@ should always be determined by the following rules:
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
-   element type and elements are required. To be clear, if the group does not
-   have annotation, the element type resolves to a multi-field Tuple. If the
-   group is `LIST`-annotated or `MAP`-annotated, it should resolve to List or
-   Map type, respectively.
+   element type and elements are required. In this case, the element type is
+   a Struct type with multiple fields.
 3. If the repeated field is a group (without annotation) with one `required` or
    `optional` field, and is named either `array` or uses the `LIST`-annotated
    group's name with `_tuple` appended, then the repeated type (a single-field
-   Tuple type) is the element type and elements are required.
+   Struct type) is the element type and elements are required.
 4. Otherwise, the repeated field's type is the element type with the repeated
    field's repetition.
 
@@ -710,7 +708,7 @@ optional group my_list (LIST) {
   repeated int32 element;
 }
 
-// List<Tuple<String, Integer>> (nullable list, non-null elements)
+// List<Struct<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
     required binary str (STRING);
@@ -718,14 +716,14 @@ optional group my_list (LIST) {
   };
 }
 
-// List<OneTuple<String>> (nullable list, non-null elements)
+// List<Struct<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group array {
     required binary str (STRING);
   };
 }
 
-// List<OneTuple<String>> (nullable list, non-null elements)
+// List<Struct<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group my_list_tuple {
     required binary str (STRING);
