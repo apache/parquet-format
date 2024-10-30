@@ -691,10 +691,14 @@ should always be determined by the following rules:
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
-   element type and elements are required.
-3. If the repeated field is a group with one field and is named either `array`
-   or uses the `LIST`-annotated group's name with `_tuple` appended then the
-   repeated type is the element type and elements are required.
+   element type and elements are required. To be clear, if the group does not
+   have annotation, the element type resolves to a multi-field Tuple. If the
+   group is `LIST`-annotated or `MAP`-annotated, it should resolve to List or
+   Map type, respectively.
+3. If the repeated field is a group (without annotation) with one `required` or
+   `optional` field, and is named either `array` or uses the `LIST`-annotated
+   group's name with `_tuple` appended, then the repeated type (a single-field
+   Tuple type) is the element type and elements are required.
 4. Otherwise, the repeated field's type is the element type with the repeated
    field's repetition.
 
@@ -726,6 +730,14 @@ optional group my_list (LIST) {
   repeated group my_list_tuple {
     required binary str (STRING);
   };
+}
+
+// List<List<Integer>> (outer list is nullable with non-null elements,
+// inner list is non-null with non-null elements)
+optional group my_list (LIST) {
+  repeated group array (LIST) {
+    repeated int32 array;
+  }
 }
 ```
 
