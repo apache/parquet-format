@@ -684,31 +684,37 @@ optional group my_list (LIST) {
 }
 ```
 
-Some existing data does not include the inner element layer. For
-backward-compatibility, the type of elements in `LIST`-annotated structures
-should always be determined by the following rules:
+Some existing data does not include the inner element layer, meaning that
+`LIST` annotates a 2-level structure. In contrast to 3-level structure, The
+repetition of the outer level `LIST`-annotated 2-level structure can be
+`optional`, `required`, or `required`. For backward-compatibility, the type of
+elements in `LIST`-annotated structures should always be determined by the
+following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
-   elements are required.
+   elements are required. In this case, `LIST` annotates a 2-level structure.
 2. If the repeated field is a group with multiple fields, then its type is the
-   element type and elements are required. In this case, the element type is
-   a Struct type with multiple fields.
-3. If the repeated field is a group (without annotation) with one `required` or
-   `optional` field, and is named either `array` or uses the `LIST`-annotated
+   element type and elements are required. In this case, `LIST` annotates a
+   2-level structure and the element type is a Struct type with multiple fields.
+3. If the repeated field is a group (not `LIST`-annotated) with one `required`
+   or `optional` field, and is named either `array` or uses the `LIST`-annotated
    group's name with `_tuple` appended, then the repeated type (a single-field
-   Struct type) is the element type and elements are required.
+   Struct type) is the element type and elements are required. This is a special
+   case of 3-level structure where the names are respected.
 4. Otherwise, the repeated field's type is the element type with the repeated
-   field's repetition.
+   field's repetition. In this case, `LIST` annotates a 2-level structure. Note
+   that the repeated field cannot be a 3-level LIST whose repetition must be
+   `required` or `optional`.
 
 Examples that can be interpreted using these rules:
 
 ```
-// List<Integer> (nullable list, non-null elements)
+// Rule 1: List<Integer> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated int32 element;
 }
 
-// List<Struct<String, Integer>> (nullable list, non-null elements)
+// Rule 2: List<Struct<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
     required binary str (STRING);
@@ -716,22 +722,23 @@ optional group my_list (LIST) {
   };
 }
 
-// List<Struct<String>> (nullable list, non-null elements)
+// Rule 3: List<Struct<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group array {
     required binary str (STRING);
   };
 }
 
-// List<Struct<String>> (nullable list, non-null elements)
+// Rule 3: List<Struct<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group my_list_tuple {
     required binary str (STRING);
   };
 }
 
-// List<List<Integer>> (outer list is nullable with non-null elements,
-// inner list is non-null with non-null elements)
+// List<List<Integer>>
+// Rule 4: nullable outer list with non-null elements
+// Rule 1: non-null inner list with non-null elements
 optional group my_list (LIST) {
   repeated group array (LIST) {
     repeated int32 array;
