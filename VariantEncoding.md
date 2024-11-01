@@ -387,14 +387,14 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
 | Exact Numeric        | decimal16                   | `10`    | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
 | Date                 | date                        | `11`    | DATE                        | 4 byte little-endian                                                                                                |
-| Timestamp            | timestamp                   | `12`    | TIMESTAMP(true, MICROS)     | 8-byte little-endian                                                                                                |
-| TimestampNTZ         | timestamp without time zone | `13`    | TIMESTAMP(false, MICROS)    | 8-byte little-endian                                                                                                |
+| Timestamp            | timestamp with time zone    | `12`    | TIMESTAMP(isAdjustedToUTC=true, MICROS)     | 8-byte little-endian                                                                                                |
+| Timestamp            | timestamp without time zone | `13`    | TIMESTAMP(isAdjustedToUTC=false, MICROS)    | 8-byte little-endian                                                                                                |
 | Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
 | Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
 | String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
-| TimeNTZ              | time without time zone      | `21`    | TIME(false, MICROS)          | 8-byte little-endian                                                                                                 |
-| Timestamp_ns         | timestamp                   | `22`    | TIMESTAMP(true, NANOS)       | 8-byte little-endian                                                                                                 |
-| TimestampNTZ_ns      | timestamp without time zone | `23`    | TIMESTAMP(false, NANOS)      | 8-byte little-endian                                                                                                 |
+| Time                 | time without time zone      | `21`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                                                 |
+| Timestamp            | timestamp with time zone   | `22`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                                                 |
+| Timestamp            | timestamp without time zone | `23`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                                                 |
 | UUID                 | uuid                        | `24`    | UUID                         | 16 bytes                                                                                                             |
 
 | Decimal Precision     | Decimal value type |
