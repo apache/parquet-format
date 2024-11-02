@@ -685,7 +685,7 @@ optional group my_list (LIST) {
 ```
 
 Some existing data does not include the inner element layer, meaning that
-`LIST` annotates a 2-level structure. In contrast to 3-level structure, The
+`LIST` annotates a 2-level structure. In contrast to 3-level structure, the
 repetition of the outer level `LIST`-annotated 2-level structure can be
 `optional`, `required`, or `required`. For backward-compatibility, the type of
 elements in `LIST`-annotated structures should always be determined by the
@@ -699,12 +699,11 @@ following rules:
 3. If the repeated field is a group (not `LIST`-annotated) with one `required`
    or `optional` field, and is named either `array` or uses the `LIST`-annotated
    group's name with `_tuple` appended, then the repeated type (a single-field
-   Struct type) is the element type and elements are required. This is a special
-   case of 3-level structure where the names are respected.
+   Struct type) is the element type and elements are required.
 4. Otherwise, the repeated field's type is the element type with the repeated
    field's repetition. In this case, `LIST` annotates a 2-level structure. Note
-   that the repeated field cannot be a 3-level LIST whose repetition must be
-   `required` or `optional`.
+   that the repeated field cannot be a 3-level LIST, as such a LIST's repetition
+   must be `required` or `optional`.
 
 Examples that can be interpreted using these rules:
 
@@ -744,6 +743,15 @@ optional group my_list (LIST) {
     repeated int32 array;
   }
 }
+```
+
+Some existing data does not even have the `LIST` annotation and simply uses
+`repeated` repetition to annotate the element type. In this case, the element
+type can be either a primitive type or a `LIST`-annotated 2-level group. 
+
+```
+// List<Integer> (non-null list, non-null elements)
+repeated int32 num;
 ```
 
 ### Maps
