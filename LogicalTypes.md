@@ -684,25 +684,23 @@ optional group my_list (LIST) {
 }
 ```
 
-Some existing data does not include the inner element layer, meaning that
-`LIST` annotates a 2-level structure. In contrast to 3-level structure, the
-repetition of the outer level `LIST`-annotated 2-level structure can be
-`optional`, `required`, or `required`. For backward-compatibility, the type of
-elements in `LIST`-annotated structures should always be determined by the
-following rules:
+Some existing data does not include the inner element layer, meaning that `LIST`
+annotates a 2-level structure. In contrast to 3-level structure, the repetition
+of the outer level of 2-level structure can be `optional`, `required`, or
+`repeated`. For backward-compatibility, the type of elements in `LIST`-annotated
+2-level structures should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
-   elements are required. In this case, `LIST` annotates a 2-level structure.
-2. If the repeated field is a group with multiple fields, then its type is the
-   element type and elements are required. In this case, `LIST` annotates a
-   2-level structure and the element type is a Struct type with multiple fields.
+   elements are required.
+2. If the repeated field is a group with multiple fields, then its type (Struct
+   type with multiple fields) is the element type and elements are required.
 3. If the repeated field is a group (not `LIST`-annotated) with one `required`
    or `optional` field, and is named either `array` or uses the `LIST`-annotated
-   group's name with `_tuple` appended, then the repeated type (a single-field
-   Struct type) is the element type and elements are required.
+   group's name with `_tuple` appended, then the repeated type (Struct type with
+   single field) is the element type and elements are required.
 4. Otherwise, the repeated field's type is the element type with the repeated
-   field's repetition. In this case, `LIST` annotates a 2-level structure. Note
-   that the repeated field cannot be a 3-level LIST, as such a LIST's repetition
+   field's repetition. Note that the repeated field cannot be `LIST`-annotated
+   or `MAP`-annotated group with 3-level structure, as such a group's repetition
    must be `required` or `optional`.
 
 Examples that can be interpreted using these rules:
@@ -743,15 +741,6 @@ optional group my_list (LIST) {
     repeated int32 array;
   }
 }
-```
-
-Some existing data does not even have the `LIST` annotation and simply uses
-`repeated` repetition to annotate the element type. In this case, the element
-type can be either a primitive type or a `LIST`-annotated 2-level group. 
-
-```
-// List<Integer> (non-null list, non-null elements)
-repeated int32 num;
 ```
 
 ### Maps
