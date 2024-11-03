@@ -670,6 +670,8 @@ optional group array_of_arrays (LIST) {
 
 #### Backward-compatibility rules
 
+##### 3-level structure with different names
+
 It is required that the repeated group of elements is named `list` and that
 its element field is named `element`. However, these names may not be used in
 existing data and should not be enforced as errors when reading. For example,
@@ -684,24 +686,36 @@ optional group my_list (LIST) {
 }
 ```
 
+##### 2-level structure
+
 Some existing data does not include the inner element layer, meaning that `LIST`
 annotates a 2-level structure. In contrast to 3-level structure, the repetition
-of the outer level of 2-level structure can be `optional`, `required`, or
-`repeated`. For backward-compatibility, the type of elements in `LIST`-annotated
-2-level structures should always be determined by the following rules:
+of 2-level structure can be `optional`, `required`, or `repeated`.
+
+```
+<list-repetition> group <name> (LIST) {
+  repeated <element-type> <element-name>;
+}
+```
+
+For backward-compatibility, the type of elements in `LIST`-annotated 2-level
+structures should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type (Struct
    type with multiple fields) is the element type and elements are required.
-3. If the repeated field is a group (not `LIST`-annotated) with one `required`
-   or `optional` field, and is named either `array` or uses the `LIST`-annotated
-   group's name with `_tuple` appended, then the repeated type (Struct type with
-   single field) is the element type and elements are required.
-4. Otherwise, the repeated field's type is the element type with the repeated
-   field's repetition. Note that the repeated field cannot be `LIST`-annotated
-   or `MAP`-annotated group with 3-level structure, as such a group's repetition
-   must be `required` or `optional`.
+3. If the repeated field is a group with one `required` or `optional` field,
+   and is named either `array` or uses the `LIST`-annotated group's name with
+   `_tuple` appended, then the repeated type (Struct type with single field) is
+   the element type and elements are required.
+4. If the repeated field is a `LIST`-annotated group with one `repeated` field,
+   then the element type is a list type with 2-level structure and elements are
+   required.
+5. Otherwise, the repeated field's type is the element type with the repeated
+   field's repetition. Please note that the repeated field here (a group with
+   one field) cannot be `LIST`-annotated or `MAP`-annotated 3-level structure,
+   as such a group's repetition must be `required` or `optional`.
 
 Examples that can be interpreted using these rules:
 
@@ -740,6 +754,23 @@ optional group my_list (LIST) {
   repeated group array (LIST) {
     repeated int32 array;
   }
+}
+```
+
+##### 1-level structure without `LIST` annotation
+
+Some existing data does not even have the `LIST` annotation and simply uses
+`repeated` repetition to annotate the element type. In this case, the element
+type MUST be a primitive type and both the list and elements are required.
+
+```
+// List<Integer> (non-null list, non-null elements)
+repeated int32 num;
+
+// Struct<List<Integer>, List<String>> (non-null list, non-null elements)
+optional group whatever {
+  repeated int32 num;
+  repeated binary str (STRING);
 }
 ```
 
