@@ -260,7 +260,7 @@ The sort order for `FLOAT16` is signed (with special handling of NANs and signed
 
 ### DATE
 
-`DATE` is used to for a logical date type, without a time of day. It must
+`DATE` is used for a logical date type, without a time of day. It must
 annotate an `int32` that stores the number of days from the Unix epoch, 1
 January 1970.
 
