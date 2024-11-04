@@ -405,6 +405,7 @@ For example, a user expression operating on a string value containing "hello" sh
 Similarly, user expressions operating on an *int8* value of 1 should behave the same as a decimal16 with scale 2 and unscaled value 100.
 
 # String values must be UTF-8 encoded
+
 All strings within the Variant binary format must be UTF-8 encoded.
 This includes the dictionary key string values, the "short string" values, and the "long string" values.
 
