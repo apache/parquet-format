@@ -753,7 +753,14 @@ optional group my_list (LIST) {
 optional group my_list (LIST) {
   repeated group array (LIST) {
     repeated int32 array;
-  }
+  };
+}
+
+// Rule 5: List<Struct<List<Integer>>> (nullable outer list with non-null elements)
+optional group my_list (LIST) {
+  repeated group foo {
+    repeated int32 bar;
+  };
 }
 ```
 
@@ -767,10 +774,16 @@ type MUST be a primitive type and both the list and elements are required.
 // List<Integer> (non-null list, non-null elements)
 repeated int32 num;
 
-// Struct<List<Integer>, List<String>> (non-null list, non-null elements)
+// Struct<List<Integer>,List<String>> (non-null list, non-null elements)
 optional group whatever {
   repeated int32 num;
   repeated binary str (STRING);
+}
+
+// List<Struct<Integer,String>> (non-null list, non-null elements)
+repeated group whatever {
+  required int32 num;
+  optional binary str (STRING);
 }
 ```
 
