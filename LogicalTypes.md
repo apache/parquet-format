@@ -714,13 +714,12 @@ to values. `MAP` must annotate a 3-level structure:
   field for map keys and, optionally, a `value` field for map values. It must
   not contain any other values.
 * The `key` field encodes the map's key type. This field must have
-  repetition `required` and must always be present. It must be placed at the
-  0th position of the `key_value` group. It is suggested to use a primitive as
-  the type.
+  repetition `required` and must always be present. It must always be the first
+  field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
-  be `required`, `optional`, or omitted. It must be placed at the 1st position
-  of the `key_value` group if present. In case of not present, the map can be
-  either represented with all null values or as a set of keys.
+  be `required`, `optional`, or omitted. It must always be the second field of
+  the repeated `key_value` group if present. In case of not present, the map
+  can be either represented with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to
 nullable integers:
