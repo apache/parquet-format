@@ -767,8 +767,8 @@ optional group my_list (LIST) {
 ##### 1-level structure without `LIST` annotation
 
 Some existing data does not even have the `LIST` annotation and simply uses
-`repeated` repetition to annotate the element type. In this case, the element
-type MUST be a primitive type and both the list and elements are required.
+`repeated` repetition to annotate the element type. In this case both the list
+and elements are required.
 
 ```
 // List<Integer> (non-null list, non-null elements)
