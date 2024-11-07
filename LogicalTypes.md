@@ -260,7 +260,7 @@ The sort order for `FLOAT16` is signed (with special handling of NANs and signed
 
 ### DATE
 
-`DATE` is used to for a logical date type, without a time of day. It must
+`DATE` is used for a logical date type, without a time of day. It must
 annotate an `int32` that stores the number of days from the Unix epoch, 1
 January 1970.
 
@@ -562,6 +562,42 @@ defined by the [BSON specification][bson-spec].
 [bson-spec]: http://bsonspec.org/spec.html
 
 The sort order used for `BSON` is unsigned byte-wise comparison.
+
+### VARIANT
+
+`VARIANT` is used for a Variant value. It must annotate a group. The group must
+contain a field named `metadata` and a field named `value`. Both fields must have
+type `binary`, which is also called `BYTE_ARRAY` in the Parquet thrift definition.
+The `VARIANT` annotated group can be used to store either an unshredded Variant
+value, or a shredded Variant value.
+
+* The Variant group must be annotated with the `VARIANT` logical type.
+* Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY`
+  in the Parquet thrift definition).
+* The `metadata` field is required and must be a valid Variant metadata component,
+  as defined by the [Variant binary encoding specification](VariantEncoding.md).
+* When present, the `value` field must be a valid Variant value component,
+  as defined by the [Variant binary encoding specification](VariantEncoding.md).
+* The `value` field is required for unshredded Variant values.
+* The `value` field is optional and may be null only when parts of the Variant
+  value are shredded according to the [Variant shredding specification](VariantShredding.md).
+
+This is the expected representation of an unshredded Variant in Parquet:
+```
+optional group variant_unshredded (VARIANT) {
+  required binary metadata;
+  required binary value;
+}
+```
+
+This is an example representation of a shredded Variant in Parquet:
+```
+optional group variant_shredded (VARIANT) {
+  required binary metadata;
+  optional binary value;
+  optional int64 typed_value;
+}
+```
 
 ## Nested Types
 
