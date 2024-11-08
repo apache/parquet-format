@@ -718,8 +718,8 @@ to values. `MAP` must annotate a 3-level structure:
   field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
   be `required`, `optional`, or omitted. It must always be the second field of
-  the repeated `key_value` group if present. In case of not present, the map
-  can be either represented with all null values or as a set of keys.
+  the repeated `key_value` group if present. In case of not present, it can be
+  represented as a map with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to
 nullable integers:
@@ -750,14 +750,14 @@ be used in existing data and should not be enforced as errors when reading.
 Some existing data incorrectly used `MAP_KEY_VALUE` in place of `MAP`. For
 backward-compatibility, a group annotated with `MAP_KEY_VALUE` that is not
 contained by a `MAP`-annotated group should be handled as a `MAP`-annotated
-group. `MAP_KEY_VALUE` may be used for the `key_value` group.
+group.
 
 Examples that can be interpreted using these rules:
 
 ```
 // Map<String, Integer> (nullable map, non-null values)
 optional group my_map (MAP) {
-  repeated group map (MAP_KEY_VALUE) {
+  repeated group map {
     required binary str (STRING);
     required int32 num;
   }
