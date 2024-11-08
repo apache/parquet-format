@@ -52,8 +52,8 @@
   </licenses>
 
   <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/PARQUET</url>
+    <system>GitHub</system>
+    <url>https://github.com/apache/parquet-format/issues</url>
   </issueManagement>
 
   <mailingLists>
