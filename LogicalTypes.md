@@ -745,13 +745,17 @@ to values. `MAP` must annotate a 3-level structure:
 
 * The outer-most level must be a group annotated with `MAP` that contains a
   single field named `key_value`. The repetition of this level must be either
-  `optional` or `required` and determines whether the list is nullable.
+  `optional` or `required` and determines whether the map is nullable.
 * The middle level, named `key_value`, must be a repeated group with a `key`
-  field for map keys and, optionally, a `value` field for map values.
+  field for map keys and, optionally, a `value` field for map values. It must
+  not contain any other values.
 * The `key` field encodes the map's key type. This field must have
-  repetition `required` and must always be present.
+  repetition `required` and must always be present. It must always be the first
+  field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
-  be `required`, `optional`, or omitted.
+  be `required`, `optional`, or omitted. It must always be the second field of
+  the repeated `key_value` group if present. In case of not present, it can be
+  represented as a map with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to
 nullable integers:
@@ -777,6 +781,7 @@ keys.
 It is required that the repeated group of key-value pairs is named `key_value`
 and that its fields are named `key` and `value`. However, these names may not
 be used in existing data and should not be enforced as errors when reading.
+(`key` and `value` can be identified by their position in case of misnaming.)
 
 Some existing data incorrectly used `MAP_KEY_VALUE` in place of `MAP`. For
 backward-compatibility, a group annotated with `MAP_KEY_VALUE` that is not
