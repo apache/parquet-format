@@ -670,7 +670,7 @@ optional group array_of_arrays (LIST) {
 
 #### Backward-compatibility rules
 
-##### 3-level structure with different names
+##### 3-level structure with different field names
 
 It is required that the repeated group of elements is named `list` and that
 its element field is named `element`. However, these names may not be used in
@@ -703,19 +703,15 @@ structures should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
-2. If the repeated field is a group with multiple fields, then its type (Struct
-   type with multiple fields) is the element type and elements are required.
-3. If the repeated field is a group with one `required` or `optional` field,
-   and is named either `array` or uses the `LIST`-annotated group's name with
-   `_tuple` appended, then the repeated type (Struct type with single field) is
-   the element type and elements are required.
-4. If the repeated field is a `LIST`-annotated group with one `repeated` field,
-   then the element type is a list type with 2-level structure and elements are
-   required.
+2. If the repeated field is a group with multiple fields, then its type is the
+   element type and elements are required.
+3. If the repeated field is a group with a `repeated` field, then the repeated
+   field is the element type because the type cannot be a 3-level list.
+4. If the repeated field is a group with one field and is named either `array`
+   or uses the `LIST`-annotated group's name with `_tuple` appended then the
+   repeated type is the element type and elements are required.
 5. Otherwise, the repeated field's type is the element type with the repeated
-   field's repetition. Please note that the repeated field here (a group with
-   one field) cannot be `LIST`-annotated or `MAP`-annotated 3-level structure,
-   as such a group's repetition must be `required` or `optional`.
+   field's repetition.
 
 Examples that can be interpreted using these rules:
 
@@ -725,7 +721,7 @@ optional group my_list (LIST) {
   repeated int32 element;
 }
 
-// Rule 2: List<Struct<String, Integer>> (nullable list, non-null elements)
+// Rule 2: List<Tuple<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
     required binary str (STRING);
@@ -733,30 +729,28 @@ optional group my_list (LIST) {
   };
 }
 
-// Rule 3: List<Struct<String>> (nullable list, non-null elements)
-optional group my_list (LIST) {
-  repeated group array {
-    required binary str (STRING);
-  };
-}
-
-// Rule 3: List<Struct<String>> (nullable list, non-null elements)
-optional group my_list (LIST) {
-  repeated group my_list_tuple {
-    required binary str (STRING);
-  };
-}
-
-// List<List<Integer>>
-// Rule 4: nullable outer list with non-null elements
-// Rule 1: non-null inner list with non-null elements
+// Rule 3: List<List<Integer>> (nullable outer list, non-null elements)
 optional group my_list (LIST) {
   repeated group array (LIST) {
     repeated int32 array;
   };
 }
 
-// Rule 5: List<Struct<List<Integer>>> (nullable outer list with non-null elements)
+// Rule 4: List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group array {
+    required binary str (STRING);
+  };
+}
+
+// Rule 4: List<OneTuple<String>> (nullable list, non-null elements)
+optional group my_list (LIST) {
+  repeated group my_list_tuple {
+    required binary str (STRING);
+  };
+}
+
+// Rule 5: List<OneTuple<List<Integer>>> (nullable outer list, non-null elements)
 optional group my_list (LIST) {
   repeated group foo {
     repeated int32 bar;
@@ -767,21 +761,21 @@ optional group my_list (LIST) {
 ##### 1-level structure without `LIST` annotation
 
 Some existing data does not even have the `LIST` annotation and simply uses
-`repeated` repetition to annotate the element type. In this case both the list
-and elements are required.
+`repeated` repetition to annotate the element type. For backward-compatibility,
+both the list and elements are `required`.
 
 ```
 // List<Integer> (non-null list, non-null elements)
 repeated int32 num;
 
-// Struct<List<Integer>,List<String>> (non-null list, non-null elements)
-optional group whatever {
+// Tuple<List<Integer>, List<String>> (non-null list, non-null elements)
+optional group my_list {
   repeated int32 num;
   repeated binary str (STRING);
 }
 
-// List<Struct<Integer,String>> (non-null list, non-null elements)
-repeated group whatever {
+// List<Tuple<Integer, String>> (non-null list, non-null elements)
+repeated group my_list {
   required int32 num;
   optional binary str (STRING);
 }
