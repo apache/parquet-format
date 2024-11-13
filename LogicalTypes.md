@@ -609,6 +609,17 @@ that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
 by `LIST` or `MAP` should be interpreted as a required list of required
 elements where the element type is the type of the field.
 
+```
+// List<Integer> (non-null list, non-null elements)
+repeated int32 num;
+
+// List<Tuple<Integer, String>> (non-null list, non-null elements)
+repeated group my_list {
+  required int32 num;
+  optional binary str (STRING);
+}
+```
+
 Implementations should use either `LIST` and `MAP` annotations _or_ unannotated
 repeated fields, but not both. When using the annotations, no unannotated
 repeated types are allowed.
@@ -755,29 +766,6 @@ optional group my_list (LIST) {
   repeated group foo {
     repeated int32 bar;
   };
-}
-```
-
-##### 1-level structure without `LIST` annotation
-
-Some existing data does not even have the `LIST` annotation and simply uses
-`repeated` repetition to annotate the element type. For backward-compatibility,
-both the list and elements are `required`.
-
-```
-// List<Integer> (non-null list, non-null elements)
-repeated int32 num;
-
-// Tuple<List<Integer>, List<String>> (non-null list, non-null elements)
-optional group my_list {
-  repeated int32 num;
-  repeated binary str (STRING);
-}
-
-// List<Tuple<Integer, String>> (non-null list, non-null elements)
-repeated group my_list {
-  required int32 num;
-  optional binary str (STRING);
 }
 ```
 
