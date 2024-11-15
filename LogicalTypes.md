@@ -620,9 +620,9 @@ repeated group my_list {
 }
 ```
 
-Implementations should use either `LIST` and `MAP` annotations _or_ unannotated
-repeated fields, but not both. When using the annotations, no unannotated
-repeated types are allowed.
+For all fields in the schema, implementations should use either `LIST` and
+`MAP` annotations _or_ unannotated repeated fields, but not both. When using
+the annotations, no unannotated repeated types are allowed.
 
 ### Lists
 
@@ -763,13 +763,6 @@ optional group my_list (LIST) {
 optional group my_list (LIST) {
   repeated group my_list_tuple {
     required binary str (STRING);
-  };
-}
-
-// Rule 5: List<OneTuple<List<Integer>>> (nullable outer list, non-null elements)
-optional group my_list (LIST) {
-  repeated group foo {
-    repeated int32 bar;
   };
 }
 ```
