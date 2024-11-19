@@ -682,9 +682,9 @@ optional group array_of_arrays (LIST) {
 #### Backward-compatibility rules
 
 Modern writers should always produce the 3-level LIST structure shown above.
-However, historically data files have been produced that use different structures to
-represent list-like data, and readers may include compatibility measures to interpret
-them as intended.
+However, historically data files have been produced that use different structures
+to represent list-like data, and readers may include compatibility measures to
+interpret them as intended.
 
 ##### 3-level structure with different field names
 
@@ -704,9 +704,11 @@ optional group my_list (LIST) {
 
 ##### 2-level structure
 
-Some existing data does not include the inner element layer, meaning that `LIST`
-annotates a 2-level structure. In contrast to 3-level structure, the repetition
-of 2-level structure can be `optional`, `required`, or `repeated`.
+Some existing data does not include the inner element layer, resulting in a
+`LIST` that annotates a 2-level structure. Unlike the 3-level structure, the
+repetition of a 2-level structure can be `optional`, `required`, or `repeated`.
+When it is `repeated`, the `LIST`-annotated 2-level structure can only serve as
+an element within another `LIST`-annotated 2-level structure.
 
 ```
 <list-repetition> group <name> (LIST) {
@@ -714,15 +716,17 @@ of 2-level structure can be `optional`, `required`, or `repeated`.
 }
 ```
 
-For backward-compatibility, the type of elements in `LIST`-annotated 2-level
-structures should always be determined by the following rules:
+For backward-compatibility, the type of elements in `LIST`-annotated structures
+should always be determined by the following rules if they cannot be determined
+as 3-level structures:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
    element type and elements are required.
-3. If the repeated field is a group with a `repeated` field, then the repeated
-   field is the element type because the type cannot be a 3-level list.
+3. If the repeated field is a group with one field and the repetition of that
+   field is `repeated`, then its type is the element type and elements are
+   required.
 4. If the repeated field is a group with one field and is named either `array`
    or uses the `LIST`-annotated group's name with `_tuple` appended then the
    repeated type is the element type and elements are required.
