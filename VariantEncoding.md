@@ -70,7 +70,7 @@ optional group shredded_variant_name (VARIANT) {
 }
 ```
 
-There are no restrictions on the repetition of Variant groups (required, optional, or repeated).
+The `VARIANT` annotation places no additional restrictions on the repetition of Variant groups, but repetition may be restricted by containing types (such as `MAP` and `LIST`).
 The Variant group name is the name of the Variant column.
 
 ## Metadata encoding
@@ -404,7 +404,7 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 
 *Variant primitive types*
 
-| Equivalence Class    | Physical Type               | Type ID | Equivalent Parquet Type     | Binary format                                                                                                       |
+| Equivalence Class    | Variant Physical Type       | Type ID | Equivalent Parquet Type     | Binary format                                                                                                       |
 |----------------------|-----------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------|
 | NullType             | null                        | `0`     | UNKNOWN                     | none                                                                                                                |
 | Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                                                |
@@ -448,7 +448,7 @@ This includes the dictionary key string values, the "short string" values, and t
 
 ## Object field ID order and uniqueness
 
-For objects, field IDs and offsets must be listed in the order of the corresponding field names, sorted lexicographically.
+For objects, field IDs and offsets must be listed in the order of the corresponding field names, sorted lexicographically (using unsigned byte ordering for UTF-8).
 Note that the field values themselves are not required to follow this order.
 As a result, offsets will not necessarily be listed in ascending order.
 The field values are not required to be in the same order as the field IDs, to enable flexibility when constructing Variant values.

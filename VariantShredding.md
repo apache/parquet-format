@@ -27,9 +27,9 @@ Query engines encode each Variant value in a self-describing format, and store i
 Since data is often partially homogenous, it can be beneficial to extract certain fields into separate Parquet columns to further improve performance.
 This process is **shredding**.
 
-Shredding enables the use of of Parquet's columnar representation for more compact data encoding, the use of column statistics for data skipping, and partial projections from Parquet's columnar layout.
+Shredding enables the use of Parquet's columnar representation for more compact data encoding, column statistics for data skipping, and partial projections.
 
-For example, the query `SELECT variant_get(event, '$.event_ts', 'timestamp') FROM tbl` only needs to load field `event_ts`, and shredding can enable columnar projection that ignores the rest of the `event` Variant.
+For example, the query `SELECT variant_get(event, '$.event_ts', 'timestamp') FROM tbl` only needs to load field `event_ts`, and if that column is shredded, it can be read by columnar projection without reading or deserializing the rest of the `event` Variant.
 Similarly, for the query `SELECT * FROM tbl WHERE variant_get(event, '$.event_type', 'string') = 'signup'`, the `event_type` shredded column metadata can be used for skipping and to lazily load the rest of the Variant.
 
 ## Variant Metadata
@@ -43,6 +43,7 @@ All field names of a Variant, whether shredded or not, must be present in the me
 
 Variant values are stored in Parquet fields named `value`.
 Each `value` field may have an associated shredded field named `typed_value` that stores the value when it matches a specific type.
+When `typed_value` is present, readers **must** reconstruct shredded values according to this specification.
 
 For example, a Variant field, `measurement` may be shredded as long values by adding `typed_value` with type `int64`:
 ```
@@ -65,12 +66,12 @@ The series of measurements `34, null, "n/a", 100` would be stored as:
 Both `value` and `typed_value` are optional fields used together to encode a single value.
 Values in the two fields must be interpreted according to the following table:
 
-| `value`  | `typed_value` | Meaning                                                  |
-|----------|---------------|----------------------------------------------------------|
-| null     | null          | The value is missing                                     |
-| non-null | null          | The value is present and may be any type, including null |
-| null     | non-null      | The value is present and is the shredded type            |
-| non-null | non-null      | The value is present and is a partially shredded object  |
+| `value`  | `typed_value` | Meaning                                                     |
+|----------|---------------|-------------------------------------------------------------|
+| null     | null          | The value is missing; only valid for shredded object fields |
+| non-null | null          | The value is present and may be any type, including null    |
+| null     | non-null      | The value is present and is the shredded type               |
+| non-null | non-null      | The value is present and is a partially shredded object     |
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
@@ -105,7 +106,7 @@ Shredded values must use the following Parquet types:
 
 #### Primitive Types
 
-Primitive values can be shredded using the equivalent Parquet primitive type from the table above for `typed_object`.
+Primitive values can be shredded using the equivalent Parquet primitive type from the table above for `typed_value`.
 
 Unless the value is shredded as an object (see [Objects](#objects)), `typed_value` or `value` (but not both) must be non-null.
 
@@ -116,8 +117,10 @@ Arrays can be shredded using a 3-level Parquet list for `typed_value`.
 If the value is not an array, `typed_value` must be null.
 If the value is an array, `value` must be null.
 
-The list `element` must be a required group that contains optional `value` and `typed_value` fields.
-The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` cannot represent it.
+The list `element` must be a required group that contains `value` and `typed_value` fields.
+The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` is not present or cannot represent it.
+The `typed_value` field may be omitted when not shredding elements as a specific type.
+When `typed_value` is omitted, `value` must be `required`.
 
 For example, a `tags` Variant may be shredded as a list of strings using the following definition:
 ```
@@ -135,7 +138,7 @@ optional group tags (VARIANT) {
 }
 ```
 
-All elements of an array must be non-null because `array` elements in a Variant cannot be missing.
+All elements of an array must be present (not missing) because the `array` Variant encoding does not allow missing elements.
 That is, either `typed_value` or `value` (but not both) must be non-null.
 Null elements must be encoded in `value` as Variant null: basic type 0 (primitive) and physical type 0 (null).
 
@@ -152,14 +155,15 @@ The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "
 
 Fields of an object can be shredded using a Parquet group for `typed_value` that contains shredded fields.
 
+If the value is an object, `typed_value` must be non-null.
 If the value is not an object, `typed_value` must be null.
-
-If the value is a partially shredded object, the `value` must not contain the shredded fields.
-If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded values.
 
 Each shredded field in the `typed_value` group is represented as a required group that contains optional `value` and `typed_value` fields.
 The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
+
+If the value is a partially shredded object, the `value` must not contain the shredded fields.
+If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded values.
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
@@ -186,21 +190,31 @@ To encode a field that is present with a null value, the `value` must contain a 
 
 The series of objects below would be stored as:
 
-| Event object                                                                       | `value`                           | `typed_value` | `typed_value.event_type.value` | `typed_value.event_type.typed_value` | `typed_value.event_ts.value` | `typed_value.event_ts.typed_value` | Notes                                         |
-|------------------------------------------------------------------------------------|-----------------------------------|---------------|--------------------------------|--------------------------------------|------------------------------|------------------------------------|-----------------------------------------------|
-| `{"event_type": "noop", "event_ts": 1729794114937}`                                | null                              | non-null      | null                           | `noop`                               | null                         | 1729794114937                      | Fully shredded object                         |
-| `{"event_type": "login", "event_ts": 1729794146402, "email": "user@example.com"}`  | `{"email": "user@example.com"}`   | non-null      | null                           | `login`                              | null                         | 1729794146402                      | Partially shredded object                     |
-| `{"error_msg": "malformed: ..."}`                                                  | `{"error_msg", "malformed: ..."}` | null          |                                |                                      |                              |                                    | Object with no shredding                      |
-| `"malformed: not an object"`                                                       | `malformed: not an object`        | null          |                                |                                      |                              |                                    | Not an object (stored as Variant string)      |
-| `{"event_ts": 1729794240241, "click": "_button"}`                                  | `{"click": "_button"}`            | non-null      | null                           | null                                 | null                         | 1729794240241                      | Field `event_type` is missing                 |
-| `{"event_type": null, "event_ts": 1729794954163}`                                  | null                              | non-null      | `00` (field exists, is null)   | null                                 | null                         | 1729794954163                      | Field `event_type` is present and is null     |
-| null                                                                               | `00` (null)                       | null          |                                |                                      |                              |                                    | Object/value is null                          |
-| missing                                                                            | null                              | null          |                                |                                      |                              |                                    | Object/value is missing                       |
-| INVALID                                                                            | `{"event_type": "login"}`         | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: Shredded field is present in `value` |
+| Event object                                                                       | `value`                           | `typed_value` | `typed_value.event_type.value` | `typed_value.event_type.typed_value` | `typed_value.event_ts.value` | `typed_value.event_ts.typed_value` | Notes                                            |
+|------------------------------------------------------------------------------------|-----------------------------------|---------------|--------------------------------|--------------------------------------|------------------------------|------------------------------------|--------------------------------------------------|
+| `{"event_type": "noop", "event_ts": 1729794114937}`                                | null                              | non-null      | null                           | `noop`                               | null                         | 1729794114937                      | Fully shredded object                            |
+| `{"event_type": "login", "event_ts": 1729794146402, "email": "user@example.com"}`  | `{"email": "user@example.com"}`   | non-null      | null                           | `login`                              | null                         | 1729794146402                      | Partially shredded object                        |
+| `{"error_msg": "malformed: ..."}`                                                  | `{"error_msg", "malformed: ..."}` | non-null      | null                           | null                                 | null                         | null                               | Object with all shredded fields missing          |
+| `"malformed: not an object"`                                                       | `malformed: not an object`        | null          |                                |                                      |                              |                                    | Not an object (stored as Variant string)         |
+| `{"event_ts": 1729794240241, "click": "_button"}`                                  | `{"click": "_button"}`            | non-null      | null                           | null                                 | null                         | 1729794240241                      | Field `event_type` is missing                    |
+| `{"event_type": null, "event_ts": 1729794954163}`                                  | null                              | non-null      | `00` (field exists, is null)   | null                                 | null                         | 1729794954163                      | Field `event_type` is present and is null        |
+| `{"event_type": "noop", "event_ts": "2024-10-24"`                                  | null                              | non-null      | null                           | `noop`                               | `"2024-10-24"`               | null                               | Field `event_ts` is present but not a timestamp  |
+| `{ }`                                                                              | null                              | non-null      | null                           | null                                 | null                         | null                               | Object is present but empty                      |
+| null                                                                               | `00` (null)                       | null          |                                |                                      |                              |                                    | Object/value is null                             |
+| missing                                                                            | null                              | null          |                                |                                      |                              |                                    | Object/value is missing                          |
+| INVALID                                                                            | `{"event_type": "login"}`         | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: Shredded field is present in `value`    |
+| INVALID                                                                            | `"a"`                             | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: `typed_value` is present for non-object |
+| INVALID                                                                            | `02 00` (object with 0 fields)    | null          |                                |                                      |                              |                                    | INVALID: `typed_value` is null for object        |
+
+Invalid cases in the table above must not be produced by writers.
+Readers must return an object when `typed_value` is non-null containing the shredded fields.
+If `typed_value` is null and `value` is an object, readers may read the encoded object but are not required to do so.
+
+Readers can assume that a value is not an object if `typed_value` is null and that `typed_value` field values are correct; that is, readers do not need to read the `value` column if `typed_value` fields satisfy the required fields.
 
 ## Nesting
 
-The `typed_value` associated with any Variant `value` field can be any shredded type according to the rules above.
+The `typed_value` associated with any Variant `value` field can be any shredded type, as shown in the sections above.
 
 For example, the `event` object above may also shred sub-fields as object (`location`) or array (`tags`).
 
@@ -258,12 +272,12 @@ Comparisons with values of other types are not necessarily valid and data should
 Casting behavior for Variant is delegated to processing engines.
 For example, the interpretation of a string as a timestamp may depend on the engine's SQL session time zone.
 
-## Reconstructing a Variant
+## Reconstructing a Shredded Variant
 
-It is possible to recover a full Variant value using a recursive algorithm, where the initial call is to `construct_variant` with the top-level Variant group fields.
+It is possible to recover an unshredded Variant value using a recursive algorithm, where the initial call is to `construct_variant` with the top-level Variant group fields.
 
 ```python
-def construct_variant(metadata, value, typed_value):
+def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> Variant:
     """Constructs a Variant from value and typed_value"""
     if typed_value is not None:
         if isinstance(typed_value, dict):
@@ -307,7 +321,7 @@ def construct_variant(metadata, value, typed_value):
         # value is missing
         return None
 
-def primitive_to_variant(typed_value):
+def primitive_to_variant(typed_value: Any): Variant:
     if isinstance(typed_value, int):
         return VariantInteger(typed_value)
     elif isinstance(typed_value, str):
