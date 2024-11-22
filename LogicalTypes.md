@@ -811,20 +811,18 @@ optional group my_map (MAP_KEY_VALUE) {
 See [Geospatial Notes](#geospatial-notes).
 
 The type has three type parameters:
-- `encoding`: A required enum value for annonated physical type and encoding
-              for the `GEOMETRY` type. See [Geometry Encoding](#geometry-encoding).
-- `edges`: A required enum value for interpretation for edges of elements of the
-           `GEOMETRY` type, i.e. whether the interpolation between points along
-           an edge represents a straight cartesian line or the shortest line on
-           the sphere. See [Edges](#edges).
+- `encoding`: A required enum value for annonated physical type and encoding for
+  the `GEOMETRY` type. See [Geometry Encoding](#geometry-encoding).
 - `crs`: An optional string value for CRS (coordinate reference system), which
-         is a mapping of how coordinates refer to precise locations on earth.
-         See [Coordinate Reference System](#coordinate-reference-system).
+  is a mapping of how coordinates refer to precise locations on earth. See
+  [Coordinate Reference System](#coordinate-reference-system).
+- `crs_encoding`: An optional string value to describes the encoding used by the
+  `crs` field. See [Coordinate Reference System](#coordinate-reference-system).
 
 The sort order used for `GEOMETRY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
-are found during reading, they must be ignored. Instead, [GeometryStatistics](#geometry-statistics)
-is introduced for `GEOMETRY` type.
+are found during reading, they must be ignored. [GeometryStatistics](#geometry-statistics)
+is introduced to store geometry statistics for `GEOMETRY` type.
 
 #### Geometry Encoding
 
@@ -855,45 +853,17 @@ This is the preferred encoding for maximum portability.
 [coordinate-axis-order]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
 [geopackage-spec]: https://www.geopackage.org/spec130/#gpb_spec
 
-#### Edges
-
-Interpretation for edges of elements of `GEOMETRY` type. In other words, it
-specifies how a point between two vertices should be interpolated in its XY
-dimensions. Supported values and corresponding interpolation approaches are:
-- `PLANAR`: a Cartesian line connecting the two vertices.
-- `SPHERICAL`: a shortest spherical arc between the longitude and latitude
-               represented by the two vertices.
-
-This value applies to all non-point geometry objects and is independent of the
-[Coordinate Reference System](#coordinate-reference-system).
-
-Because most systems currently assume planar edges and do not support spherical
-edges, `PLANAR` should be used as the default value.
-
-Note that edges is required for `GEOMETRY` type. In order to correctly
-interpret geometry data, writer implementations SHOULD always set this field,
-and reader implementations SHOULD fail for an unknown edges value.
-
 #### Coordinate Reference System
 
 CRS (coordinate reference system) is a mapping of how coordinates refer to
-precise locations on earth. A CRS is specified by a key-value entry in the
-`key_value_metadata` field of `FileMetaData` whose key is a short name of
-the CRS and value is the CRS representation. An additional entry in the
-`key_value_metadata` field with the suffix ".type" is required to describe
-the encoding of this CRS representation.
+locations on earth. A custom CRS is specified by a string value in the `crs`
+field of the `GEOMETRY` type. An additional `crs_encoding` field describes the
+encoding used for this CRS representation. Both fields are optional. If custom
+CRS is not provided, CRS defaults to "OGC:CRS84".
 
-For example, if a geometry column (e.g., "geom1") uses the CRS "OGC:CRS84", the
-writer may write two entries to `key_value_metadata` field of `FileMetaData` as
-below, and set the `crs` field of the `GEOMETRY` type to "geom1_crs":
-```
-  "geom1_crs": an UTF-8 encoded PROJJSON representation of OGC:CRS84
-  "geom1_crs.type": "PROJJSON"
-```
-
-The PROJJSON representation of OGC:CRS84 can be seen at [OGC:CRS84][ogc-crs84].
-Multiple geometry columns can refer to the same CRS metadata field
-(e.g., "geom1_crs") if they share the same CRS.
+For example, if a geometry column uses the CRS "OGC:CRS84", the writer may
+write a PROJJSON representation of [OGC:CRS84][ogc-crs84] to the `crs` field
+and set the `crs_encoding` field to "PROJJSON".
 
 [ogc-crs84]: https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#ogccrs84-details
 
@@ -923,13 +893,13 @@ are always present. Z and M are omitted for 2D geometries.
 
 ```thrift
 struct BoundingBox {
-  /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
+  /** Westmost value (min longitude) on the X axis */
   1: required double xmin;
-  /** Max X value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  /** Eastmost value (max longitude) on the X axis */
   2: required double xmax;
-  /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
+  /** Southmost value (min latitude) on the Y axis */
   3: required double ymin;
-  /** Max Y value when edges = PLANAR, northmost value if edges = SPHERICAL */
+  /** Northmost value (max latitude) on the Y axis */
   4: required double ymax;
   /** Min Z value if the axis exists */
   5: optional double zmin;
@@ -941,11 +911,6 @@ struct BoundingBox {
   8: optional double mmax;
 }
 ```
-
-The meaning of each value depends on the `Edges` attribute of the `GEOMETRY` type:
-- If Edges is `PLANAR`, the values are literally the actual min/max value from each axis.
-- If Edges is `SPHERICAL`, the values for X and Y are `[westmost, eastmost, southmost, northmost]`,
-  with necessary min/max values for Z and M if needed.
 
 ##### Geometry Types
 

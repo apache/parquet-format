@@ -242,13 +242,13 @@ struct SizeStatistics {
  * coordinates from each axis.
  */
 struct BoundingBox {
-  /** Min X value when edges = PLANAR, westmost value if edges = SPHERICAL */
+  /** Westmost value (min longitude) on the X axis */
   1: required double xmin;
-  /** Max X value when edges = PLANAR, eastmost value if edges = SPHERICAL */
+  /** Eastmost value (max longitude) on the X axis */
   2: required double xmax;
-  /** Min Y value when edges = PLANAR, southmost value if edges = SPHERICAL */
+  /** Southmost value (min latitude) on the Y axis */
   3: required double ymin;
-  /** Max Y value when edges = PLANAR, northmost value if edges = SPHERICAL */
+  /** Northmost value (max latitude) on the Y axis */
   4: required double ymax;
   /** Min Z value if the axis exists */
   5: optional double zmin;
@@ -411,6 +411,12 @@ struct JsonType {
 struct BsonType {
 }
 
+/**
+ * Embedded Variant logical type annotation
+ */
+struct VariantType {
+}
+
 /** Physical type and encoding for the geometry type */
 enum GeometryEncoding {
   /**
@@ -421,34 +427,23 @@ enum GeometryEncoding {
   WKB = 0;
 }
 
-/** Interpretation for edges of elements of a GEOMETRY type */
-enum Edges {
-  PLANAR = 0;
-  SPHERICAL = 1;
-}
-
 /**
  * GEOMETRY logical type annotation (added in 2.11.0)
  *
- * GeometryEncoding and Edges are required. In order to correctly interpret
- * geometry data, writer implementations SHOULD always them, and reader
- * implementations SHOULD fail for unknown values.
+ * GeometryEncoding is required. In order to correctly interpret geometry data,
+ * writer implementations SHOULD always set it, and reader implementations
+ * SHOULD fail for unknown values.
  *
- * CRS is optional. Once CRS is set, it MUST be a key to an entry in the
- * `key_value_metadata` field of `FileMetaData`.
+ * CRS is optional. A custom CRS and its corresponding encoding can be set to
+ * crs and crs_encoding fields respectively. If missing, the CRS defaults to
+ * "OGC:CRS84".
  *
  * See LogicalTypes.md for detail.
  */
 struct GeometryType {
   1: required GeometryEncoding encoding;
-  2: required Edges edges;
-  3: optional string crs;
-}
-
-/**
- * Embedded Variant logical type annotation
- */
-struct VariantType {
+  2: optional string crs;
+  3: optional string crs_encoding;
 }
 
 /**
