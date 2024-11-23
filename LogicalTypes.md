@@ -724,9 +724,8 @@ as 3-level structures:
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
    element type and elements are required.
-3. If the repeated field is a group with one field and the repetition of that
-   field is `repeated`, then its type is the element type and elements are
-   required.
+3. If the repeated field is a group with one field with `repeated` repetition,
+   then its type is the element type and elements are required.
 4. If the repeated field is a group with one field and is named either `array`
    or uses the `LIST`-annotated group's name with `_tuple` appended then the
    repeated type is the element type and elements are required.
