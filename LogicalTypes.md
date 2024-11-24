@@ -681,10 +681,10 @@ optional group array_of_arrays (LIST) {
 
 #### Backward-compatibility rules
 
-New writer implementations should always produce the 3-level LIST structure shown above.
-However, historically data files have been produced that use different structures
-to represent list-like data, and readers may include compatibility measures to
-interpret them as intended.
+New writer implementations should always produce the 3-level LIST structure shown
+above. However, historically data files have been produced that use different
+structures to represent list-like data, and readers may include compatibility
+measures to interpret them as intended.
 
 ##### 3-level structure with different field names
 
