@@ -889,17 +889,19 @@ by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values
-are always present. Z and M are omitted for 2D geometries.
+are always present. Z and M are omitted for 2D geometries. The concepts of 
+westmost and eastmost values are explicitly introduced to address cases 
+involving antimeridian crossing, where xmin may be greater than xmax.
 
 ```thrift
 struct BoundingBox {
-  /** Westmost value (min longitude) on the X axis */
+  /** Westmost value on the longitude axis */
   1: required double xmin;
-  /** Eastmost value (max longitude) on the X axis */
+  /** Eastmost value on the longitude axis */
   2: required double xmax;
-  /** Southmost value (min latitude) on the Y axis */
+  /** Southmost value on the latitude axis */
   3: required double ymin;
-  /** Northmost value (max latitude) on the Y axis */
+  /** Northmost value on the latitude axis */
   4: required double ymax;
   /** Min Z value if the axis exists */
   5: optional double zmin;
@@ -945,7 +947,9 @@ The Geometry class hierarchy and its WKT and WKB serializations (ISO supporting
 XY, XYZ, XYM, XYZM) are defined by [OpenGIS Implementation Specification for
 Geographic information – Simple feature access – Part 1: Common architecture](
 https://portal.ogc.org/files/?artifact_id=25355), from [OGC (Open Geospatial
-Consortium)](https://www.ogc.org/standard/sfa/).
+Consortium)](https://www.ogc.org/standard/sfa/). According to the OGC specification,
+all geometric attributes are described piecewise by straight line or planar interpolation
+between sets of points.
 
 The version of the OGC standard first used here is 1.2.1, but future versions
 may also used if the WKB representation remains wire-compatible.

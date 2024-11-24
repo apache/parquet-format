@@ -242,13 +242,13 @@ struct SizeStatistics {
  * coordinates from each axis.
  */
 struct BoundingBox {
-  /** Westmost value (min longitude) on the X axis */
+  /** Westmost value on the longitude axis */
   1: required double xmin;
-  /** Eastmost value (max longitude) on the X axis */
+  /** Eastmost value on the longitude axis */
   2: required double xmax;
-  /** Southmost value (min latitude) on the Y axis */
+  /** Southmost value on the latitude axis */
   3: required double ymin;
-  /** Northmost value (max latitude) on the Y axis */
+  /** Northmost value on the latitude axis */
   4: required double ymax;
   /** Min Z value if the axis exists */
   5: optional double zmin;
