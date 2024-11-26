@@ -84,25 +84,25 @@ For example, if a Variant is required (like `measurement` above) and both `value
 
 Shredded values must use the following Parquet types:
 
-| Variant Type                | Equivalent Parquet Type      |
-|-----------------------------|------------------------------|
-| boolean                     | BOOLEAN                      |
-| int8                        | INT(8, signed=true)          |
-| int16                       | INT(16, signed=true)         |
-| int32                       | INT32 / INT(32, signed=true) |
-| int64                       | INT64 / INT(64, signed=true) |
-| float                       | FLOAT                        |
-| double                      | DOUBLE                       |
-| decimal4                    | DECIMAL(precision, scale)    |
-| decimal8                    | DECIMAL(precision, scale)    |
-| decimal16                   | DECIMAL(precision, scale)    |
-| date                        | DATE                         |
-| timestamp                   | TIMESTAMP(true, MICROS)      |
-| timestamp without time zone | TIMESTAMP(false, MICROS)     |
-| binary                      | BINARY                       |
-| string                      | STRING                       |
-| array                       | LIST; see Arrays below       |
-| object                      | GROUP; see Objects below     |
+| Variant Type                | Equivalent Parquet Type           |
+|-----------------------------|-----------------------------------|
+| boolean                     | BOOLEAN                           |
+| int8                        | INT(8, signed=true)               |
+| int16                       | INT(16, signed=true)              |
+| int32                       | INT32 / INT(32, signed=true)      |
+| int64                       | INT64 / INT(64, signed=true)      |
+| float                       | FLOAT                             |
+| double                      | DOUBLE                            |
+| decimal4                    | INT32 / DECIMAL(precision, scale) |
+| decimal8                    | INT64 / DECIMAL(precision, scale) |
+| decimal16                   | DECIMAL(precision, scale)         |
+| date                        | DATE                              |
+| timestamp                   | TIMESTAMP(true, MICROS)           |
+| timestamp without time zone | TIMESTAMP(false, MICROS)          |
+| binary                      | BINARY                            |
+| string                      | STRING                            |
+| array                       | LIST; see Arrays below            |
+| object                      | GROUP; see Objects below          |
 
 #### Primitive Types
 
@@ -112,12 +112,13 @@ Unless the value is shredded as an object (see [Objects](#objects)), `typed_valu
 
 #### Arrays
 
-Arrays can be shredded using a 3-level Parquet list for `typed_value`.
+Arrays can be shredded by using a 3-level Parquet list for `typed_value`.
 
 If the value is not an array, `typed_value` must be null.
 If the value is an array, `value` must be null.
 
-The list `element` must be a required group that contains `value` and `typed_value` fields.
+The list `element` must be a required group.
+The `element` group can contain `value` and `typed_value` fields.
 The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` is not present or cannot represent it.
 The `typed_value` field may be omitted when not shredding elements as a specific type.
 When `typed_value` is omitted, `value` must be `required`.
@@ -183,12 +184,12 @@ optional group event (VARIANT) {
 }
 ```
 
-The group for each named field must be required.
+The group for each named field must use repetition level `required`.
 
 A field's `value` and `typed_value` are set to null (missing) to indicate that the field does not exist in the variant.
 To encode a field that is present with a null value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
 
-The series of objects below would be stored as:
+The table below shows how the series of objects in the first column would be stored:
 
 | Event object                                                                       | `value`                           | `typed_value` | `typed_value.event_type.value` | `typed_value.event_type.typed_value` | `typed_value.event_ts.value` | `typed_value.event_ts.typed_value` | Notes                                            |
 |------------------------------------------------------------------------------------|-----------------------------------|---------------|--------------------------------|--------------------------------------|------------------------------|------------------------------------|--------------------------------------------------|
@@ -334,7 +335,8 @@ def primitive_to_variant(typed_value: Any): Variant:
 
 Shredding is an optional feature of Variant, and readers must continue to be able to read a group containing only `value` and `metadata` fields.
 
-Engines without shredding support are not expected to be able to read Parquet files that use shredding.
-Different files may contain conflicting schemas.
+Engines that do not write shredded values must be able to read shredded values according to this spec or must fail.
+
+Different files may contain conflicting shredding schemas.
 That is, files may contain different `typed_value` columns for the same Variant with incompatible types.
 It may not be possible to infer or specify a single shredded schema that would allow all Parquet files for a table to be read without reconstructing the value as a Variant.
