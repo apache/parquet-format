@@ -39,6 +39,8 @@ Another motivation for the representation is that (aside from metadata) each nes
 For example, in a Variant containing an Array of Variant values, the representation of an inner Variant value, when paired with the metadata of the full variant, is itself a valid Variant.
 
 This document describes the Variant Binary Encoding scheme.
+Variant fields can also be _shredded_.
+Shredding refers to extracting some elements of the variant into separate columns for more efficient extraction/filter pushdown.
 The [Variant Shredding specification](VariantShredding.md) describes the details of shredding Variant values as typed Parquet columns.
 
 ## Variant in Parquet
@@ -47,9 +49,8 @@ A Variant value in Parquet is represented by a group with 2 fields, named `value
 
 * The Variant group must be annotated with the `VARIANT` logical type.
 * Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY` in the Parquet thrift definition).
-* The `metadata` field is required and must be a valid Variant metadata, as defined below.
-* The `value` field is required for unshredded Variant values.
-* The `value` field is optional when parts of the Variant value are shredded according to the [Variant Shredding specification](VariantShredding.md).
+* The `metadata` field is `required` and must be a valid Variant metadata, as defined below.
+* The `value` field must be annotated as `required` for unshredded Variant values, or `optional` if parts of the value are [shredded](VariantShredding.md) as typed Parquet columns.
 * When present, the `value` field must be a valid Variant value, as defined below. 
 
 This is the expected unshredded representation in Parquet:
@@ -482,7 +483,7 @@ To maximize compatibility with readers that can process JSON but not Variant, th
 |---------------|-----------|----------------------------------------------------------|--------------------------------------|
 | Null type     | null      | `null`                                                   | `null`                               |
 | Boolean       | boolean   | `true` or `false`                                        | `true`                               |
-| Exact Numeric | number    | Digits in fraction must match scale, no exponent         | `34`, 34.00                          |
+| Exact Numeric | number    | Digits in fraction must match scale, no exponent         | `34`, `34.00`                        |
 | Float         | number    | Fraction must be present                                 | `14.20`                              |
 | Double        | number    | Fraction must be present                                 | `1.0`                                |
 | Date          | string    | ISO-8601 formatted date                                  | `"2017-11-16"`                       |
@@ -493,3 +494,6 @@ To maximize compatibility with readers that can process JSON but not Variant, th
 | Array         | array     |                                                          | `[34, "abc", "2017-11-16]`           |
 | Object        | object    |                                                          | `{"id": 34, "data": "abc"}`          |
 
+Notes:
+
+* For timestamp and timestampntz, values must use microsecond precision and trailing 0s are required
