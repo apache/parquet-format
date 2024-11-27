@@ -609,6 +609,20 @@ that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
 by `LIST` or `MAP` should be interpreted as a required list of required
 elements where the element type is the type of the field.
 
+```
+WARNING: writers should not produce list types like these examples! They are
+just for the purpose of reading existing data for backward-compatibility.
+
+// List<Integer> (non-null list, non-null elements)
+repeated int32 num;
+
+// List<Tuple<Integer, String>> (non-null list, non-null elements)
+repeated group my_list {
+  required int32 num;
+  optional binary str (STRING);
+}
+```
+
 For all fields in the schema, implementations should use either `LIST` and
 `MAP` annotations _or_ unannotated repeated fields, but not both. When using
 the annotations, no unannotated repeated types are allowed.
@@ -713,6 +727,9 @@ should always be determined by the following rules:
 Examples that can be interpreted using these rules:
 
 ```
+WARNING: writers should not produce list types like these examples! They are
+just for the purpose of reading existing data for backward-compatibility.
+
 // Rule 1: List<Integer> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated int32 element;
