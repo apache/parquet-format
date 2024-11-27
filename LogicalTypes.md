@@ -609,17 +609,6 @@ that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
 by `LIST` or `MAP` should be interpreted as a required list of required
 elements where the element type is the type of the field.
 
-```
-// List<Integer> (non-null list, non-null elements)
-repeated int32 num;
-
-// List<Tuple<Integer, String>> (non-null list, non-null elements)
-repeated group my_list {
-  required int32 num;
-  optional binary str (STRING);
-}
-```
-
 For all fields in the schema, implementations should use either `LIST` and
 `MAP` annotations _or_ unannotated repeated fields, but not both. When using
 the annotations, no unannotated repeated types are allowed.
@@ -686,8 +675,6 @@ above. However, historically data files have been produced that use different
 structures to represent list-like data, and readers may include compatibility
 measures to interpret them as intended.
 
-##### 3-level structure with different field names
-
 It is required that the repeated group of elements is named `list` and that
 its element field is named `element`. However, these names may not be used in
 existing data and should not be enforced as errors when reading. For example,
@@ -702,23 +689,14 @@ optional group my_list (LIST) {
 }
 ```
 
-##### 2-level structure
-
 Some existing data does not include the inner element layer, resulting in a
 `LIST` that annotates a 2-level structure. Unlike the 3-level structure, the
 repetition of a 2-level structure can be `optional`, `required`, or `repeated`.
 When it is `repeated`, the `LIST`-annotated 2-level structure can only serve as
 an element within another `LIST`-annotated 2-level structure.
 
-```
-<list-repetition> group <name> (LIST) {
-  repeated <element-type> <element-name>;
-}
-```
-
 For backward-compatibility, the type of elements in `LIST`-annotated structures
-should always be determined by the following rules if they cannot be determined
-as 3-level structures:
+should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
