@@ -763,6 +763,13 @@ optional group my_list (LIST) {
     required binary str (STRING);
   };
 }
+
+// Rule 5: List<String>  (nullable list, nullable elements)
+optional group my_list (LIST) {
+  repeated group element {
+    optional binary str (STRING);
+  };
+}
 ```
 
 ### Maps
