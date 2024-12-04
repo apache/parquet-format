@@ -73,13 +73,13 @@ metadata  |        header         |
           |                       |
           +-----------------------+
           |                       |
-          :        offset         :  <--  unsigned little-endian, `offset_size` bytes
+          :        offset         :  <-- unsigned little-endian, `offset_size` bytes
           |                       |
           +-----------------------+
                       :
           +-----------------------+
           |                       |
-          :        offset         :  <--  unsigned little-endian, `offset_size` bytes
+          :        offset         :  <-- unsigned little-endian, `offset_size` bytes
           |                       |      (`dictionary_size + 1` offsets)
           +-----------------------+
           |                       |
@@ -88,9 +88,9 @@ metadata  |        header         |
           +-----------------------+
 ```
 
-The metadata is encoded first with the `header` byte, then `dictionary_size` which is a unsigned little-endian value of `offset_size` bytes, and represents the number of string values in the dictionary.
+The metadata is encoded first with the `header` byte, then `dictionary_size` which is an unsigned little-endian value of `offset_size` bytes, and represents the number of string values in the dictionary.
 Next, is an `offset` list, which contains `dictionary_size + 1` values.
-Each `offset` is a usigned little-endian value of `offset_size` bytes, and represents the starting byte offset of the i-th string in `bytes`.
+Each `offset` is an unsigned little-endian value of `offset_size` bytes, and represents the starting byte offset of the i-th string in `bytes`.
 The first `offset` value will always be `0`, and the last `offset` value will always be the total length of `bytes`.
 The last part of the metadata is `bytes`, which stores all the string values in the dictionary.
 All string values must be UTF-8 encoded strings.
@@ -257,10 +257,10 @@ object value_data  |                       |
 An object `value_data` begins with `num_elements`, a 1-byte or 4-byte unsigned little-endian value, representing the number of elements in the object.
 The size in bytes of `num_elements` is indicated by `is_large` in the `value_header`.
 Next, is a list of `field_id` values.
-There are `num_elements` number of entries and each `field_id` is a unsigned little-endian value of `field_id_size` bytes.
+There are `num_elements` number of entries and each `field_id` is an unsigned little-endian value of `field_id_size` bytes.
 A `field_id` is an index into the dictionary in the metadata.
 The `field_id` list is followed by a `field_offset` list.
-There are `num_elements + 1` number of entries and each `field_offset` is a unsigned little-endian value of `field_offset_size` bytes.
+There are `num_elements + 1` number of entries and each `field_offset` is an unsigned little-endian value of `field_offset_size` bytes.
 A `field_offset` represents the byte offset (relative to the first byte of the first `value`) where the i-th `value` starts.
 The last `field_offset` points to the byte after the end of the last `value`.
 The `field_offset` list is followed by the `value` list.
@@ -316,7 +316,7 @@ array value_data  |                       |
 An array `value_data` begins with `num_elements`, a 1-byte or 4-byte unsigned little-endian value, representing the number of elements in the array.
 The size in bytes of `num_elements` is indicated by `is_large` in the `value_header`.
 Next, is a `field_offset` list.
-There are `num_elements + 1` number of entries and each `field_offset` is a unsigned little-endian value of `field_offset_size` bytes.
+There are `num_elements + 1` number of entries and each `field_offset` is an unsigned little-endian value of `field_offset_size` bytes.
 A `field_offset` represents the byte offset (relative to the first byte of the first `value`) where the i-th `value` starts.
 The last `field_offset` points to the byte after the last byte of the last `value`.
 The `field_offset` list is followed by the `value` list.
