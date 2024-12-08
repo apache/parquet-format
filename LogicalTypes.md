@@ -609,9 +609,23 @@ that is neither contained by a `LIST`- or `MAP`-annotated group nor annotated
 by `LIST` or `MAP` should be interpreted as a required list of required
 elements where the element type is the type of the field.
 
-Implementations should use either `LIST` and `MAP` annotations _or_ unannotated
-repeated fields, but not both. When using the annotations, no unannotated
-repeated types are allowed.
+```
+WARNING: writers should not produce list types like these examples! They are
+just for the purpose of reading existing data for backward-compatibility.
+
+// List<Integer> (non-null list, non-null elements)
+repeated int32 num;
+
+// List<Tuple<Integer, String>> (non-null list, non-null elements)
+repeated group my_list {
+  required int32 num;
+  optional binary str (STRING);
+}
+```
+
+For all fields in the schema, implementations should use either `LIST` and
+`MAP` annotations _or_ unannotated repeated fields, but not both. When using
+the annotations, no unannotated repeated types are allowed.
 
 ### Lists
 
@@ -670,6 +684,11 @@ optional group array_of_arrays (LIST) {
 
 #### Backward-compatibility rules
 
+New writer implementations should always produce the 3-level LIST structure shown
+above. However, historically data files have been produced that use different
+structures to represent list-like data, and readers may include compatibility
+measures to interpret them as intended.
+
 It is required that the repeated group of elements is named `list` and that
 its element field is named `element`. However, these names may not be used in
 existing data and should not be enforced as errors when reading. For example,
@@ -684,29 +703,39 @@ optional group my_list (LIST) {
 }
 ```
 
-Some existing data does not include the inner element layer. For
-backward-compatibility, the type of elements in `LIST`-annotated structures
+Some existing data does not include the inner element layer, resulting in a
+`LIST` that annotates a 2-level structure. Unlike the 3-level structure, the
+repetition of a 2-level structure can be `optional`, `required`, or `repeated`.
+When it is `repeated`, the `LIST`-annotated 2-level structure can only serve as
+an element within another `LIST`-annotated 2-level structure.
+
+For backward-compatibility, the type of elements in `LIST`-annotated structures
 should always be determined by the following rules:
 
 1. If the repeated field is not a group, then its type is the element type and
    elements are required.
 2. If the repeated field is a group with multiple fields, then its type is the
    element type and elements are required.
-3. If the repeated field is a group with one field and is named either `array`
+3. If the repeated field is a group with one field with `repeated` repetition,
+   then its type is the element type and elements are required.
+4. If the repeated field is a group with one field and is named either `array`
    or uses the `LIST`-annotated group's name with `_tuple` appended then the
    repeated type is the element type and elements are required.
-4. Otherwise, the repeated field's type is the element type with the repeated
+5. Otherwise, the repeated field's type is the element type with the repeated
    field's repetition.
 
 Examples that can be interpreted using these rules:
 
 ```
-// List<Integer> (nullable list, non-null elements)
+WARNING: writers should not produce list types like these examples! They are
+just for the purpose of reading existing data for backward-compatibility.
+
+// Rule 1: List<Integer> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated int32 element;
 }
 
-// List<Tuple<String, Integer>> (nullable list, non-null elements)
+// Rule 2: List<Tuple<String, Integer>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group element {
     required binary str (STRING);
@@ -714,17 +743,31 @@ optional group my_list (LIST) {
   };
 }
 
-// List<OneTuple<String>> (nullable list, non-null elements)
+// Rule 3: List<List<Integer>> (nullable outer list, non-null elements)
+optional group my_list (LIST) {
+  repeated group array (LIST) {
+    repeated int32 array;
+  };
+}
+
+// Rule 4: List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group array {
     required binary str (STRING);
   };
 }
 
-// List<OneTuple<String>> (nullable list, non-null elements)
+// Rule 4: List<OneTuple<String>> (nullable list, non-null elements)
 optional group my_list (LIST) {
   repeated group my_list_tuple {
     required binary str (STRING);
+  };
+}
+
+// Rule 5: List<String>  (nullable list, nullable elements)
+optional group my_list (LIST) {
+  repeated group element {
+    optional binary str (STRING);
   };
 }
 ```
