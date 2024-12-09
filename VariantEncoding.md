@@ -376,7 +376,7 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 
 *Variant primitive types*
 
-| Logical Type         | Physical Type               | Type ID | Equivalent Parquet Type     | Binary format                                                                               |
+| Type Equivalence Class         | Physical Type               | Type ID | Equivalent Parquet Type     | Binary format                                                                               |
 |----------------------|-----------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------|
 | NullType             | null                        | `0`     | any                         | none                                                                                        |
 | Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                        |
