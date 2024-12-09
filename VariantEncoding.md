@@ -400,7 +400,7 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | TimestampNTZ         | timestamp without time zone | `23`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                        |
 | UUID                 | uuid                        | `24`    | UUID                         | 16-byte big-endian                                                                         |
 
-The *Logical Type* column indicates logical equivalence of physically encoded types.
+The *Type Equivalence Class* column indicates logical equivalence of physically encoded types.
 For example, a user expression operating on a string value containing "hello" should behave the same, whether it is encoded with the short string optimization, or long string encoding.
 Similarly, user expressions operating on an *int8* value of 1 should behave the same as a decimal16 with scale 2 and unscaled value 100.
 
