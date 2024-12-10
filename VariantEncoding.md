@@ -497,3 +497,4 @@ To maximize compatibility with readers that can process JSON but not Variant, th
 Notes:
 
 * For timestamp and timestampntz, values must use microsecond precision and trailing 0s are required
+* For float and double, infinities and not a number values are encoded as strings: `"Infinity"`, `"-Infinity"`, and `"NaN"`
