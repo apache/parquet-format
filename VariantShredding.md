@@ -160,13 +160,15 @@ Fields of an object can be shredded using a Parquet group for `typed_value` that
 
 If the value is an object, `typed_value` must be non-null.
 If the value is not an object, `typed_value` must be null.
+Readers can assume that a value is not an object if `typed_value` is null and that `typed_value` field values are correct; that is, readers do not need to read the `value` column if `typed_value` fields satisfy the required fields.
 
 Each shredded field in the `typed_value` group is represented as a required group that contains optional `value` and `typed_value` fields.
 The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
 
-If the value is a partially shredded object, the `value` must not contain the shredded fields.
-If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded values.
+The `value` column of a partially shredded object must never contain fields represented by the Parquet columns in `typed_value` (shredded fields).
+If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded field values.
+Readers are not required to check for conflicts between `value` and the shredded fields in `typed_value` columns.
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
@@ -212,8 +214,6 @@ The table below shows how the series of objects in the first column would be sto
 Invalid cases in the table above must not be produced by writers.
 Readers must return an object when `typed_value` is non-null containing the shredded fields.
 If `typed_value` is null and `value` is an object, readers may read the encoded object but are not required to do so.
-
-Readers can assume that a value is not an object if `typed_value` is null and that `typed_value` field values are correct; that is, readers do not need to read the `value` column if `typed_value` fields satisfy the required fields.
 
 ## Nesting
 
