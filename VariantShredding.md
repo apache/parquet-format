@@ -54,6 +54,8 @@ required group measurement (VARIANT) {
 }
 ```
 
+The Parquet columns used to store variant metadata and values must be accessed by name, not by position.
+
 The series of measurements `34, null, "n/a", 100` would be stored as:
 
 | Value   | `metadata`       | `value`               | `typed_value` |
