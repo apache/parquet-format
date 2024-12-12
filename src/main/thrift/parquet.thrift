@@ -384,6 +384,11 @@ struct BsonType {
  * Embedded Variant logical type annotation
  */
 struct VariantType {
+  // If the Variant is shredded the version of the shredding specification used.
+  // Required, if the the column is shredded.
+  //
+  // See VariantShredding.md for differences between versions.
+  1: optional i8 shredding_version
 }
 
 /**
