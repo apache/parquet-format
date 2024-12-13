@@ -242,13 +242,13 @@ struct SizeStatistics {
  * coordinates from each axis.
  */
 struct BoundingBox {
-  /** Westmost value (min longitude) on the X axis */
+  /** Min X value for Geometry logical type, westmost value for Geography logical type */
   1: required double xmin;
-  /** Eastmost value (max longitude) on the X axis */
+  /** Max X value for Geometry logical type, eastmost value for Geography logical type */
   2: required double xmax;
-  /** Southmost value (min latitude) on the Y axis */
+  /** Min Y value for Geometry logical type, southmost value for Geography logical type */
   3: required double ymin;
-  /** Northmost value (max latitude) on the Y axis */
+  /** Max Y value for Geometry logical type, northmost value for Geography logical type */
   4: required double ymax;
   /** Min Z value if the axis exists */
   5: optional double zmin;
@@ -260,7 +260,7 @@ struct BoundingBox {
   8: optional double mmax;
 }
 
-/** Statistics specific to GEOMETRY logical type */
+/** Statistics specific to Geometry and Geography logical types */
 struct GeometryStatistics {
   /** A bounding box of geometries */
   1: optional BoundingBox bbox;
@@ -417,33 +417,62 @@ struct BsonType {
 struct VariantType {
 }
 
-/** Physical type and encoding for the geometry type */
-enum GeometryEncoding {
-  /**
-   * Allowed for physical type: BYTE_ARRAY.
-   *
-   * Well-known binary (WKB) representations of geometries.
-   */
-  WKB = 0;
+/** Coordinate reference system (CRS) encoding for Geometry and Geography logical types */
+enum CRSEncoding {
+  SRID = 0;
+  PROJJSON = 1;
+}
+
+/** Edge interpolation algorithm for Geography logical type */
+enum EdgeInterpolationAlgorithm {
+  SPHERICAL = 0;
+  VINCENTY = 1;
+  THOMAS = 2;
+  ANDOYER = 3;
+  KARNEY = 4;
 }
 
 /**
- * GEOMETRY logical type annotation (added in 2.11.0)
+ * Embedded Geometry logical type annotation
  *
- * GeometryEncoding is required. In order to correctly interpret geometry data,
- * writer implementations SHOULD always set it, and reader implementations
- * SHOULD fail for unknown values.
+ * Geometry features in the Well-Known Binary (WKB) format with linear/planar
+ * edges interpolation.
  *
- * CRS is optional. A custom CRS and its corresponding encoding can be set to
- * crs and crs_encoding fields respectively. If missing, the CRS defaults to
- * "OGC:CRS84".
+ * A custom CRS can be set to the crs field. If unset, the CRS defaults to
+ * "OGC:CRS84", which means that the geometries must be stored in longitude,
+ * latitude based on the WGS84 datum.
  *
- * See LogicalTypes.md for detail.
+ * crs_encoding is an auxillary field to help decode the crs text. If unset, the
+ * crs field can be arbitrary text.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
  */
 struct GeometryType {
-  1: required GeometryEncoding encoding;
-  2: optional string crs;
-  3: optional string crs_encoding;
+  1: optional string crs;
+  2: optional CRSEncoding crs_encoding;
+}
+
+/**
+ * Embedded Geography logical type annotation
+ *
+ * Geometry features in the WKB format with non-linear/non-planar edges
+ * interpolation.
+ *
+ * Similar to the Geometry logical type, a custom CRS can be set to the crs and
+ * crs_encoding fields. However, Geography logical type must use a geographic
+ * CRS, where longitudes are bound by [-180, 180] and latitudes are bound by
+ * [-90, 90].
+ *
+ * algorithm is required. In order to correctly interpret edges interpolation
+ * of the geometries, writer implementations should always set it and reader
+ * implementations should fail for unknown values.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
+ */
+struct GeographyType {
+  1: optional string crs;
+  2: optional CRSEncoding crs_encoding;
+  3: required EdgeInterpolationAlgorithm algorithm;
 }
 
 /**
@@ -919,8 +948,8 @@ struct ColumnMetaData {
    */
   16: optional SizeStatistics size_statistics;
 
-  /** Optional statistics specific to GEOMETRY logical type */
-  17: optional GeometryStatistics geometry_stats;
+  /** Optional statistics specific for Geometry and Geography logical types */
+  17: optional GeometryStatistics geometry_statistics;
 }
 
 struct EncryptionWithFooterKey {
@@ -1053,6 +1082,7 @@ union ColumnOrder {
    *   MAP - undefined
    *   VARIANT - undefined
    *   GEOMETRY - undefined
+   *   GEOGRAPHY - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
