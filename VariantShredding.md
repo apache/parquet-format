@@ -77,9 +77,10 @@ Values in the two fields must be interpreted according to the following table:
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
 
-If both fields are non-null and either is not an object, the value is invalid. Readers must either fail or return the `typed_value`.
+When `typed_value` is non-null, its value must always be used when reading.
+Writers must not produce data where both `value` and `typed_value` are non-null, unless the Variant value is an object.
 
-If a Variant is missing in a context where a value is required, readers must either fail or return a Variant null: basic type 0 (primitive) and physical type 0 (null).
+If a Variant is missing in a context where a value is required, readers must return a Variant null (`00`): basic type 0 (primitive) and physical type 0 (null).
 For example, if a Variant is required (like `measurement` above) and both `value` and `typed_value` are null, the returned `value` must be `00` (Variant null).
 
 ### Shredded Value Types
@@ -167,8 +168,7 @@ The `value` field stores the value as Variant-encoded `binary` when the `typed_v
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
 
 The `value` column of a partially shredded object must never contain fields represented by the Parquet columns in `typed_value` (shredded fields).
-If shredded fields are present in the variant object, it is invalid and readers must either fail or use the shredded field values.
-Readers are not required to check for conflicts between `value` and the shredded fields in `typed_value` columns.
+The values stored in shredded fields must always be used when reading.
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
@@ -208,12 +208,11 @@ The table below shows how the series of objects in the first column would be sto
 | null                                                                               | `00` (null)                       | null          |                                |                                      |                              |                                    | Object/value is null                             |
 | missing                                                                            | null                              | null          |                                |                                      |                              |                                    | Object/value is missing                          |
 | INVALID                                                                            | `{"event_type": "login"}`         | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: Shredded field is present in `value`    |
-| INVALID                                                                            | `"a"`                             | non-null      | null                           | `login`                              | null                         | 1729795057774                      | INVALID: `typed_value` is present for non-object |
+| INVALID                                                                            | `"a"`                             | non-null      | null                           | null                                 | null                         | null                               | INVALID: `typed_value` is present for non-object |
 | INVALID                                                                            | `02 00` (object with 0 fields)    | null          |                                |                                      |                              |                                    | INVALID: `typed_value` is null for object        |
 
 Invalid cases in the table above must not be produced by writers.
 Readers must return an object when `typed_value` is non-null containing the shredded fields.
-If `typed_value` is null and `value` is an object, readers may read the encoded object but are not required to do so.
 
 ## Nesting
 
