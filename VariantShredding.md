@@ -83,8 +83,8 @@ optional group variant_col {
 |---------------|-------------------------|-----------------|---------------|-----------------|------------------------|--------------------------|-------|
 | {a: 123, b: {c: “hello”}} | null | null | 123 | null | hello | null | All values shredded |
 | {a: 1.23, b: {c: “123”}} | null | null | null | 1.23 | 123 | null | a is not an integer |
-| {a: 123, b: {c: null}} | null | null | null | 123 | null | null | b.object.c set to non-null to indicate VariantNull |
-| {a: 123, b: {} | null | null | null | 123 | null | null | b.object.c set to null, to indicate that c is missing |
+| {a: 123, b: {c: null}} | null | null | 123 | null | null | null | b.object.c set to non-null to indicate VariantNull |
+| {a: 123, b: {}} | null | null | 123 | null | null | null | b.object.c set to null, to indicate that c is missing |
 | {a: 123, d: 456} | {d: 456} | null | 123 | null | null | null | Extra field d is stored as variant_value |
 | [{a: 1, b: {c: 2}}, {a: 3, b: {c: 4}}] | [{a: 1, b: {c: 2}}, {a: 3, b: {c: 4}}] | null | null | null | null | null | Not an object |
 
