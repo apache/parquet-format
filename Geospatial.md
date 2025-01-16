@@ -75,7 +75,7 @@ An algorithm for interpolating edges, and is one of the following values:
 
 Two geospatial logical type annotations are supported:
 * `GEOMETRY`: Geometry features in the WKB format with linear/planar edges interpolation. See [Geometry](LogicalTypes.md#geometry)
-* `GEOGRAPHY`: Geometry features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
+* `GEOGRAPHY`: Geography features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
 
 # Statistics
 
