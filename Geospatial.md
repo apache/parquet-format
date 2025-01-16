@@ -31,46 +31,31 @@ Simple feature access – Part 1: Common architecture][sfa-part1], from [OGC
 (Open Geospatial Consortium)][ogc].
 
 The version of the OGC standard first used here is 1.2.1, but future versions
-may also used if the WKB representation remains wire-compatible.
+may also be used if the WKB representation remains wire-compatible.
 
 [sfa-part1]: https://portal.ogc.org/files/?artifact_id=25355
 [ogc]: https://www.ogc.org/standard/sfa/
-
-## Well-Known Binary
-
-Well-Known Binary (WKB) representations of geometries.
-
-Apache Parquet follows the same definitions of GeoParquet for [WKB][geoparquet-wkb]
-and [coordinate axis order][coordinate-axis-order]:
-- Geometries should be encoded as ISO WKB supporting XY, XYZ, XYM, XYZM. Supported
-standard geometry types: Point, LineString, Polygon, MultiPoint, MultiLineString,
-MultiPolygon, and GeometryCollection.
-- Coordinate axis order is always (x, y) where x is easting or longitude, and
-y is northing or latitude. This ordering explicitly overrides the axis order
-as specified in the CRS following the [GeoPackage specification][geopackage-spec].
-
-[geoparquet-wkb]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L92
-[coordinate-axis-order]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L155
-[geopackage-spec]: https://www.geopackage.org/spec130/#gpb_spec
 
 ## Coordinate Reference System
 
 Coordinate Reference System (CRS) is a mapping of how coordinates refer to
 locations on Earth.
 
-Apache Parquet supports CRS Customization by providing following attributes:
-* `crs`: a CRS text representation. If unset, the CRS defaults to "OGC:CRS84".
+The default CRS `OGC:CRS84` means that the objects must be stored in longitude,
+latitude based on the WGS84 datum.
+
+Custom CRS can be specified by following attributes:
+* `crs`: a CRS text representation. If unset, the CRS defaults to `"OGC:CRS84"`.
 * `crs_encoding`: a standard encoding used to represent the CRS text. If unset,
   `crs` can be arbitrary string.
 
 For maximum interoperability of a custom CRS, it is recommended to provide
 the CRS text with a standard encoding. Supported CRS encodings are:
 * `SRID`: [Spatial reference identifier][srid], CRS text is the identifier itself.
-* `PROJJSON`: [PROJJSON][projjson], CRS text is the projjson string.
+* `PROJJSON`: [PROJJSON][projjson], CRS text is the PROJJSON string.
 
-For example, if a Geometry or Geography column uses the CRS "OGC:CRS84", a writer
-may write a PROJJSON representation of [OGC:CRS84][ogc-crs84] to the `crs` field
-and set the `crs_encoding` field to `PROJJSON`.
+For example, a writer may write a PROJJSON representation of [OGC:CRS84][ogc-crs84]
+to the `crs` field and set the `crs_encoding` field to `"PROJJSON"`.
 
 [srid]: https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier
 [projjson]: https://proj.org/en/stable/specifications/projjson.html
@@ -78,12 +63,9 @@ and set the `crs_encoding` field to `PROJJSON`.
 
 ## Edge Interpolation Algorithm
 
-The edge interpolation algorithm is used for interpreting edges of elements of
-a Geography column. It is applies to all non-point geometry objects and is
-independent of the [Coordinate Reference System](#coordinate-reference-system).
+An algorithm for interpolating edges, and is one of the following values:
 
-Supported values are:
-* `spherical`: edges are interpolated as geodesics on a sphere. The radius of the underlying sphere is the mean radius of the spheroid defined by the CRS, defined as (2 * major_axis_length + minor_axis_length / 3).
+* `spherical`: edges are interpolated as geodesics on a sphere.
 * `vincenty`: [https://en.wikipedia.org/wiki/Vincenty%27s_formulae](https://en.wikipedia.org/wiki/Vincenty%27s_formulae)
 * `thomas`: Thomas, Paul D. Spheroidal geodesics, reference systems, & local geometry. US Naval Oceanographic Office, 1970.
 * `andoyer`: Thomas, Paul D. Mathematical models for navigation systems. US Naval Oceanographic Office, 1965.
@@ -91,16 +73,16 @@ Supported values are:
 
 # Logical Types
 
-Apache Parquet supports the following geospatial logical type annotations:
-* `GEOMETRY`: Geometry features in the WKB format with linear/planar edges interpolation. See [Geometry logical type](LogicalTypes.md#geometry)
-* `GEOGRAPHY`: Geometry features in the WKB format with non-linear/non-planar edges interpolation. See [Geography logical type](LogicalTypes.md#geography)
+Two geospatial logical type annotations are supported:
+* `GEOMETRY`: Geometry features in the WKB format with linear/planar edges interpolation. See [Geometry](LogicalTypes.md#geometry)
+* `GEOGRAPHY`: Geometry features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
 
 # Statistics
 
 `GeometryStatistics` is a struct specific for `GEOMETRY` and `GEOGRAPHY` logical
 types to store statistics of a column chunk. It is an optional field in the
 `ColumnMetaData` and contains [Bounding Box](#bounding-box) and [Geometry
-Types](#geometry-types).
+Types](#geometry-types) that are described below in detail.
 
 ## Bounding Box
 
@@ -117,28 +99,26 @@ highway milepost value), a timestamp, or some other value as defined by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
-always present. Z and M are omitted for 2D geometries. The concepts of westmost
-and eastmost values are explicitly introduced for Geography logical type to
-address cases involving antimeridian crossing, where xmin may be greater than
-xmax.
+always present. Z and M are omitted for 2D geometries.
+
+For the X and Y values only, (xmin/ymin) may be greater than (xmax/ymax). In this
+X case, an object in this bounding box may match if it contains an X such that
+`x >= xmin` OR `x <= xmax`, and in this Y case if `y >= ymin` OR `y <= ymax`.
+In geographic terminology, the concepts of `xmin`, `xmax`, `ymin`, and `ymax`
+are also known as `westernmost`, `easternmost`, `northernmost` and `southernmost`.
+
+For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
+[-180, 180] for X and [-90, 90] for Y.
 
 ```thrift
 struct BoundingBox {
-  /** Min X value for Geometry logical type, westmost value for Geography logical type */
   1: required double xmin;
-  /** Max X value for Geometry logical type, eastmost value for Geography logical type */
   2: required double xmax;
-  /** Min Y value for Geometry logical type, southmost value for Geography logical type */
   3: required double ymin;
-  /** Max Y value for Geometry logical type, northmost value for Geography logical type */
   4: required double ymax;
-  /** Min Z value if the axis exists */
   5: optional double zmin;
-  /** Max Z value if the axis exists */
   6: optional double zmax;
-  /** Min M value if the axis exists */
   7: optional double mmin;
-  /** Max M value if the axis exists */
   8: optional double mmax;
 }
 ```

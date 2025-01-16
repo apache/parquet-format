@@ -242,21 +242,13 @@ struct SizeStatistics {
  * coordinates from each axis.
  */
 struct BoundingBox {
-  /** Min X value for Geometry logical type, westmost value for Geography logical type */
   1: required double xmin;
-  /** Max X value for Geometry logical type, eastmost value for Geography logical type */
   2: required double xmax;
-  /** Min Y value for Geometry logical type, southmost value for Geography logical type */
   3: required double ymin;
-  /** Max Y value for Geometry logical type, northmost value for Geography logical type */
   4: required double ymax;
-  /** Min Z value if the axis exists */
   5: optional double zmin;
-  /** Max Z value if the axis exists */
   6: optional double zmax;
-  /** Min M value if the axis exists */
   7: optional double mmin;
-  /** Max M value if the axis exists */
   8: optional double mmax;
 }
 
@@ -435,17 +427,16 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geometry features in the Well-Known Binary (WKB) format with linear/planar
- * edges interpolation.
+ * Geometry features in the Well-Known Binary (WKB) format and edges interpolation
+ * is always linear/planar.
  *
- * A custom CRS can be set to the crs field. If unset, the CRS defaults to
- * "OGC:CRS84", which means that the geometries must be stored in longitude,
- * latitude based on the WGS84 datum.
- *
- * crs_encoding is an auxillary field to help decode the crs text. If unset, the
- * crs field can be arbitrary text.
+ * A custom CRS can be set by the crs and crs_encoding fields. If unset, the CRS
+ * defaults to "OGC:CRS84", which means that the geometries must be stored in
+ * longitude, latitude based on the WGS84 datum.
  *
  * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
  */
 struct GeometryType {
   1: optional string crs;
@@ -455,19 +446,20 @@ struct GeometryType {
 /**
  * Embedded Geography logical type annotation
  *
- * Geometry features in the WKB format with non-linear/non-planar edges
- * interpolation.
+ * Geometry features in the WKB format with an explicit (non-linear/non-planar)
+ * edges interpolation algorithm.
  *
- * Similar to the Geometry logical type, a custom CRS can be set to the crs and
- * crs_encoding fields. However, Geography logical type must use a geographic
- * CRS, where longitudes are bound by [-180, 180] and latitudes are bound by
- * [-90, 90].
+ * A custom geographic CRS can be set by the crs and crs_encoding fields, where
+ * longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
+ * If unset, the CRS defaults to "OGC:CRS84".
  *
- * algorithm is required. In order to correctly interpret edges interpolation
- * of the geometries, writer implementations should always set it and reader
- * implementations should fail for unknown values.
+ * The edges interpolation algorithm is required. In order to correctly interpret
+ * edges interpolation of the geometries, writer implementations should always
+ * set it and reader implementations should fail for unknown values.
  *
  * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
  */
 struct GeographyType {
   1: optional string crs;

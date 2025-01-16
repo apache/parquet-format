@@ -602,14 +602,13 @@ optional group variant_shredded (VARIANT) {
 ### GEOMETRY
 
 `GEOMETRY` is used for geometry features in the Well-Known Binary (WKB) format
-with linear/planar edges interpolation. See [Geospatial.md](Geospatial.md) for
-more detail.
+with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
+primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has two type parameters:
-- `crs`: An optional string value for Coordinate Reference System (CRS), which
-  is a mapping of how coordinates refer to locations on Earth. If unset, the CRS
-  defaults to "OGC:CRS84", which means that the geometries must be stored in
-  longitude, latitude based on the WGS84 datum.
+- `crs`: An optional string value for CRS. If unset, the CRS defaults to
+  "OGC:CRS84", which means that the geometries must be stored in longitude,
+  latitude based on the WGS84 datum.
 - `crs_encoding`: An optional enum value to describes the encoding used by the
   `crs` field. Supported values are: `SRID`, `PROJJSON`. If unset, `crs` can be
   arbitrary string.
@@ -618,19 +617,17 @@ The sort order used for `GEOMETRY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored. 
 
-[`GeometryStatistics`](Geospatial.md#statistics) is introduced to store statistics
-for `GEOMETRY` type.
-
 ### GEOGRAPHY
 
-`GEOGRAPHY` is used for geography features in the WKB format with non-linear/non-planar
-edges interpolation.
+`GEOGRAPHY` is used for geography features in the WKB format with an explicit
+(non-linear/non-planar) edges interpolation algorithm. It must annotate a
+`BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has three type parameters:
-- `crs`: An optional string value for CRS, similar to `GEOMETRY` type. It must
-  be a geographic CRS, where longitudes are bound by [-180, 180] and latitudes
-  are bound by [-90, 90].
-- `crs_encoding`: An optional enum value, similar to `GEOMETRY` type.
+- `crs`: An optional string value for CRS. It must be a geographic CRS, where
+  longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
+  If unset, the CRS defaults to "OGC:CRS84".
+- `crs_encoding`: Same as `GEOMETRY` type above.
 - `algorithm`: A required enum value to describes the edge interpolation
   algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
   `KARNEY`. In order to correctly interpret edges interpolation of the geometries,
@@ -640,9 +637,6 @@ The type has three type parameters:
 The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored. 
-
-[`GeometryStatistics`](Geospatial.md#statistics) is introduced to store statistics
-for `GEOGRAPHY` type.
 
 ## Nested Types
 
