@@ -499,6 +499,7 @@ union LogicalType {
   15: Float16Type FLOAT16     // no compatible ConvertedType
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
+  18: GeographyType GEOGRAPHY // no compatible ConvertedType
 }
 
 /**
