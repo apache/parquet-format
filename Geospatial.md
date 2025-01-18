@@ -105,7 +105,8 @@ For the X and Y values only, (xmin/ymin) may be greater than (xmax/ymax). In thi
 X case, an object in this bounding box may match if it contains an X such that
 `x >= xmin` OR `x <= xmax`, and in this Y case if `y >= ymin` OR `y <= ymax`.
 In geographic terminology, the concepts of `xmin`, `xmax`, `ymin`, and `ymax`
-are also known as `westernmost`, `easternmost`, `northernmost` and `southernmost`.
+are also known as `westernmost`, `easternmost`, `southernmost` and `northernmost`,
+respectively.
 
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
