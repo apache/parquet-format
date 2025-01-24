@@ -628,11 +628,9 @@ The type has three type parameters:
   longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
   If unset, the CRS defaults to "OGC:CRS84".
 - `crs_encoding`: Same as `GEOMETRY` type above.
-- `algorithm`: A required enum value to describes the edge interpolation
+- `algorithm`: An optional enum value to describes the edge interpolation
   algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
-  `KARNEY`. In order to correctly interpret edges interpolation of the geometries,
-  writer implementations should always set it and reader implementations should
-  fail for unknown values.
+  `KARNEY`. If unset, the algorithm defaults to `SPHERICAL`.
 
 The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics

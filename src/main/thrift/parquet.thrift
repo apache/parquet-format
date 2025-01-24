@@ -453,9 +453,8 @@ struct GeometryType {
  * longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
  * If unset, the CRS defaults to "OGC:CRS84".
  *
- * An algorithm is required in order to correctly interpret edges interpolation
- * of the geometries. Writer implementations should always set it and reader
- * implementations should fail for unknown values.
+ * An optional algorithm can be set to correctly interpret edges interpolation
+ * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
  *
@@ -464,7 +463,7 @@ struct GeometryType {
 struct GeographyType {
   1: optional string crs;
   2: optional CRSEncoding crs_encoding;
-  3: required EdgeInterpolationAlgorithm algorithm;
+  3: optional EdgeInterpolationAlgorithm algorithm;
 }
 
 /**
