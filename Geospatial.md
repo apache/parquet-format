@@ -44,22 +44,14 @@ locations on Earth.
 The default CRS `OGC:CRS84` means that the objects must be stored in longitude,
 latitude based on the WGS84 datum.
 
-Custom CRS can be specified by following attributes:
-* `crs`: a CRS text representation. If unset, the CRS defaults to `"OGC:CRS84"`.
-* `crs_encoding`: a standard encoding used to represent the CRS text. If unset,
-  `crs` can be arbitrary string.
+Custom CRS can be specified by a string value. It is recommended to use the
+identifier of the CRS like [Spatial reference identifier][srid] and [PROJJSON][projjson].
 
-For maximum interoperability of a custom CRS, it is recommended to provide
-the CRS text with a standard encoding. Supported CRS encodings are:
-* `SRID`: [Spatial reference identifier][srid], CRS text is the identifier itself.
-* `PROJJSON`: [PROJJSON][projjson], CRS text is the PROJJSON string.
-
-For example, a writer may write a PROJJSON representation of [OGC:CRS84][ogc-crs84]
-to the `crs` field and set the `crs_encoding` field to `"PROJJSON"`.
+For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
+by [-90, 90].
 
 [srid]: https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier
 [projjson]: https://proj.org/en/stable/specifications/projjson.html
-[ogc-crs84]: https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#ogccrs84-details
 
 ## Edge Interpolation Algorithm
 

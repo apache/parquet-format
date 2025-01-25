@@ -605,13 +605,10 @@ optional group variant_shredded (VARIANT) {
 with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
 primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
-The type has two type parameters:
+The type has only one type parameter:
 - `crs`: An optional string value for CRS. If unset, the CRS defaults to
-  "OGC:CRS84", which means that the geometries must be stored in longitude,
+  `"OGC:CRS84"`, which means that the geometries must be stored in longitude,
   latitude based on the WGS84 datum.
-- `crs_encoding`: An optional enum value to describes the encoding used by the
-  `crs` field. Supported values are: `SRID`, `PROJJSON`. If unset, `crs` can be
-  arbitrary string.
 
 The sort order used for `GEOMETRY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
@@ -623,11 +620,10 @@ are found during reading, they must be ignored.
 (non-linear/non-planar) edges interpolation algorithm. It must annotate a
 `BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
-The type has three type parameters:
+The type has two type parameters:
 - `crs`: An optional string value for CRS. It must be a geographic CRS, where
   longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
-  If unset, the CRS defaults to "OGC:CRS84".
-- `crs_encoding`: Same as `GEOMETRY` type above.
+  If unset, the CRS defaults to `"OGC:CRS84"`.
 - `algorithm`: An optional enum value to describes the edge interpolation
   algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
   `KARNEY`. If unset, the algorithm defaults to `SPHERICAL`.

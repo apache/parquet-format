@@ -430,9 +430,9 @@ enum EdgeInterpolationAlgorithm {
  * Geometry features in the Well-Known Binary (WKB) format and edges interpolation
  * is always linear/planar.
  *
- * A custom CRS can be set by the crs and crs_encoding fields. If unset, the CRS
- * defaults to "OGC:CRS84", which means that the geometries must be stored in
- * longitude, latitude based on the WGS84 datum.
+ * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
+ * which means that the geometries must be stored in longitude, latitude based on
+ * the WGS84 datum.
  *
  * Allowed for physical type: BYTE_ARRAY.
  *
@@ -440,7 +440,6 @@ enum EdgeInterpolationAlgorithm {
  */
 struct GeometryType {
   1: optional string crs;
-  2: optional CRSEncoding crs_encoding;
 }
 
 /**
@@ -449,9 +448,9 @@ struct GeometryType {
  * Geography features in the WKB format with an explicit (non-linear/non-planar)
  * edges interpolation algorithm.
  *
- * A custom geographic CRS can be set by the crs and crs_encoding fields, where
- * longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
- * If unset, the CRS defaults to "OGC:CRS84".
+ * A custom geographic CRS can be set by the crs field, where longitudes are
+ * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
+ * defaults to "OGC:CRS84".
  *
  * An optional algorithm can be set to correctly interpret edges interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
@@ -462,8 +461,7 @@ struct GeometryType {
  */
 struct GeographyType {
   1: optional string crs;
-  2: optional CRSEncoding crs_encoding;
-  3: optional EdgeInterpolationAlgorithm algorithm;
+  2: optional EdgeInterpolationAlgorithm algorithm;
 }
 
 /**
