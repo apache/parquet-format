@@ -43,11 +43,15 @@ Parquet is built to be used by anyone. The Hadoop ecosystem is rich with data pr
 
 ## Modules
 
-The `parquet-format` project contains format specifications and Thrift definitions of metadata required to properly read Parquet files.
+The [parquet-format] project contains format specifications and Thrift definitions of metadata required to properly read Parquet files.
 
-The `parquet-java` project contains multiple sub-modules, which implement the core components of reading and writing a nested, column-oriented data stream, map this core onto the parquet format, and provide Hadoop Input/Output Formats, Pig loaders, and other java-based utilities for interacting with Parquet.
+The [parquet-java] project contains multiple sub-modules, which implement the core components of reading and writing a nested, column-oriented data stream, map this core onto the parquet format, and provide Hadoop Input/Output Formats, Pig loaders, and other java-based utilities for interacting with Parquet.
 
-The `parquet-compatibility` project contains compatibility tests that can be used to verify that implementations in different languages can read and write each other's files.
+The [parquet-testing] project contains compatibility tests that can be used to verify that implementations in different languages can read and write each other's files.
+
+[parquet-format]: https://github.com/apache/parquet-format
+[parquet-java]: https://github.com/apache/parquet-java
+[parquet-testing]: https://github.com/apache/parquet-testing
 
 ## Building
 
