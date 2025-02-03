@@ -479,20 +479,24 @@ Values stored in the Variant encoding are a superset of JSON values.
 For example, a Variant value can be a date that has no equivalent type in JSON.
 To maximize compatibility with readers that can process JSON but not Variant, the following conversions should be used when producing JSON from a Variant:
 
-| Variant type  | JSON type | Representation requirements                              | Example                              |
-|---------------|-----------|----------------------------------------------------------|--------------------------------------|
-| Null type     | null      | `null`                                                   | `null`                               |
-| Boolean       | boolean   | `true` or `false`                                        | `true`                               |
-| Exact Numeric | number    | Digits in fraction must match scale, no exponent         | `34`, `34.00`                        |
-| Float         | number    | Fraction must be present                                 | `14.20`                              |
-| Double        | number    | Fraction must be present                                 | `1.0`                                |
-| Date          | string    | ISO-8601 formatted date                                  | `"2017-11-16"`                       |
-| Timestamp     | string    | ISO-8601 formatted UTC timestamp including +00:00 offset | `"2017-11-16T22:31:08.000001+00:00"` |
-| TimestampNTZ  | string    | ISO-8601 formatted UTC timestamp with no offset or zone  | `"2017-11-16T22:31:08.000001"`       |
-| Binary        | string    | Base64 encoded binary                                    | `"dmFyaWFudAo="`                     |
-| String        | string    |                                                          | `"variant"`                          |
-| Array         | array     |                                                          | `[34, "abc", "2017-11-16]`           |
-| Object        | object    |                                                          | `{"id": 34, "data": "abc"}`          |
+| Variant type     | JSON type | Representation requirements                              | Example                                  |
+|------------------|-----------|----------------------------------------------------------|------------------------------------------|
+| Null type        | null      | `null`                                                   | `null`                                   |
+| Boolean          | boolean   | `true` or `false`                                        | `true`                                   |
+| Exact Numeric    | number    | Digits in fraction must match scale, no exponent         | `34`, `34.00`                            |
+| Float            | number    | Fraction must be present                                 | `14.20`                                  |
+| Double           | number    | Fraction must be present                                 | `1.0`                                    |
+| Date             | string    | ISO-8601 formatted date                                  | `"2017-11-16"`                           |
+| Time             | string    | ISO-8601 formatted UTC time                              | `"22:31:08.000001"`                      |
+| Timestamp (6)    | string    | ISO-8601 formatted UTC timestamp including +00:00 offset | `"2017-11-16T22:31:08.000001+00:00"`     |
+| Timestamp (9)    | string    | ISO-8601 formatted UTC timestamp including +00:00 offset | `"2017-11-16T22:31:08.000000001+00:00"`  |
+| TimestampNTZ (6) | string    | ISO-8601 formatted UTC timestamp with no offset or zone  | `"2017-11-16T22:31:08.000001"`           |
+| TimestampNTZ (9) | string    | ISO-8601 formatted UTC timestamp with no offset or zone  | `"2017-11-16T22:31:08.000000001"`        |
+| Binary           | string    | Base64 encoded binary                                    | `"dmFyaWFudAo="`                         |
+| String           | string    |                                                          | `"variant"`                              |
+| UUID             | string    |                                                          | `"f79c3e09-677c-4bbd-a479-3f349cb785e7"` |
+| Array            | array     |                                                          | `[34, "abc", "2017-11-16]`               |
+| Object           | object    |                                                          | `{"id": 34, "data": "abc"}`              |
 
 Notes:
 
