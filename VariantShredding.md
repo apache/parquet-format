@@ -85,27 +85,29 @@ For example, if a Variant is required (like `measurement` above) and both `value
 
 Shredded values must use the following Parquet types:
 
-| Variant Type                | Equivalent Parquet Type           |
-|-----------------------------|-----------------------------------|
-| boolean                     | BOOLEAN                           |
-| int8                        | INT(8, signed=true)               |
-| int16                       | INT(16, signed=true)              |
-| int32                       | INT32 / INT(32, signed=true)      |
-| int64                       | INT64 / INT(64, signed=true)      |
-| float                       | FLOAT                             |
-| double                      | DOUBLE                            |
-| decimal4                    | INT32 / DECIMAL(precision, scale) |
-| decimal8                    | INT64 / DECIMAL(precision, scale) |
-| decimal16                   | DECIMAL(precision, scale)         |
-| date                        | DATE                              |
-| time                        | TIME(false, MICROS)               |
-| timestamp with time zone    | TIMESTAMP(true, MICROS|NANOS)     |
-| timestamp without time zone | TIMESTAMP(false, MICROS|NANOS)    |
-| binary                      | BINARY                            |
-| string                      | BINARY / STRING                   |
-| uuid                        | FIXED_LEN_BYTE_ARRAY[16] / UUID   |
-| array                       | LIST; see Arrays below            |
-| object                      | GROUP; see Objects below          |
+| Variant Type                | Parquet Physical Type             | Parquet Logical Type     |
+|-----------------------------|-----------------------------------|--------------------------|
+| boolean                     | BOOLEAN                           |                          |
+| int8                        | INT32                             | INT(8, signed=true)      |
+| int16                       | INT32                             | INT(16, signed=true)     |
+| int32                       | INT32                             |                          |
+| int64                       | INT64                             |                          |
+| float                       | FLOAT                             |                          |
+| double                      | DOUBLE                            |                          |
+| decimal4                    | INT32                             | DECIMAL(P, S)            |
+| decimal8                    | INT64                             | DECIMAL(P, S)            |
+| decimal16                   | BYTE_ARRAY / FIXED_LEN_BYTE_ARRAY | DECIMAL(P, S)            |
+| date                        | INT32                             | DATE                     |
+| time                        | INT64                             | TIME(false, MICROS)      |
+| timestamptz(6)              | INT64                             | TIMESTAMP(true, MICROS)  |
+| timestamptz(9)              | INT64                             | TIMESTAMP(true, NANOS)   |
+| timestampntz(6)             | INT64                             | TIMESTAMP(false, MICROS) |
+| timestampntz(9)             | INT64                             | TIMESTAMP(false, NANOS)  |
+| binary                      | BINARY                            |                          |
+| string                      | BINARY                            | STRING                   |
+| uuid                        | FIXED_LEN_BYTE_ARRAY[len=16]      | UUID                     |
+| array                       | GROUP; see Arrays below           | LIST                     |
+| object                      | GROUP; see Objects below          |                          |
 
 #### Primitive Types
 
