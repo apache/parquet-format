@@ -98,10 +98,12 @@ Shredded values must use the following Parquet types:
 | decimal8                    | INT64 / DECIMAL(precision, scale) |
 | decimal16                   | DECIMAL(precision, scale)         |
 | date                        | DATE                              |
-| timestamp                   | TIMESTAMP(true, MICROS)           |
-| timestamp without time zone | TIMESTAMP(false, MICROS)          |
+| time                        | TIME(false, MICROS)               |
+| timestamp with time zone    | TIMESTAMP(true, MICROS|NANOS)     |
+| timestamp without time zone | TIMESTAMP(false, MICROS|NANOS)    |
 | binary                      | BINARY                            |
-| string                      | STRING                            |
+| string                      | BINARY / STRING                   |
+| uuid                        | FIXED_LEN_BYTE_ARRAY[16] / UUID   |
 | array                       | LIST; see Arrays below            |
 | object                      | GROUP; see Objects below          |
 
