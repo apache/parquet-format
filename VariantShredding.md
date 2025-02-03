@@ -76,8 +76,6 @@ Values in the two fields must be interpreted according to the following table:
 | non-null | non-null      | The value is present and is a partially shredded object     |
 
 An object is _partially shredded_ when the `value` is an object and the `typed_value` is a shredded object.
-
-When `typed_value` is non-null, its value must always be used when reading.
 Writers must not produce data where both `value` and `typed_value` are non-null, unless the Variant value is an object.
 
 If a Variant is missing in a context where a value is required, readers must return a Variant null (`00`): basic type 0 (primitive) and physical type 0 (null).
@@ -168,7 +166,8 @@ The `value` field stores the value as Variant-encoded `binary` when the `typed_v
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
 
 The `value` column of a partially shredded object must never contain fields represented by the Parquet columns in `typed_value` (shredded fields).
-The values stored in shredded fields must always be used when reading.
+Readers may always assume that data is written correctly and that shredded fields in `typed_value` are not present in `value`.
+As a result, reads when a field is defined in both `value` and a `typed_value` shredded field may be inconsistent.
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
@@ -192,6 +191,11 @@ The group for each named field must use repetition level `required`.
 
 A field's `value` and `typed_value` are set to null (missing) to indicate that the field does not exist in the variant.
 To encode a field that is present with a null value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
+
+When both `value` and `typed_value` for a field are non-null, engines should fail.
+If engines choose to read in such cases, then the `typed_value` column must be used.
+Readers may always assume that data is written correctly and that only `value` or `typed_value` is defined.
+As a result, reads when both `value` and `typed_value` are defined may be inconsistent with optimized reads that require only one of the columns.
 
 The table below shows how the series of objects in the first column would be stored:
 
