@@ -409,12 +409,6 @@ struct BsonType {
 struct VariantType {
 }
 
-/** Coordinate reference system (CRS) encoding for Geometry and Geography logical types */
-enum CRSEncoding {
-  SRID = 0;
-  PROJJSON = 1;
-}
-
 /** Edge interpolation algorithm for Geography logical type */
 enum EdgeInterpolationAlgorithm {
   SPHERICAL = 0;
