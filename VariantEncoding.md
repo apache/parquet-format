@@ -424,10 +424,10 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
 | Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
 | String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
-| TimeNTZ              | time without time zone      | `21`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                               |
-| Timestamp            | timestamp with time zone    | `22`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                               |
-| TimestampNTZ         | timestamp without time zone | `23`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                               |
-| UUID                 | uuid                        | `24`    | UUID                        | 16-byte big-endian                                                                                                  |
+| TimeNTZ              | time without time zone      | `17`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                               |
+| Timestamp            | timestamp with time zone    | `18`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                               |
+| TimestampNTZ         | timestamp without time zone | `19`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                               |
+| UUID                 | uuid                        | `20`    | UUID                        | 16-byte big-endian                                                                                                  |
 
 The *Equivalence Class* column indicates logical equivalence of physically encoded types.
 For example, a user expression operating on a string value containing "hello" should behave the same, whether it is encoded with the short string optimization, or long string encoding.
