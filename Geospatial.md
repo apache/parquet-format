@@ -25,10 +25,10 @@ This document contains the specification of geospatial types and statistics.
 # Background
 
 The Geometry and Geography class hierarchy and its Well-Known Text (WKT) and
-Well-Known Binary (WKB) serializations (ISO supporting XY, XYZ, XYM, XYZM) are
-defined by [OpenGIS Implementation Specification for Geographic information –
-Simple feature access – Part 1: Common architecture][sfa-part1], from [OGC
-(Open Geospatial Consortium)][ogc].
+Well-Known Binary (WKB) serializations (ISO variant supporting XY, XYZ, XYM,
+XYZM) are defined by [OpenGIS Implementation Specification for Geographic
+information – Simple feature access – Part 1: Common architecture][sfa-part1],
+from [OGC(Open Geospatial Consortium)][ogc].
 
 The version of the OGC standard first used here is 1.2.1, but future versions
 may also be used if the WKB representation remains wire-compatible.
@@ -41,17 +41,19 @@ may also be used if the WKB representation remains wire-compatible.
 Coordinate Reference System (CRS) is a mapping of how coordinates refer to
 locations on Earth.
 
-The default CRS `OGC:CRS84` means that the objects must be stored in longitude,
-latitude based on the WGS84 datum.
+The default CRS `OGC:CRS84` means that the geospatial features must be stored
+in the order of longitude/latitude based on the WGS84 datum.
 
-Custom CRS can be specified by a string value. It is recommended to use the
-identifier of the CRS like [Spatial reference identifier][srid] and [PROJJSON][projjson].
+Custom CRS can be specified by a string value. It is recommended to use an
+identifier-based approach like [Spatial reference identifier][srid].
+
+The axis order (longitude/latitude or latitude/longitude) is determined by CRS.
+For example, `srid:4326` follows a latitude/longitude order.
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
 by [-90, 90].
 
 [srid]: https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier
-[projjson]: https://proj.org/en/stable/specifications/projjson.html
 
 ## Edge Interpolation Algorithm
 
@@ -66,39 +68,41 @@ An algorithm for interpolating edges, and is one of the following values:
 # Logical Types
 
 Two geospatial logical type annotations are supported:
-* `GEOMETRY`: Geometry features in the WKB format with linear/planar edges interpolation. See [Geometry](LogicalTypes.md#geometry)
-* `GEOGRAPHY`: Geography features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
+* `GEOMETRY`: geospatial features in the WKB format with linear/planar edges interpolation. See [Geometry](LogicalTypes.md#geometry)
+* `GEOGRAPHY`: geospatial features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
 
 # Statistics
 
-`GeometryStatistics` is a struct specific for `GEOMETRY` and `GEOGRAPHY` logical
-types to store statistics of a column chunk. It is an optional field in the
-`ColumnMetaData` and contains [Bounding Box](#bounding-box) and [Geometry
-Types](#geometry-types) that are described below in detail.
+`GeospatialStatistics` is a struct specific for `GEOMETRY` and `GEOGRAPHY`
+logical types to store statistics of a column chunk. It is an optional field in
+the `ColumnMetaData` and contains [Bounding Box](#bounding-box) and [Geospatial
+Types](#geospatial-types) that are described below in detail.
 
 ## Bounding Box
 
-A geometry has at least two coordinate dimensions: X and Y for 2D coordinates
-of each point. A geometry can optionally have Z and / or M values associated
-with each point in the geometry.
+A geospatial instance has at least two coordinate dimensions: X and Y for 2D
+coordinates of each point. A geospatial instance can optionally have Z and/or M
+values associated with each point.
 
 The Z values introduce the third dimension coordinate. Usually they are used to
 indicate the height, or elevation.
 
-M values are an opportunity for a geometry to express a fourth dimension as a
-coordinate value. These values can be used as a linear reference value (e.g.,
-highway milepost value), a timestamp, or some other value as defined by the CRS.
+M values are an opportunity for a geospatial instance to express a fourth
+dimension as a coordinate value. These values can be used as a linear reference
+value (e.g., highway milepost value), a timestamp, or some other value as defined
+by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
-always present. Z and M are omitted for 2D geometries.
+always present. Z and M are omitted for 2D geospatial instances.
 
 For the X and Y values only, (xmin/ymin) may be greater than (xmax/ymax). In this
 X case, an object in this bounding box may match if it contains an X such that
 `x >= xmin` OR `x <= xmax`, and in this Y case if `y >= ymin` OR `y <= ymax`.
-In geographic terminology, the concepts of `xmin`, `xmax`, `ymin`, and `ymax`
-are also known as `westernmost`, `easternmost`, `southernmost` and `northernmost`,
-respectively.
+This wraparound occurs only when X or Y is assigned to represent longitude, and
+the corresponding bounding box crosses the antimeridian line. In geographic
+terminology, the concepts of `xmin`, `xmax`, `ymin`, and `ymax` are also known
+as `westernmost`, `easternmost`, `southernmost` and `northernmost`, respectively.
 
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
@@ -116,14 +120,14 @@ struct BoundingBox {
 }
 ```
 
-## Geometry Types
+## Geospatial Types
 
-A list of geometry types from all geometries in the `GEOMETRY` or `GEOGRAPHY`
+A list of geospatial types from all instances in the `GEOMETRY` or `GEOGRAPHY`
 column, or an empty list if they are not known.
 
 This is borrowed from [geometry_types of GeoParquet][geometry-types] except that
 values in the list are [WKB (ISO-variant) integer codes][wkb-integer-code].
-Table below shows the most common geometry types and their codes:
+Table below shows the most common geospatial types and their codes:
 
 | Type               | XY   | XYZ  | XYM  | XYZM |
 | :----------------- | :--- | :--- | :--- | :--: |
@@ -136,9 +140,21 @@ Table below shows the most common geometry types and their codes:
 | GeometryCollection | 0007 | 1007 | 2007 | 3007 |
 
 In addition, the following rules are applied:
-- A list of multiple values indicates that multiple geometry types are present (e.g. `[0003, 0006]`).
-- An empty array explicitly signals that the geometry types are not known.
-- The geometry types in the list must be unique (e.g. `[0001, 0001]` is not valid).
+- A list of multiple values indicates that multiple geospatial types are present (e.g. `[0003, 0006]`).
+- An empty array explicitly signals that the geospatial types are not known.
+- The geospatial types in the list must be unique (e.g. `[0001, 0001]` is not valid).
 
 [geometry-types]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L159
 [wkb-integer-code]: https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
+
+# CRS Customization
+
+CRS is represented as a string value. Writer and reader implementations are
+responsible for serializing and deserializing the CRS, respectively.
+
+As a convention to maximize the interoperability, custom CRS values can be
+specified by a string of the format `type:identifier`, where `type` is one of
+the following values:
+
+* `srid`: [Spatial reference identifier](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), `identifier` is the SRID itself.
+* `projjson`: [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), `identifier` is the name of a table property or a file property where the projjson string is stored.

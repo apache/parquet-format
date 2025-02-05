@@ -601,7 +601,7 @@ optional group variant_shredded (VARIANT) {
 
 ### GEOMETRY
 
-`GEOMETRY` is used for geometry features in the Well-Known Binary (WKB) format
+`GEOMETRY` is used for geospatial features in the Well-Known Binary (WKB) format
 with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
 primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
@@ -616,7 +616,7 @@ are found during reading, they must be ignored.
 
 ### GEOGRAPHY
 
-`GEOGRAPHY` is used for geography features in the WKB format with an explicit
+`GEOGRAPHY` is used for geospatial features in the WKB format with an explicit
 (non-linear/non-planar) edges interpolation algorithm. It must annotate a
 `BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 

@@ -238,8 +238,8 @@ struct SizeStatistics {
 }
 
 /**
- * Bounding box of geometries in the representation of min/max value pair of
- * coordinates from each axis.
+ * Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max
+ * value pair of coordinates from each axis.
  */
 struct BoundingBox {
   1: required double xmin;
@@ -253,11 +253,11 @@ struct BoundingBox {
 }
 
 /** Statistics specific to Geometry and Geography logical types */
-struct GeometryStatistics {
-  /** A bounding box of geometries */
+struct GeospatialStatistics {
+  /** A bounding box of geospatial instances */
   1: optional BoundingBox bbox;
-  /** Geometry type codes of all geometries, or an empty list if not known */
-  2: optional list<i32> geometry_types;
+  /** Geospatial type codes of all instances, or an empty list if not known */
+  2: optional list<i32> geospatial_types;
 }
 
 /**
@@ -421,7 +421,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geometry features in the Well-Known Binary (WKB) format and edges interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -439,7 +439,7 @@ struct GeometryType {
 /**
  * Embedded Geography logical type annotation
  *
- * Geography features in the WKB format with an explicit (non-linear/non-planar)
+ * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
  * edges interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
@@ -933,7 +933,7 @@ struct ColumnMetaData {
   16: optional SizeStatistics size_statistics;
 
   /** Optional statistics specific for Geometry and Geography logical types */
-  17: optional GeometryStatistics geometry_statistics;
+  17: optional GeospatialStatistics geospatial_statistics;
 }
 
 struct EncryptionWithFooterKey {
