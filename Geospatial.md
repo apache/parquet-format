@@ -27,7 +27,7 @@ This document contains the specification of geospatial types and statistics.
 The Geometry and Geography class hierarchy and its Well-Known Text (WKT) and
 Well-Known Binary (WKB) serializations (ISO variant supporting XY, XYZ, XYM,
 XYZM) are defined by [OpenGIS Implementation Specification for Geographic
-information – Simple feature access – Part 1: Common architecture][sfa-part1],
+information - Simple feature access - Part 1: Common architecture][sfa-part1],
 from [OGC(Open Geospatial Consortium)][ogc].
 
 The version of the OGC standard first used here is 1.2.1, but future versions
@@ -46,9 +46,6 @@ in the order of longitude/latitude based on the WGS84 datum.
 
 Custom CRS can be specified by a string value. It is recommended to use an
 identifier-based approach like [Spatial reference identifier][srid].
-
-The axis order (longitude/latitude or latitude/longitude) is determined by CRS.
-For example, `srid:4326` follows a latitude/longitude order.
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
 by [-90, 90].
@@ -81,8 +78,9 @@ Types](#geospatial-types) that are described below in detail.
 ## Bounding Box
 
 A geospatial instance has at least two coordinate dimensions: X and Y for 2D
-coordinates of each point. A geospatial instance can optionally have Z and/or M
-values associated with each point.
+coordinates of each point. Please note that X is longitude/easting and Y is
+latitude/northing. A geospatial instance can optionally have Z and/or M values
+associated with each point.
 
 The Z values introduce the third dimension coordinate. Usually they are used to
 indicate the height, or elevation.
@@ -96,13 +94,12 @@ Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
-For the X and Y values only, (xmin/ymin) may be greater than (xmax/ymax). In this
-X case, an object in this bounding box may match if it contains an X such that
-`x >= xmin` OR `x <= xmax`, and in this Y case if `y >= ymin` OR `y <= ymax`.
-This wraparound occurs only when X or Y is assigned to represent longitude, and
-the corresponding bounding box crosses the antimeridian line. In geographic
-terminology, the concepts of `xmin`, `xmax`, `ymin`, and `ymax` are also known
-as `westernmost`, `easternmost`, `southernmost` and `northernmost`, respectively.
+For the X values only, xmin may be greater than xmax. In this case, an object
+in this bounding box may match if it contains an X such that `x >= xmin` OR
+`x <= xmax`. This wraparound occurs only when the corresponding bounding box
+crosses the antimeridian line. In geographic terminology, the concepts of `xmin`,
+`xmax`, `ymin`, and `ymax` are also known as `westernmost`, `easternmost`,
+`southernmost` and `northernmost`, respectively.
 
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
@@ -158,3 +155,10 @@ the following values:
 
 * `srid`: [Spatial reference identifier](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), `identifier` is the SRID itself.
 * `projjson`: [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), `identifier` is the name of a table property or a file property where the projjson string is stored.
+
+# Coordinate axis order
+
+The axis order of the coordinates in WKB and bounding box stored in Parquet
+follows the de facto standard for axis order in WKB and is therefore always
+(x, y) where x is easting or longitude and y is northing or latitude. This
+ordering explicitly overrides the axis order as specified in the CRS.
