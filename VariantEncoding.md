@@ -39,13 +39,42 @@ Another motivation for the representation is that (aside from metadata) each nes
 For example, in a Variant containing an Array of Variant values, the representation of an inner Variant value, when paired with the metadata of the full variant, is itself a valid Variant.
 
 This document describes the Variant Binary Encoding scheme.
-[VariantShredding.md](VariantShredding.md) describes the details of the Variant shredding scheme.
+Variant fields can also be _shredded_.
+Shredding refers to extracting some elements of the variant into separate columns for more efficient extraction/filter pushdown.
+The [Variant Shredding specification](VariantShredding.md) describes the details of shredding Variant values as typed Parquet columns.
 
-# Variant in Parquet
+## Variant in Parquet
+
 A Variant value in Parquet is represented by a group with 2 fields, named `value` and `metadata`.
-Both fields `value` and `metadata` are of type `binary`, and cannot be `null`.
 
-# Metadata encoding
+* The Variant group must be annotated with the `VARIANT` logical type.
+* Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY` in the Parquet thrift definition).
+* The `metadata` field is `required` and must be a valid Variant metadata, as defined below.
+* The `value` field must be annotated as `required` for unshredded Variant values, or `optional` if parts of the value are [shredded](VariantShredding.md) as typed Parquet columns.
+* When present, the `value` field must be a valid Variant value, as defined below. 
+
+This is the expected unshredded representation in Parquet:
+
+```
+optional group variant_name (VARIANT) {
+  required binary metadata;
+  required binary value;
+}
+```
+
+This is an example representation of a shredded Variant in Parquet:
+```
+optional group shredded_variant_name (VARIANT) {
+  required binary metadata;
+  optional binary value;
+  optional int64 typed_value;
+}
+```
+
+The `VARIANT` annotation places no additional restrictions on the repetition of Variant groups, but repetition may be restricted by containing types (such as `MAP` and `LIST`).
+The Variant group name is the name of the Variant column.
+
+## Metadata encoding
 
 The encoded metadata always starts with a header byte.
 ```
@@ -95,7 +124,7 @@ The first `offset` value will always be `0`, and the last `offset` value will al
 The last part of the metadata is `bytes`, which stores all the string values in the dictionary.
 All string values must be UTF-8 encoded strings.
 
-## Metadata encoding grammar
+### Metadata encoding grammar
 
 The grammar for encoded metadata is as follows
 
@@ -119,7 +148,7 @@ Notes:
 - If `sorted_strings` is set to 1, strings in the dictionary must be unique and sorted in lexicographic order. If the value is set to 0, readers may not make any assumptions about string order or uniqueness.
 
 
-# Value encoding
+## Value encoding
 
 The entire encoded Variant value includes the `value_metadata` byte, and then 0 or more bytes for the `val`.
 ```
@@ -132,16 +161,16 @@ value     |            value_header            | basic_type |
           |                                                 |
           +-------------------------------------------------+
 ```
-## Basic Type
+### Basic Type
 
 The `basic_type` is 2-bit value that represents which basic type the Variant value is.
 The [basic types table](#encoding-types) shows what each value represents.
 
-## Value Header
+### Value Header
 
 The `value_header` is a 6-bit value that contains more information about the type, and the format depends on the `basic_type`.
 
-### Value Header for Primitive type (`basic_type`=0)
+#### Value Header for Primitive type (`basic_type`=0)
 
 When `basic_type` is `0`, `value_header` is a 6-bit `primitive_header`.
 The [primitive types table](#encoding-types) shows what each value represents.
@@ -152,7 +181,7 @@ value_header    |   primitive_header    |
                 +-----------------------+
 ```
 
-### Value Header for Short string (`basic_type`=1)
+#### Value Header for Short string (`basic_type`=1)
 
 When `basic_type` is `1`, `value_header` is a 6-bit `short_string_header`.
 ```
@@ -163,7 +192,7 @@ value_header    |  short_string_header  |
 ```
 The `short_string_header` value is the length of the string.
 
-### Value Header for Object (`basic_type`=2)
+#### Value Header for Object (`basic_type`=2)
 
 When `basic_type` is `2`, `value_header` is made up of `field_offset_size_minus_one`, `field_id_size_minus_one`, and `is_large`.
 ```
@@ -181,7 +210,7 @@ The actual number of bytes is computed as `field_offset_size_minus_one + 1` and 
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
 
-### Value Header for Array (`basic_type`=3)
+#### Value Header for Array (`basic_type`=3)
 
 When `basic_type` is `3`, `value_header` is made up of `field_offset_size_minus_one`, and `is_large`.
 ```
@@ -198,21 +227,21 @@ The actual number of bytes is computed as `field_offset_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
 
-## Value Data
+### Value Data
 
 The `value_data` encoding format depends on the type specified by `value_metadata`.
 For some types, the `value_data` will be 0-bytes.
 
-### Value Data for Primitive type (`basic_type`=0)
+#### Value Data for Primitive type (`basic_type`=0)
 
 When `basic_type` is `0`, `value_data` depends on the `primitive_header` value.
 The [primitive types table](#encoding-types) shows the encoding format for each primitive type.
 
-### Value Data for Short string (`basic_type`=1)
+#### Value Data for Short string (`basic_type`=1)
 
 When `basic_type` is `1`, `value_data` is the sequence of UTF-8 encoded bytes that represents the string.
 
-### Value Data for Object (`basic_type`=2)
+#### Value Data for Object (`basic_type`=2)
 
 When `basic_type` is `2`, `value_data` encodes an object.
 The encoding format is shown in the following diagram:
@@ -282,7 +311,7 @@ The `field_id` list must be `[<id for key "a">, <id for key "b">, <id for key "c
 The `field_offset` list must be `[<offset for value 1>, <offset for value 2>, <offset for value 3>, <last offset>]`.
 The `value` list can be in any order.
 
-### Value Data for Array (`basic_type`=3)
+#### Value Data for Array (`basic_type`=3)
 
 When `basic_type` is `3`, `value_data` encodes an array. The encoding format is shown in the following diagram:
 ```
@@ -323,7 +352,7 @@ The `field_offset` list is followed by the `value` list.
 There are `num_elements` number of `value` entries and each `value` is an encoded Variant value.
 For the i-th array entry, the value is the Variant `value` starting from the i-th `field_offset` byte offset.
 
-## Value encoding grammar
+### Value encoding grammar
 
 The grammar for an encoded value is:
 
@@ -364,7 +393,7 @@ It is semantically identical to the "string" primitive type.
 
 The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(val)) + 1`.
 
-# Encoding types
+## Encoding types
 *Variant basic types*
 
 | Basic Type   | ID  | Description                                       |
@@ -376,31 +405,31 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 
 *Variant primitive types*
 
-| Type Equivalence Class         | Physical Type               | Type ID | Equivalent Parquet Type     | Binary format                                                                               |
-|----------------------|-----------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------|
-| NullType             | null                        | `0`     | any                         | none                                                                                        |
-| Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                        |
-| Boolean              | boolean (False)             | `2`     | BOOLEAN                     | none                                                                                        |
-| Exact Numeric        | int8                        | `3`     | INT(8, signed)              | 1 byte                                                                                      |
-| Exact Numeric        | int16                       | `4`     | INT(16, signed)             | 2 byte little-endian                                                                        |
-| Exact Numeric        | int32                       | `5`     | INT(32, signed)             | 4 byte little-endian                                                                        |
-| Exact Numeric        | int64                       | `6`     | INT(64, signed)             | 8 byte little-endian                                                                        |
-| Double               | double                      | `7`     | DOUBLE                      | IEEE little-endian                                                                          |
-| Exact Numeric        | decimal4                    | `8`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table) |
-| Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table) |
-| Exact Numeric        | decimal16                   | `10`    | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table) |
-| Date                 | date                        | `11`    | DATE                        | 4 byte little-endian                                                                        |
-| Timestamp            | timestamp with time zone    | `12`    | TIMESTAMP(isAdjustedToUTC=true, MICROS)     | 8-byte little-endian                                                                        |
-| TimestampNTZ         | timestamp without time zone | `13`    | TIMESTAMP(isAdjustedToUTC=false, MICROS)    | 8-byte little-endian                                                                        |
-| Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                          |
-| Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                |
-| String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                  |
-| TimeNTZ              | time without time zone      | `21`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                        |
-| Timestamp            | timestamp with time zone   | `22`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                        |
-| TimestampNTZ         | timestamp without time zone | `23`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                        |
-| UUID                 | uuid                        | `24`    | UUID                         | 16-byte big-endian                                                                         |
+| Equivalence Class    | Variant Physical Type       | Type ID | Equivalent Parquet Type     | Binary format                                                                                                       |
+|----------------------|-----------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------|
+| NullType             | null                        | `0`     | UNKNOWN                     | none                                                                                                                |
+| Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                                                |
+| Boolean              | boolean (False)             | `2`     | BOOLEAN                     | none                                                                                                                |
+| Exact Numeric        | int8                        | `3`     | INT(8, signed)              | 1 byte                                                                                                              |
+| Exact Numeric        | int16                       | `4`     | INT(16, signed)             | 2 byte little-endian                                                                                                |
+| Exact Numeric        | int32                       | `5`     | INT(32, signed)             | 4 byte little-endian                                                                                                |
+| Exact Numeric        | int64                       | `6`     | INT(64, signed)             | 8 byte little-endian                                                                                                |
+| Double               | double                      | `7`     | DOUBLE                      | IEEE little-endian                                                                                                  |
+| Exact Numeric        | decimal4                    | `8`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Exact Numeric        | decimal16                   | `10`    | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Date                 | date                        | `11`    | DATE                        | 4 byte little-endian                                                                                                |
+| Timestamp            | timestamp                   | `12`    | TIMESTAMP(isAdjustedToUTC=true, MICROS)     | 8-byte little-endian                                                                                |
+| TimestampNTZ         | timestamp without time zone | `13`    | TIMESTAMP(isAdjustedToUTC=false, MICROS)    | 8-byte little-endian                                                                                |
+| Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
+| Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
+| String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
+| TimeNTZ              | time without time zone      | `21`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                               |
+| Timestamp            | timestamp with time zone    | `22`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                               |
+| TimestampNTZ         | timestamp without time zone | `23`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                               |
+| UUID                 | uuid                        | `24`    | UUID                        | 16-byte big-endian                                                                                                  |
 
-The *Type Equivalence Class* column indicates logical equivalence of physically encoded types.
+The *Equivalence Class* column indicates logical equivalence of physically encoded types.
 For example, a user expression operating on a string value containing "hello" should behave the same, whether it is encoded with the short string optimization, or long string encoding.
 Similarly, user expressions operating on an *int8* value of 1 should behave the same as a decimal16 with scale 2 and unscaled value 100.
 
@@ -413,14 +442,14 @@ Similarly, user expressions operating on an *int8* value of 1 should behave the 
 | 18 <= precision <= 38 | int128             |
 | > 38                  | Not supported      |
 
-# String values must be UTF-8 encoded
+## String values must be UTF-8 encoded
 
 All strings within the Variant binary format must be UTF-8 encoded.
 This includes the dictionary key string values, the "short string" values, and the "long string" values.
 
-# Object field ID order and uniqueness
+## Object field ID order and uniqueness
 
-For objects, field IDs and offsets must be listed in the order of the corresponding field names, sorted lexicographically.
+For objects, field IDs and offsets must be listed in the order of the corresponding field names, sorted lexicographically (using unsigned byte ordering for UTF-8).
 Note that the field values themselves are not required to follow this order.
 As a result, offsets will not necessarily be listed in ascending order.
 The field values are not required to be in the same order as the field IDs, to enable flexibility when constructing Variant values.
@@ -432,14 +461,44 @@ Field names are case-sensitive.
 Field names are required to be unique for each object.
 It is an error for an object to contain two fields with the same name, whether or not they have distinct dictionary IDs.
 
-# Versions and extensions
+## Versions and extensions
 
 An implementation is not expected to parse a Variant value whose metadata version is higher than the version supported by the implementation.
 However, new types may be added to the specification without incrementing the version ID.
 In such a situation, an implementation should be able to read the rest of the Variant value if desired.
 
-# Shredding
+## Shredding
 
 A single Variant object may have poor read performance when only a small subset of fields are needed.
 A better approach is to create separate columns for individual fields, referred to as shredding or subcolumnarization.
 [VariantShredding.md](VariantShredding.md) describes the Variant shredding specification in Parquet.
+
+## Conversion to JSON
+
+Values stored in the Variant encoding are a superset of JSON values.
+For example, a Variant value can be a date that has no equivalent type in JSON.
+To maximize compatibility with readers that can process JSON but not Variant, the following conversions should be used when producing JSON from a Variant:
+
+| Variant type     | JSON type | Representation requirements                              | Example                                  |
+|------------------|-----------|----------------------------------------------------------|------------------------------------------|
+| Null type        | null      | `null`                                                   | `null`                                   |
+| Boolean          | boolean   | `true` or `false`                                        | `true`                                   |
+| Exact Numeric    | number    | Digits in fraction must match scale, no exponent         | `34`, `34.00`                            |
+| Float            | number    | Fraction must be present                                 | `14.20`                                  |
+| Double           | number    | Fraction must be present                                 | `1.0`                                    |
+| Date             | string    | ISO-8601 formatted date                                  | `"2017-11-16"`                           |
+| Time             | string    | ISO-8601 formatted UTC time                              | `"22:31:08.000001"`                      |
+| Timestamp (6)    | string    | ISO-8601 formatted UTC timestamp including +00:00 offset | `"2017-11-16T22:31:08.000001+00:00"`     |
+| Timestamp (9)    | string    | ISO-8601 formatted UTC timestamp including +00:00 offset | `"2017-11-16T22:31:08.000000001+00:00"`  |
+| TimestampNTZ (6) | string    | ISO-8601 formatted UTC timestamp with no offset or zone  | `"2017-11-16T22:31:08.000001"`           |
+| TimestampNTZ (9) | string    | ISO-8601 formatted UTC timestamp with no offset or zone  | `"2017-11-16T22:31:08.000000001"`        |
+| Binary           | string    | Base64 encoded binary                                    | `"dmFyaWFudAo="`                         |
+| String           | string    |                                                          | `"variant"`                              |
+| UUID             | string    |                                                          | `"f79c3e09-677c-4bbd-a479-3f349cb785e7"` |
+| Array            | array     |                                                          | `[34, "abc", "2017-11-16]`               |
+| Object           | object    |                                                          | `{"id": 34, "data": "abc"}`              |
+
+Notes:
+
+* For timestamp and timestampntz, values must use microsecond precision and trailing 0s are required
+* For float and double, infinities and not a number values are encoded as strings: `"Infinity"`, `"-Infinity"`, and `"NaN"`
