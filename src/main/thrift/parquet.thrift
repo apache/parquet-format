@@ -504,7 +504,7 @@ enum Encoding {
   //  GROUP_VAR_INT = 1;
 
   /**
-   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
    * in a data page use RLE_DICTIONARY instead.
    * in a Dictionary page use PLAIN instead
@@ -796,15 +796,25 @@ struct PageEncodingStats {
  * Description for column metadata
  */
 struct ColumnMetaData {
-  /** Type of this column **/
-  1: required Type type
+  /**
+   * DEPRECATED: can be found in SchemaElement
+   *
+   * Writers MUST NOT omit this field until 2025-10-01.
+   * Readers MUST ignore this field before 2025-10-01.
+   */
+  1: optional Type type
 
   /** Set of all encodings used for this column. The purpose is to validate
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
-  3: required list<string> path_in_schema
+  /**
+   * DEPRECATED: can be found in SchemaElement
+   *
+   * Writers MUST NOT omit this field until 2025-10-01.
+   * Readers MUST ignore this field before 2025-10-01.
+   */
+  3: optional list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
@@ -857,6 +867,13 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /**
+   * The index into FileMetadata.schema (list<SchemaElement>) for this column.
+   * This implies that ColumnMetaData can be sparse in a rowgroup, if for example
+   * a column does not have any data pages in a rowgroup.
+   */
+  17: optional i32 schema_index;
 }
 
 struct EncryptionWithFooterKey {
