@@ -238,6 +238,29 @@ struct SizeStatistics {
 }
 
 /**
+ * Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max
+ * value pair of coordinates from each axis.
+ */
+struct BoundingBox {
+  1: required double xmin;
+  2: required double xmax;
+  3: required double ymin;
+  4: required double ymax;
+  5: optional double zmin;
+  6: optional double zmax;
+  7: optional double mmin;
+  8: optional double mmax;
+}
+
+/** Statistics specific to Geometry and Geography logical types */
+struct GeospatialStatistics {
+  /** A bounding box of geospatial instances */
+  1: optional BoundingBox bbox;
+  /** Geospatial type codes of all instances, or an empty list if not known */
+  2: optional list<i32> geospatial_types;
+}
+
+/**
  * Statistics per row group and per page
  * All fields are optional.
  */
@@ -386,6 +409,55 @@ struct BsonType {
 struct VariantType {
 }
 
+/** Edge interpolation algorithm for Geography logical type */
+enum EdgeInterpolationAlgorithm {
+  SPHERICAL = 0;
+  VINCENTY = 1;
+  THOMAS = 2;
+  ANDOYER = 3;
+  KARNEY = 4;
+}
+
+/**
+ * Embedded Geometry logical type annotation
+ *
+ * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * is always linear/planar.
+ *
+ * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
+ * which means that the geometries must be stored in longitude, latitude based on
+ * the WGS84 datum.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
+ */
+struct GeometryType {
+  1: optional string crs;
+}
+
+/**
+ * Embedded Geography logical type annotation
+ *
+ * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
+ * edges interpolation algorithm.
+ *
+ * A custom geographic CRS can be set by the crs field, where longitudes are
+ * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
+ * defaults to "OGC:CRS84".
+ *
+ * An optional algorithm can be set to correctly interpret edges interpolation
+ * of the geometries. If unset, the algorithm defaults to SPHERICAL.
+ *
+ * Allowed for physical type: BYTE_ARRAY.
+ *
+ * See Geospatial.md for details.
+ */
+struct GeographyType {
+  1: optional string crs;
+  2: optional EdgeInterpolationAlgorithm algorithm;
+}
+
 /**
  * LogicalType annotations to replace ConvertedType.
  *
@@ -417,6 +489,8 @@ union LogicalType {
   14: UUIDType UUID           // no compatible ConvertedType
   15: Float16Type FLOAT16     // no compatible ConvertedType
   16: VariantType VARIANT     // no compatible ConvertedType
+  17: GeometryType GEOMETRY   // no compatible ConvertedType
+  18: GeographyType GEOGRAPHY // no compatible ConvertedType
 }
 
 /**
@@ -857,6 +931,9 @@ struct ColumnMetaData {
    * filter pushdown.
    */
   16: optional SizeStatistics size_statistics;
+
+  /** Optional statistics specific for Geometry and Geography logical types */
+  17: optional GeospatialStatistics geospatial_statistics;
 }
 
 struct EncryptionWithFooterKey {
@@ -988,6 +1065,8 @@ union ColumnOrder {
    *   LIST - undefined
    *   MAP - undefined
    *   VARIANT - undefined
+   *   GEOMETRY - undefined
+   *   GEOGRAPHY - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true

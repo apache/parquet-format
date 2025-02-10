@@ -599,6 +599,39 @@ optional group variant_shredded (VARIANT) {
 }
 ```
 
+### GEOMETRY
+
+`GEOMETRY` is used for geospatial features in the Well-Known Binary (WKB) format
+with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
+primitive type. See [Geospatial.md](Geospatial.md) for more detail.
+
+The type has only one type parameter:
+- `crs`: An optional string value for CRS. If unset, the CRS defaults to
+  `"OGC:CRS84"`, which means that the geometries must be stored in longitude,
+  latitude based on the WGS84 datum.
+
+The sort order used for `GEOMETRY` is undefined. When writing data, no min/max
+statistics should be saved for this type and if such non-compliant statistics
+are found during reading, they must be ignored. 
+
+### GEOGRAPHY
+
+`GEOGRAPHY` is used for geospatial features in the WKB format with an explicit
+(non-linear/non-planar) edges interpolation algorithm. It must annotate a
+`BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
+
+The type has two type parameters:
+- `crs`: An optional string value for CRS. It must be a geographic CRS, where
+  longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
+  If unset, the CRS defaults to `"OGC:CRS84"`.
+- `algorithm`: An optional enum value to describes the edge interpolation
+  algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
+  `KARNEY`. If unset, the algorithm defaults to `SPHERICAL`.
+
+The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
+statistics should be saved for this type and if such non-compliant statistics
+are found during reading, they must be ignored. 
+
 ## Nested Types
 
 This section specifies how `LIST` and `MAP` can be used to encode nested types
