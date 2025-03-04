@@ -168,6 +168,7 @@ Readers can assume that a value is not an object if `typed_value` is null and th
 Each shredded field in the `typed_value` group is represented as a required group that contains optional `value` and `typed_value` fields.
 The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
+The `typed_value` field may be omitted when not shredding fields as a specific type.
 
 The `value` column of a partially shredded object must never contain fields represented by the Parquet columns in `typed_value` (shredded fields).
 Readers may always assume that data is written correctly and that shredded fields in `typed_value` are not present in `value`.
