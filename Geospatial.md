@@ -104,6 +104,19 @@ crosses the antimeridian line. In geographic terminology, the concepts of `xmin`
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
 
+When `GeospatialStatistics` is present, writers must omit zmin and zmax if and
+only if there are zero non-NaN Z values in the column chunk, and must omit mmin
+and mmax if and only if there are zero non-NaN M values. The bounding box must 
+be omitted entirely if and only if there are zero non-NaN X values or zero 
+non-NaN Y values in the column chunk. If Z or M values are missing, the writer
+may still include a bounding box using only the available dimensions.
+
+Readers may interpret the absence of a bounding box, zmin/zmax, or mmin/mmax as
+an indication that all corresponding values are null, and may use this 
+information to skip data during predicate evaluation. For example, a reader may
+skip a row group if the bounding box is absent, indicating that all X and Y 
+coordinates are null.
+
 ```thrift
 struct BoundingBox {
   1: required double xmin;
