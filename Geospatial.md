@@ -104,7 +104,7 @@ crosses the antimeridian line. In geographic terminology, the concepts of `xmin`
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
 
-When `GeospatialStatistics` is present, writers must omit zmin and zmax if and
+To produce `GeospatialStatistics`, writers must omit zmin and zmax if and
 only if there are zero non-NaN Z values in the column chunk, and must omit mmin
 and mmax if and only if there are zero non-NaN M values. The bounding box must 
 be omitted entirely if and only if there are zero non-NaN X values or zero 
