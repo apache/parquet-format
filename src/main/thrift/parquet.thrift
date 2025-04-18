@@ -313,12 +313,12 @@ struct Statistics {
 
 /** Empty structs to use as logical type annotations */
 struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
-struct UUIDType {}    // allowed for FIXED[16], must encoded raw UUID bytes
+struct UUIDType {}    // allowed for FIXED[16], must be encoded as raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
-struct Float16Type {} // allowed for FIXED[2], must encoded raw FLOAT16 bytes
+struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
 
 /**
  * Logical type to annotate a column that is always null.
@@ -1057,6 +1057,7 @@ union ColumnOrder {
    *   UINT64 - unsigned comparison
    *   DECIMAL - signed comparison of the represented value
    *   DATE - signed comparison
+   *   FLOAT16 - signed comparison of the represented value (*)
    *   TIME_MILLIS - signed comparison
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
