@@ -94,6 +94,36 @@ Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
+Writers should follow the guidelines below when calculating bounding boxes in
+the presence of invalid values. An invalid geospatial value refers to any of 
+the following: `NaN`, `null`, `does not exist` (e.g., LINESTRING EMPTY), or 
+`out of bounds` (e.g., `x < -180` or `x > 180` for `GEOGRAPHY` types):
+
+* X and Y: Skip any invalid X or Y value and processing the remaining X or Y 
+  values. Do not produce a bounding box if all X or all Y values are invalid.
+
+* Z: Skip any invalid Z value and continue processing the remaining Z values.
+  Omit Z from the bounding box if all Z values are invalid.
+
+* M: Skip any invalid M value and continue processing the remaining M values.
+  Omit M from the bounding box if all M values are invalid.
+
+Readers should follow the guidelines below when examining bounding boxes:
+
+* No bounding box: No assumptions can be made about the presence or absence 
+  of invalid values. Readers may need to load all individual coordinate 
+  values for validation.
+
+* A bounding box is present:
+    * X and Y: X and Y of the bounding box must be present. Readers should 
+      proceed using these values.
+    * Z: If Z of the bounding box are missing, readers should make no 
+      assumptions about invalid values and may need to load individual 
+      coordinates for validation.
+    * M: If M of the bounding box are missing, readers should make no 
+      assumptions about invalid values and may need to load individual 
+      coordinates for validation.
+
 For the X values only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
 `x <= xmax`. This wraparound occurs only when the corresponding bounding box
@@ -103,19 +133,6 @@ crosses the antimeridian line. In geographic terminology, the concepts of `xmin`
 
 For `GEOGRAPHY` types, X and Y values are restricted to the canonical ranges of
 [-180, 180] for X and [-90, 90] for Y.
-
-To produce `GeospatialStatistics`, writers must omit zmin and zmax if and
-only if there are zero non-NaN Z values in the column chunk, and must omit mmin
-and mmax if and only if there are zero non-NaN M values. The bounding box must 
-be omitted entirely if and only if there are zero non-NaN X values or zero 
-non-NaN Y values in the column chunk. If Z or M values are missing, the writer
-may still include a bounding box using only the available dimensions.
-
-Readers may interpret the absence of a bounding box, zmin/zmax, or mmin/mmax as
-an indication that all corresponding values are null, and may use this 
-information to skip data during predicate evaluation. For example, a reader may
-skip a row group if the bounding box is absent, indicating that all X and Y 
-coordinates are null.
 
 ```thrift
 struct BoundingBox {
