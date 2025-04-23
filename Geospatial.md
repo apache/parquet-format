@@ -95,9 +95,7 @@ min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
 Writers should follow the guidelines below when calculating bounding boxes in
-the presence of invalid values. An invalid geospatial value refers to any of 
-the following: `NaN`, `null`, `does not exist` (e.g., LINESTRING EMPTY), or 
-`out of bounds` (e.g., `x < -180` or `x > 180` for `GEOGRAPHY` types):
+the presence of [invalid geospatial values](#invalid-geospatial-values).
 
 * X and Y: Skip any invalid X or Y value and continue processing the remaining X or Y 
   values. Do not produce a bounding box if all X or all Y values are invalid.
@@ -108,21 +106,23 @@ the following: `NaN`, `null`, `does not exist` (e.g., LINESTRING EMPTY), or
 * M: Skip any invalid M value and continue processing the remaining M values.
   Omit M from the bounding box if all M values are invalid.
 
-Readers should follow the guidelines below when examining bounding boxes:
+Readers should follow the guidelines below when examining bounding boxes. If 
+a bounding box is [invalid](#invalid-geospatial-values), it is treated as a `no 
+bounding box` case.
 
-* No bounding box: No assumptions can be made about the presence or absence 
-  of invalid values. Readers may need to load all individual coordinate 
+* No bounding box: No assumptions can be made about the presence or validity 
+  of coordinate values. Readers may need to load all individual coordinate 
   values for validation.
 
 * A bounding box is present:
-    * X and Y: X and Y of the bounding box must be present. Readers should 
-      proceed using these values.
-    * Z: If Z of the bounding box are missing, readers should make no 
-      assumptions about invalid values and may need to load individual 
-      coordinates for validation.
-    * M: If M of the bounding box are missing, readers should make no 
-      assumptions about invalid values and may need to load individual 
-      coordinates for validation.
+    * X and Y: Both X and Y of the bounding box must be present. If either 
+      is missing, the bounding box is invalid.
+    * Z: If Z of the bounding box is missing, readers should not assume 
+      anything about the presence or validity of Z values and may need to 
+      load individual coordinates for validation.
+    * M: If M of the bounding box is missing, readers should not assume
+      anything about the presence or validity of M values and may need to 
+      load individual coordinates for validation.
 
 For the X values only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
@@ -192,3 +192,18 @@ The axis order of the coordinates in WKB and bounding box stored in Parquet
 follows the de facto standard for axis order in WKB and is therefore always
 (x, y) where x is easting or longitude and y is northing or latitude. This
 ordering explicitly overrides the axis order as specified in the CRS.
+
+# Invalid geospatial values
+
+An invalid geospatial value refers to any of the following cases:
+
+* `null`: A null value in Parquet.
+* A non-`null` value that are encoded in a valid WKB or bounding box format 
+  but are not considered valid under this specification, including:
+  * `NaN`: Not a Number. For example, `POINT EMPTY` in WKB is represented by a 
+    `Point` with each ordinate value set to an IEEE-754 quiet NaN value.
+  * `Empty geometries`: Geometries explicitly marked as empty in WKB using 
+    indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
+    include `LINESTRING EMPTY` or `POLYGON EMPTY`.
+  * `Out-of-bounds coordinates`: Values that fall outside the valid range 
+    for `GEOGRAPHY` types. For example, `x < -180` or `x > 180`.
