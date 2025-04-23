@@ -99,7 +99,7 @@ the presence of invalid values. An invalid geospatial value refers to any of
 the following: `NaN`, `null`, `does not exist` (e.g., LINESTRING EMPTY), or 
 `out of bounds` (e.g., `x < -180` or `x > 180` for `GEOGRAPHY` types):
 
-* X and Y: Skip any invalid X or Y value and processing the remaining X or Y 
+* X and Y: Skip any invalid X or Y value and continue processing the remaining X or Y 
   values. Do not produce a bounding box if all X or all Y values are invalid.
 
 * Z: Skip any invalid Z value and continue processing the remaining Z values.
