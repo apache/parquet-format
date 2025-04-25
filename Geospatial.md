@@ -95,28 +95,31 @@ min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
 Writers should follow the guidelines below when calculating bounding boxes in
-the presence of [invalid geospatial values](#invalid-geospatial-values).
+the presence of edge cases.
 
-* X and Y: Skip any invalid X or Y value and continue processing the remaining X or Y 
-  values. Do not produce a bounding box if all X or all Y values are invalid.
+* `null` instance: Skip it and continue processing the remaining 
+  geospatial instances. Do not produce a bounding box if all instances are null.
+* Non-`null` instance with [invalid geospatial values](#invalid-geospatial-values):
+  * X and Y: Skip any invalid X or Y value and continue processing the 
+    remaining X or Y values. Do not produce a bounding box if all X or all Y 
+    values are invalid.
 
-* Z: Skip any invalid Z value and continue processing the remaining Z values.
-  Omit Z from the bounding box if all Z values are invalid.
+  * Z: Skip any invalid Z value and continue processing the remaining Z values.
+    Omit Z from the bounding box if all Z values are invalid.
 
-* M: Skip any invalid M value and continue processing the remaining M values.
-  Omit M from the bounding box if all M values are invalid.
+  * M: Skip any invalid M value and continue processing the remaining M values.
+    Omit M from the bounding box if all M values are invalid.
 
-Readers should follow the guidelines below when examining bounding boxes. If 
-a bounding box is [invalid](#invalid-geospatial-values), it is treated as a `no 
-bounding box` case.
+Readers should follow the guidelines below when examining bounding boxes. 
+Parquet does not permit `null` or `NaN` values in bounding boxes, whether at 
+the overall bounding box level or within individual coordinate fields.
 
 * No bounding box: No assumptions can be made about the presence or validity 
   of coordinate values. Readers may need to load all individual coordinate 
   values for validation.
 
 * A bounding box is present:
-    * X and Y: Both X and Y of the bounding box must be present. If either 
-      is missing, the bounding box is invalid.
+    * X and Y: Both X and Y of the bounding box must be present.
     * Z: If Z of the bounding box is missing, readers should not assume 
       anything about the presence or validity of Z values and may need to 
       load individual coordinates for validation.
@@ -195,15 +198,16 @@ ordering explicitly overrides the axis order as specified in the CRS.
 
 # Invalid geospatial values
 
-An invalid geospatial value refers to any of the following cases:
+An invalid geospatial value refers to the coordinate values of a non-`null` 
+geospatial instance that are encoded in a valid WKB format, but are not 
+considered valid values under this specification. While different WKB 
+readers may interpret such values differently, the resulting output should 
+be treated as invalid.
 
-* `null`: A null value in Parquet.
-* A non-`null` value that are encoded in a valid WKB or bounding box format 
-  but are not considered valid under this specification, including:
-  * `NaN`: Not a Number. For example, `POINT EMPTY` in WKB is represented by a 
-    `Point` with each ordinate value set to an IEEE-754 quiet NaN value.
-  * `Empty geometries`: Geometries explicitly marked as empty in WKB using 
-    indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
-    include `LINESTRING EMPTY` or `POLYGON EMPTY`.
-  * `Out-of-bounds coordinates`: Values that fall outside the valid range 
-    for `GEOGRAPHY` types. For example, `x < -180` or `x > 180`.
+* `NaN`: Not a Number. For example, `POINT EMPTY` in WKB is represented by a 
+  `Point` with each ordinate value set to an IEEE-754 quiet NaN value.
+* `Empty geometries`: Geometries explicitly marked as empty in WKB using 
+  indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
+  include `LINESTRING EMPTY` or `POLYGON EMPTY`.
+* `Out-of-bounds coordinates`: Values that fall outside the valid range 
+  for `GEOGRAPHY` types. For example, `x < -180` or `x > 180`.
