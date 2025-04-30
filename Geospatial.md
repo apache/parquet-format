@@ -203,7 +203,7 @@ non-`null` geospatial instance that should be excluded from bounding box
 calculations.
 
 * `NaN`: Not a Number. A `Point` with no X and Y values in WKB is 
-  represented by a `Point` with each ordinate value set to an IEEE-754 
+  represented by a `Point` with each coordinate value set to an IEEE-754 
   NaN value (e.g., hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
   NaN values in other geometry types are typically considered invalid 
   geometries by other libraries.
