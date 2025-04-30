@@ -205,8 +205,10 @@ readers may interpret such values differently, the resulting output should
 be treated as invalid.
 
 * `NaN`: Not a Number. For example, a `Point` with no X and Y values in WKB is 
-  represented by a `Point` with each ordinate value set to an IEEE-754 quiet 
-  NaN value (hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
+  represented by a `Point` with each ordinate value set to an IEEE-754 
+  NaN value (e.g., hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
+  NaN values in other geometry types are typically considered invalid geometries by other
+  libraries.
 * `Empty geometries`: Geometries explicitly marked as empty in WKB using 
   indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
   include `LineString` with no coordinates (hex: `01 02 00 00 00 00 00 00 
