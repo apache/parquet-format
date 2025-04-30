@@ -120,12 +120,14 @@ Readers should follow the guidelines below when examining bounding boxes.
     * X and Y: Both X and Y of the bounding box must be present. If any of 
       `xmin`, `ymin`, `xmax`, or `ymax` is `NaN`, the bounding box is not 
       reliable and should not be used.
-    * Z: If Z of the bounding box is missing, readers should not assume 
-      anything about the presence or validity of Z values and may need to 
-      load individual coordinates for validation.
-    * M: If M of the bounding box is missing, readers should not assume
-      anything about the presence or validity of M values and may need to 
-      load individual coordinates for validation.
+    * Z: If Z of the bounding box is missing or either `zmin` or `zmax` is 
+      `NaN`, readers should not assume anything about the presence or 
+      validity of Z values and may need to load individual coordinates for 
+      validation.
+    * M: If M of the bounding box is missing or either `mmin` or `mmax` is 
+      `NaN`, readers should not assume anything about the presence or 
+      validity of M values and may need to load individual coordinates for 
+      validation.
 
 For the X values only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
