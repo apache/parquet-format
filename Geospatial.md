@@ -99,27 +99,27 @@ the presence of edge cases.
 
 * `null` instance: Skip it and continue processing the remaining 
   geospatial instances. Do not produce a bounding box if all instances are null.
-* Non-`null` instance with [invalid geospatial values](#invalid-geospatial-values):
-  * X and Y: Skip any invalid X or Y value and continue processing the 
+* Non-`null` instance with [special geospatial values](#special-geospatial-values):
+  * X and Y: Skip any special X or Y value and continue processing the 
     remaining X or Y values. Do not produce a bounding box if all X or all Y 
-    values are invalid.
+    values are special values.
 
-  * Z: Skip any invalid Z value and continue processing the remaining Z values.
-    Omit Z from the bounding box if all Z values are invalid.
+  * Z: Skip any special Z value and continue processing the remaining Z values.
+    Omit Z from the bounding box if all Z values are special values.
 
-  * M: Skip any invalid M value and continue processing the remaining M values.
-    Omit M from the bounding box if all M values are invalid.
+  * M: Skip any special M value and continue processing the remaining M values.
+    Omit M from the bounding box if all M values are special values.
 
-Readers should follow the guidelines below when examining bounding boxes. 
-Parquet does not permit `null` or `NaN` values in bounding boxes, whether at 
-the overall bounding box level or within individual coordinate fields.
+Readers should follow the guidelines below when examining bounding boxes.
 
 * No bounding box: No assumptions can be made about the presence or validity 
   of coordinate values. Readers may need to load all individual coordinate 
   values for validation.
 
 * A bounding box is present:
-    * X and Y: Both X and Y of the bounding box must be present.
+    * X and Y: Both X and Y of the bounding box must be present. If any of 
+      `xmin`, `ymin`, `xmax`, or `ymax` is `NaN`, the bounding box is not 
+      reliable and should not be used.
     * Z: If Z of the bounding box is missing, readers should not assume 
       anything about the presence or validity of Z values and may need to 
       load individual coordinates for validation.
@@ -196,22 +196,22 @@ follows the de facto standard for axis order in WKB and is therefore always
 (x, y) where x is easting or longitude and y is northing or latitude. This
 ordering explicitly overrides the axis order as specified in the CRS.
 
-# Invalid geospatial values
+# Special geospatial values
 
-An invalid geospatial value refers to the coordinate values of a non-`null` 
-geospatial instance that are encoded in a valid WKB format, but are not 
-considered valid values under this specification. While different WKB 
-readers may interpret such values differently, the resulting output should 
-be treated as invalid.
+A special geospatial value refers to the coordinate values of a 
+non-`null` geospatial instance that should be excluded from bounding box 
+calculations.
 
-* `NaN`: Not a Number. For example, a `Point` with no X and Y values in WKB is 
+* `NaN`: Not a Number. A `Point` with no X and Y values in WKB is 
   represented by a `Point` with each ordinate value set to an IEEE-754 
   NaN value (e.g., hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
-  NaN values in other geometry types are typically considered invalid geometries by other
-  libraries.
+  NaN values in other geometry types are typically considered invalid 
+  geometries by other libraries.
 * `Empty geometries`: Geometries explicitly marked as empty in WKB using 
   indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
   include `LineString` with no coordinates (hex: `01 02 00 00 00 00 00 00 
   00`) or `Polygon` with no coordinates (hex: `01 03 00 00 00 00 00 00 00`).
 * `Out-of-bounds coordinates`: Values that fall outside the valid range 
   for `GEOGRAPHY` types. For example, `x < -180` or `x > 180`.
+* Any invalid WKB representation of a geospatial instance, such as an empty 
+  string.
