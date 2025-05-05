@@ -85,10 +85,9 @@ associated with each point.
 The Z values introduce the third dimension coordinate. Usually they are used to
 indicate the height, or elevation.
 
-M values are an opportunity for a geospatial instance to express a fourth
-dimension as an axis value. These values can be used as a linear reference
-value (e.g., highway milepost value), a timestamp, or some other value as defined
-by the CRS.
+M values are an opportunity for a geospatial instance to track a value in a 
+fourth dimension. These values can be used as a linear reference value (e.g., 
+highway milepost value), a timestamp, or some other value as defined by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
@@ -200,15 +199,15 @@ ordering explicitly overrides the axis order as specified in the CRS.
 
 # Special geospatial values
 
-A special geospatial value refers to an individual axis value (e.g., X, Y, Z,
+A special geospatial value refers to an individual scalar value (e.g., X, Y, Z,
 or M) within a coordinate of a non-`null` geospatial instance. These special 
 values are excluded from bounding box calculations. For example, in a 
 `LineString` instance with XY coordinates `[(1, 2), (NaN, 3), (4, 5)]`, the 
 `NaN` value on the X axis will be excluded from the bounding box calculation, 
-while all other axis values will be included.
+while all other scalar values will be included.
 
 * `NaN`: Not a Number. A `Point` with no X and Y values in WKB is 
-  represented by a `Point` with each axis value set to an IEEE-754 
+  represented by a `Point` with each scalar value set to an IEEE-754 
   NaN value (e.g., hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
   NaN values in other geometry types are typically considered invalid 
   geometries by other libraries.
