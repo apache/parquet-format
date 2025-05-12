@@ -85,14 +85,20 @@ associated with each point.
 The Z values introduce the third dimension coordinate. Usually they are used to
 indicate the height, or elevation.
 
-M values are an opportunity for a geospatial instance to express a fourth
-dimension as a coordinate value. These values can be used as a linear reference
-value (e.g., highway milepost value), a timestamp, or some other value as defined
-by the CRS.
+M values are an opportunity for a geospatial instance to track a value in a 
+fourth dimension. These values can be used as a linear reference value (e.g., 
+highway milepost value), a timestamp, or some other value as defined by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
+
+When calculating a bounding box, null or NaN values in a coordinate 
+dimension are skipped. For example, `POINT (1 NaN)` contributes a value to X 
+but no values to Y, Z, or M dimension of the bounding box. If a dimension has 
+only null or NaN values, that dimension is omitted from the bounding box. If 
+either the X or Y dimension is missing, then the bounding box itself is not 
+produced.
 
 For the X values only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
