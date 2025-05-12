@@ -93,40 +93,12 @@ Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
-Writers should follow the guidelines below when calculating bounding boxes in
-the presence of edge cases.
-
-* `null` instance: Skip it and continue processing the remaining 
-  geospatial instances. Do not produce a bounding box if all instances are null.
-* Non-`null` instance with [special geospatial values](#special-geospatial-values):
-  * X and Y: Skip any special X or Y value and continue processing the 
-    remaining X or Y values. Do not produce a bounding box if all X or all Y 
-    values are special values.
-
-  * Z: Skip any special Z value and continue processing the remaining Z values.
-    Omit Z from the bounding box if all Z values are special values.
-
-  * M: Skip any special M value and continue processing the remaining M values.
-    Omit M from the bounding box if all M values are special values.
-
-Readers should follow the guidelines below when examining bounding boxes.
-
-* No bounding box: No assumptions can be made about the presence or validity 
-  of geospatial values. Readers may need to load all individual coordinate 
-  values for validation.
-
-* A bounding box is present:
-    * X and Y: Both X and Y of the bounding box must be present. If any of 
-      `xmin`, `ymin`, `xmax`, or `ymax` is `NaN`, the bounding box is not 
-      reliable and should not be used.
-    * Z: If Z of the bounding box is missing or either `zmin` or `zmax` is 
-      `NaN`, readers should not assume anything about the presence or 
-      validity of Z values and may need to load individual coordinates for 
-      validation.
-    * M: If M of the bounding box is missing or either `mmin` or `mmax` is 
-      `NaN`, readers should not assume anything about the presence or 
-      validity of M values and may need to load individual coordinates for 
-      validation.
+When calculating a bounding box, null or NaN values in a coordinate 
+dimension are skipped. For example, `POINT (1 NaN)` contributes a value to X 
+but no values to Y, Z, or M dimension of the bounding box. If a dimension has 
+only null or NaN values, that dimension is omitted from the bounding box. If 
+either the X or Y dimension is missing, then the bounding box itself is not 
+produced.
 
 For the X values only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
@@ -196,26 +168,3 @@ The axis order of the coordinates in WKB and bounding box stored in Parquet
 follows the de facto standard for axis order in WKB and is therefore always
 (x, y) where x is easting or longitude and y is northing or latitude. This
 ordering explicitly overrides the axis order as specified in the CRS.
-
-# Special geospatial values
-
-A special geospatial value refers to an individual scalar value (e.g., X, Y, Z,
-or M) within a coordinate of a non-`null` geospatial instance. These special 
-values are excluded from bounding box calculations. For example, in a 
-`LineString` instance with XY coordinates `[(1, 2), (NaN, 3), (4, 5)]`, the 
-`NaN` value on the X axis will be excluded from the bounding box calculation, 
-while all other scalar values will be included.
-
-* `NaN`: Not a Number. A `Point` with no X and Y values in WKB is 
-  represented by a `Point` with each scalar value set to an IEEE-754 
-  NaN value (e.g., hex: `01 01 00 00 00 00 00 00 00 00 00 00 f8 7f 00 00 00 00 00 00 f8 7f`).
-  NaN values in other geometry types are typically considered invalid 
-  geometries by other libraries.
-* `Empty geometries`: Geometries explicitly marked as empty in WKB using 
-  indicators such as `numPoints`, `numRings`, or `numGeometries`. Examples 
-  include `LineString` with no coordinates (hex: `01 02 00 00 00 00 00 00 
-  00`) or `Polygon` with no coordinates (hex: `01 03 00 00 00 00 00 00 00`).
-* `Out-of-bounds coordinates`: Values that fall outside the valid range 
-  for `GEOGRAPHY` types. For example, `x < -180` or `x > 180`.
-* Any invalid WKB representation of a geospatial instance, such as an empty 
-  string.
