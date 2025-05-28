@@ -521,7 +521,11 @@ as shown below.
     </tr>
 </table>
 
-### INTERVAL
+### INTERVAL types
+
+#### INTERVAL
+`INTERVAL` is *deprecated*. Please use `INTERVAL_YEAR_MONTH` and `INTERVAL_DAY_TIME`
+as a more precise representation per [ANSI SQL Standard](https://www.ibm.com/docs/en/informix-servers/14.10.0?topic=types-ansi-sql-standards-datetime-interval-values).
 
 `INTERVAL` is used for an interval of time. It must annotate a
 `fixed_len_byte_array` of length 12. This array stores three little-endian
@@ -538,6 +542,19 @@ conversion from days to months.
 The sort order used for `INTERVAL` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored.
+
+#### INTERVAL_YEAR_MONTH
+`INTERVAL_YEAR_MONTH` is used to represent a year-month time interval, such as
+`4 years and 6 months`. It must annotate an `int32` that stores the total number
+of months as a signed integer, which represents the interval and can be negative.
+The time duration is independent of any timezone.
+
+#### INTERVAL_DAY_TIME
+`INTERVAL_DAY_TIME` is used to represent a day-time time interval, such as
+`5 days, 10 hours and 30 minutes`. It must annotate and 16-byte `FIXED_LEN_BYTE_ARRAY`
+that stores the total number of nanoseconds representing the interval. The value is
+a signed integer and can be negative to indicate backward duration.
+The time interval is independent of any timezone.
 
 ## Embedded Types
 
