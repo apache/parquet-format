@@ -524,6 +524,7 @@ as shown below.
 ### Interval types
 
 #### INTERVAL
+
 `INTERVAL` is *deprecated*. Please use `INTERVAL_YEAR_MONTH` and `INTERVAL_DAY_TIME`
 as a more precise representation per [ANSI SQL Standard](https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F).
 
