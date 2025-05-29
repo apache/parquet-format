@@ -551,10 +551,15 @@ The time duration is independent of any timezone.
 
 #### INTERVAL_DAY_TIME
 `INTERVAL_DAY_TIME` is used to represent a day-time time interval, such as
-`5 days, 10 hours and 30 minutes`. It must annotate and 16-byte `FIXED_LEN_BYTE_ARRAY`
+`5 days, 10 hours and 30 minutes`. It must annotate a 16-byte `FIXED_LEN_BYTE_ARRAY`
 that stores the total number of nanoseconds representing the interval. The value is
 a signed integer and can be negative to indicate backward duration.
 The time interval is independent of any timezone.
+
+Based on the [ANSI SQL standard](https://web.cecs.pdx.edu/~len/sql1999.pdf) definition of the INTERVAL data type and fields values, 
+an interval of 1 day is equivalent to 24 hours, regardless of the specific number of 
+seconds in a day. This means that when you define an interval of `1 day`, 
+it represents exactly 24 hours, or 86,400,000,000 nanoseconds.
 
 ## Embedded Types
 
