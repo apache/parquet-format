@@ -481,7 +481,7 @@ struct IntervalYearMonthType {
  *
  * Allowed for physical type: FIXED_LEN_BYTE_ARRAY
  */
-struct IntervalMonthDayType {
+struct IntervalDayTimeType {
 }
 
 /**
