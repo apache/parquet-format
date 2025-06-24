@@ -480,6 +480,9 @@ struct IntervalYearMonthType {
  * number of nanoseconds. The value can be negative to indicate a backward duration.
  *
  * Allowed for physical type: FIXED_LEN_BYTE_ARRAY
+ *
+ * For example, 5 days 2 seconds are 434,000,000,000,000 nanoseconds in total, the
+ * final 16-byte FIXED_LEN_BYTE_ARRAY hex will be 00000000000000000010a36c948c0000.
  */
 struct IntervalDayTimeType {
 }
