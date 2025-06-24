@@ -474,10 +474,10 @@ struct IntervalYearMonthType {
 }
 
 /**
- * Month-Day Interval logical type annotation
+ * Day-Time Interval logical type annotation
  *
- * The data is stored as a 16-byte signed value, which represents the number
- * of nanoseconds. The value can be negative to indicate a backward duration.
+ * The data is stored as a 16-byte signed little endian value, which represents the
+ * number of nanoseconds. The value can be negative to indicate a backward duration.
  *
  * Allowed for physical type: FIXED_LEN_BYTE_ARRAY
  */
