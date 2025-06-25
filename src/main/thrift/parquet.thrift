@@ -1076,7 +1076,7 @@ union ColumnOrder {
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined
+   *   INT96 (only used for legacy timestamps) - timestamp ordering (first 8 bytes nanoseconds, next 4 bytes julian date)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
