@@ -22,7 +22,7 @@
 > [!IMPORTANT]
 > **This specification is still under active development, and has not been formally adopted.**
 
-A Variant represents a type that contain one of:
+A Variant represents a type that contains one of:
 - Primitive: A type and corresponding value (e.g. INT, STRING)
 - Array: An ordered list of Variant values
 - Object: An unordered collection of string/Variant pairs (i.e. key/value pairs). An object may not contain duplicate keys.
