@@ -462,6 +462,32 @@ struct GeographyType {
 }
 
 /**
+ * Year-Month Interval logical type annotation
+ *
+ * The data is stored as an 4 byte signed integer which represents the number
+ * of months associated with the time interval. The value can be negative to
+ * indicate a backward duration.
+ *
+ * Allowed for physical type: INT32
+ */
+struct IntervalYearMonthType {
+}
+
+/**
+ * Day-Time Interval logical type annotation
+ *
+ * The data is stored as a 16-byte signed little endian value, which represents the
+ * number of nanoseconds. The value can be negative to indicate a backward duration.
+ *
+ * Allowed for physical type: FIXED_LEN_BYTE_ARRAY
+ *
+ * For example, 5 days 2 seconds are 434,000,000,000,000 nanoseconds in total, the
+ * final 16-byte FIXED_LEN_BYTE_ARRAY hex will be 00000000000000000010a36c948c0000.
+ */
+struct IntervalDayTimeType {
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -494,6 +520,10 @@ union LogicalType {
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
+
+  // INTERVAL types
+  19: IntervalYearMonthType INTERVAL_YEAR_MONTH     // no compatible convertedType
+  20: IntervalDayTimeType INTERVAL_DAY_TIME         // no compatible convertedType
 }
 
 /**
@@ -1071,6 +1101,8 @@ union ColumnOrder {
    *   VARIANT - undefined
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
+   *   INTERVAL_YEAR_MONTH - signed comparison of the represented value
+   *   INTERVAL_DAY_TIME - signed comparison of the represented value
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
