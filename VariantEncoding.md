@@ -154,7 +154,7 @@ The entire encoded Variant value includes the `value_metadata` byte, and then 0 
 ```
            7                                  2 1          0
           +------------------------------------+------------+
-value     |            value_header            | basic_type |
+value     |            value_header            | basic_type |  <-- value_metadata
           +------------------------------------+------------+
           |                                                 |
           :                   value_data                    :  <-- 0 or more bytes
