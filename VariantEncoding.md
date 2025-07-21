@@ -455,7 +455,7 @@ As a result, offsets will not necessarily be listed in ascending order.
 The field values are not required to be in the same order as the field IDs, to enable flexibility when constructing Variant values.
 
 An implementation may rely on this field ID order in searching for field names.
-E.g. a binary search on field IDs (combined with metadata lookups) may be used to find a field with a given field.
+E.g. a binary search on field IDs (combined with metadata lookups) may be used to find a field with a given name.
 
 Field names are case-sensitive.
 Field names are required to be unique for each object.
