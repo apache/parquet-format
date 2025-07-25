@@ -553,18 +553,17 @@ The time duration is independent of any timezone.
 
 #### DURATION
 
-`DURATION` is used to represent a day-time time interval, such as
-`5 days, 10 hours and 30 minutes`. It must annotate an `int64`
-that stores the total number of time units representing the interval. The value is
-a signed integer and can be negative to indicate backward duration.
-The time interval is independent of any timezone.
+`DURATION` is used to represent a span of time, such as `5 days`. It must 
+annotate an `int64` value that stores the total number of time units for the 
+duration. The value is a signed integer and can be negative to indicate backward duration.
+The duration is purely a measure of time and is independent of any time zone.
 
 The `DURATION` type takes `unit` as a parameter, and the value must be one of
 `MILLIS`, `MICROS` or  `NANOS`.
 
-Interval of 1 day is equivalent to 24 hours, regardless of the specific number of 
-seconds in a day. This means that when you define an interval of `1 day`, 
-it represents exactly 24 hours, or 86,400,000,000 nanoseconds.
+Duration of 1 day is defined exactly of 24 hours, regardless of the specific number of 
+seconds in a calendar day. For example, a 1-day duration is always equal to 
+86,400,000,000 nanoseconds.
 
 ## Embedded Types
 
