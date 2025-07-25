@@ -470,7 +470,7 @@ struct GeographyType {
  *
  * Allowed for physical type: INT32
  */
-struct YEAR_MONTH_INTERVAL {
+struct YearMonthIntervalType {
 }
 
 /**
