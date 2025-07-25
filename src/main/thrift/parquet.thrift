@@ -470,21 +470,19 @@ struct GeographyType {
  *
  * Allowed for physical type: INT32
  */
-struct IntervalYearMonthType {
+struct YEAR_MONTH_INTERVAL {
 }
 
 /**
  * Day-Time Interval logical type annotation
  *
- * The data is stored as a 16-byte signed little endian value, which represents the
- * number of nanoseconds. The value can be negative to indicate a backward duration.
+ * The data is stored as a 8-byte signed integer which represents the number of
+ * total time units. The value can be negative to indicate a backward duration.
  *
- * Allowed for physical type: FIXED_LEN_BYTE_ARRAY
- *
- * For example, 5 days 2 seconds are 434,000,000,000,000 nanoseconds in total, the
- * final 16-byte FIXED_LEN_BYTE_ARRAY hex will be 00000000000000000010a36c948c0000.
+ * Allowed for physical type: INT64
  */
-struct IntervalDayTimeType {
+struct DurationType {
+   1: required TimeUnit unit
 }
 
 /**
@@ -522,8 +520,8 @@ union LogicalType {
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
 
   // INTERVAL types
-  19: IntervalYearMonthType INTERVAL_YEAR_MONTH     // no compatible convertedType
-  20: IntervalDayTimeType INTERVAL_DAY_TIME         // no compatible convertedType
+  19: YearMonthIntervalType YEAR_MONTH_INTERVAL     // no compatible convertedType
+  20: DurationType DURATION                         // no compatible convertedType
 }
 
 /**

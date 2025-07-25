@@ -525,7 +525,7 @@ as shown below.
 
 #### INTERVAL
 
-`INTERVAL` is *deprecated*. Please use `INTERVAL_YEAR_MONTH` and `INTERVAL_DAY_TIME`
+`INTERVAL` is *deprecated*. Please use `YEAR_MONTH_INTERVAL` and `DURATION`
 as a more precise representation per [ANSI SQL Standard](https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F).
 
 `INTERVAL` is used for an interval of time. It must annotate a
@@ -544,23 +544,25 @@ The sort order used for `INTERVAL` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored.
 
-#### INTERVAL_YEAR_MONTH
+#### YEAR_MONTH_INTERVAL
 
-`INTERVAL_YEAR_MONTH` is used to represent a year-month time interval, such as
+`YEAR_MONTH_INTERVAL` is used to represent a year-month time interval, such as
 `4 years and 6 months`. It must annotate an `int32` that stores the total number
 of months as a signed integer, which represents the interval and can be negative.
 The time duration is independent of any timezone.
 
-#### INTERVAL_DAY_TIME
+#### DURATION
 
-`INTERVAL_DAY_TIME` is used to represent a day-time time interval, such as
-`5 days, 10 hours and 30 minutes`. It must annotate a 16-byte `FIXED_LEN_BYTE_ARRAY`
-that stores the total number of nanoseconds representing the interval. The value is
+`DURATION` is used to represent a day-time time interval, such as
+`5 days, 10 hours and 30 minutes`. It must annotate an `int64`
+that stores the total number of time units representing the interval. The value is
 a signed integer and can be negative to indicate backward duration.
 The time interval is independent of any timezone.
 
-Based on the [ANSI SQL standard](https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F) definition of the INTERVAL data type and fields values, 
-an interval of 1 day is equivalent to 24 hours, regardless of the specific number of 
+The `DURATION` type takes `unit` as a parameter, and the value must be one of
+`MILLIS`, `MICROS` or  `NANOS`.
+
+Interval of 1 day is equivalent to 24 hours, regardless of the specific number of 
 seconds in a day. This means that when you define an interval of `1 day`, 
 it represents exactly 24 hours, or 86,400,000,000 nanoseconds.
 
