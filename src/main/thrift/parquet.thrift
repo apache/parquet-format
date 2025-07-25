@@ -1099,8 +1099,8 @@ union ColumnOrder {
    *   VARIANT - undefined
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
-   *   INTERVAL_YEAR_MONTH - signed comparison of the represented value
-   *   INTERVAL_DAY_TIME - signed comparison of the represented value
+   *   YEAR_MONTH_INTERVAL - signed comparison of the represented value
+   *   DURATION - signed comparison of the represented value
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
