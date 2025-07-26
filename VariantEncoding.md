@@ -435,12 +435,12 @@ Similarly, user expressions operating on an *int8* value of 1 should behave the 
 
 *Decimal table*
 
-| Decimal Precision     | Decimal value type |
-|-----------------------|--------------------|
-| 1 <= precision <= 9   | int32              |
-| 10 <= precision <= 18 | int64              |
-| 18 <= precision <= 38 | int128             |
-| > 38                  | Not supported      |
+| Decimal Precision     | Decimal value type | Physical Type  |
+|-----------------------|--------------------|----------------|
+| 1 <= precision <= 9   | int32              | decimal4       |
+| 10 <= precision <= 18 | int64              | decimal8       |
+| 19 <= precision <= 38 | int128             | decimal16      |
+| > 38                  | Not supported      |                |
 
 ## String values must be UTF-8 encoded
 
