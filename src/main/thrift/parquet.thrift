@@ -474,7 +474,7 @@ struct YearMonthIntervalType {
 }
 
 /**
- * Day-Time Interval logical type annotation
+ * Duration logical type annotation
  *
  * The data is stored as a 8-byte signed integer which represents the number of
  * total time units. The value can be negative to indicate a backward duration.

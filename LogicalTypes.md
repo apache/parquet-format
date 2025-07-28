@@ -549,7 +549,10 @@ are found during reading, they must be ignored.
 `YEAR_MONTH_INTERVAL` is used to represent a year-month time interval, such as
 `4 years and 6 months`. It must annotate an `int32` that stores the total number
 of months as a signed integer, which represents the interval and can be negative.
-The time duration is independent of any timezone.
+
+While ANSI SQL systems typically restrict supported intervals to a range of ±10,000 
+years and enforce this constraint internally, the Parquet format does not impose 
+any limitations on the interval values that may be stored.
 
 #### DURATION
 
@@ -561,8 +564,9 @@ The duration is purely a measure of time and is independent of any time zone.
 The `DURATION` type takes `unit` as a parameter, and the value must be one of
 `MILLIS`, `MICROS` or  `NANOS`.
 
-Duration of 1 day is defined exactly of 24 hours, regardless of the specific number of 
-seconds in a calendar day. For example, a 1-day duration is always equal to 
+`Duration` can be used to represent DayTime Intervals as defined by ANSI SQL. In this
+context, a duration of 1 day is strictly defined as 24 hours, regardless of the actual 
+number of hours in a calendar day. For example, a 1-day duration is always equal to 
 86,400,000,000 nanoseconds.
 
 ## Embedded Types
