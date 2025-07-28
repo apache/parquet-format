@@ -558,8 +558,9 @@ does not impose any limitations on the interval values that may be stored.
 
 `DURATION` is used to represent a span of time, such as `5 days`. It must 
 annotate an `int64` value that stores the total number of time units for the 
-duration. The value is a signed integer and can be negative to indicate backward 
-duration. The duration is purely a measure of time and is independent of any time zone.
+duration. The value is a signed integer, where a negative value indicates the
+duration is in the reverse (backward) direction. The duration is purely a 
+measure of time and is independent of any time zone.
 
 The `DURATION` type takes `unit` as a parameter, and the value must be one of
 `MILLIS`, `MICROS` or  `NANOS`.
