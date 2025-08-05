@@ -126,7 +126,8 @@ The list `element` must be a required group.
 The `element` group can contain `value` and `typed_value` fields.
 The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` is not present or cannot represent it.
 The `typed_value` field may be omitted when not shredding elements as a specific type.
-When `typed_value` is omitted, `value` must be `required`.
+The `value` field may be omitted when shredding elements as a specific type.
+However, at least one of the two fields must be present.
 
 For example, a `tags` Variant may be shredded as a list of strings using the following definition:
 ```
