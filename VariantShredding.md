@@ -194,7 +194,6 @@ optional group event (VARIANT) {
 ```
 
 The group for each named field must use repetition level `required`.
-Readers may always assume the group has the correct repetition level.
 
 A field's `value` and `typed_value` are set to null (missing) to indicate that the field does not exist in the variant.
 To encode a field that is present with a null value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
