@@ -1,5 +1,3 @@
-# Proposal
-
 ---
 Author: Julien Le Dem
 Created: 2025-Aug-7
@@ -8,6 +6,8 @@ Issue: https://github.com/apache/parquet-format/issues/NNN
 Status: ARCHIVED
 Reason: Did not compress
 ---
+
+# Proposal
 
 ## Description
 Add Base64 to compression algorithms.
