@@ -32,16 +32,19 @@ Once the implementation phase is finished, we can include the contribution in th
 
 ## Active Proposals 
 
-| ID | Description | Status |
+| ID  | Description  | Status  |
+|-----|--------------|---------|
 | [github issue] | adding this new encoding | POC |
-| [github issue] | add Variant typea | Implementation |
+| [github issue] | add Variant type | Implementation |
 
 ## Implemented
- | ID | Description | Status | release it was added |
+| ID  | Description  | Status  | release it was added  |
+|-----|--------------|---------|-----------------------|
 | [gihub issue] | encryption | Completed |  x.y.z | 
 
 ## Archived
 
-| ID | Description | Status | reason for archiving |
+| ID  | Description  | Status  | reason for archiving  |
+|-----|--------------|---------|-----------------------|
 | [github issue] | [adding base64 compression](1_BASE64_ENCODING.md) | Archived | POC showed that compression ratio was not practical | 
 
