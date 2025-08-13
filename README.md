@@ -25,7 +25,7 @@ This repository contains the specification for [Apache Parquet] and
 Apache Parquet is an open source, column-oriented data file format
 designed for efficient data storage and retrieval. It provides high
 performance compression and encoding schemes to handle complex data in
-bulk and is supported in many programming language and analytics
+bulk and is supported in many programming languages and analytics
 tools.
 
 [Apache Parquet]: https://parquet.apache.org
@@ -158,7 +158,7 @@ documented in [LogicalTypes.md][logical-types].
 Parquet stores min/max statistics at several levels (such as Column Chunk,
 Column Index, and Data Page). These statistics are according to a sort order,
 which is defined for each column in the file footer. Parquet supports common
-sort orders for logical and primitve types. The details are documented in the
+sort orders for logical and primitive types. The details are documented in the
 [Thrift definition](src/main/thrift/parquet.thrift) in the `ColumnOrder` union.
 
 ## Nested Encoding
