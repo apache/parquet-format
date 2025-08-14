@@ -33,7 +33,7 @@ enum Type {
   BOOLEAN = 0;
   INT32 = 1;
   INT64 = 2;
-  INT96 = 3;  // deprecated, only used by legacy implementations.
+  INT96 = 3;  // deprecated, new Parquet writers should not write data in INT96
   FLOAT = 4;
   DOUBLE = 5;
   BYTE_ARRAY = 6;
@@ -1076,11 +1076,20 @@ union ColumnOrder {
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined
+   *   INT96 (only used for legacy timestamps) - undefined(+)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
+   *
+   * (+) While the INT96 type has been deprecated, at the time of writing it is
+   *    still used in many legacy systems. If a Parquet implementation chooses
+   *    to write statistics for INT96 columns, it is recommended to order them
+   *    according to the legacy rules:
+   *    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   *    - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+   *      64-bit signed integer (nanos)
+   *    See https://github.com/apache/parquet-format/issues/502 for more details
    *
    * (*) Because the sorting order is not specified properly for floating
    *     point values (relations vs. total ordering) the following
