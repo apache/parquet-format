@@ -130,7 +130,7 @@ are serialized using the TCompactProtocol.
 
 ## Types
 The types supported by the file format are intended to be as minimal as possible,
-with a focus on how the types effect on disk storage.  For example, 16-bit ints
+with a focus on how the types affect disk storage.  For example, 16-bit ints
 are not explicitly supported in the storage format since they are covered by
 32-bit ints with an efficient encoding.  This reduces the complexity of implementing
 readers and writers for the format.  The types are:
