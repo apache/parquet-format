@@ -21,4 +21,4 @@
 
 This directory contains scripts useful to developers when running the Parquet release.
 
-The mechanics of the iceberg-format release are analog to parquet-java, which can be found [here](https://parquet.apache.org/docs/contribution-guidelines/releasing/).
+The mechanics of the parquet-format release are analog to parquet-java, which can be found [here](https://parquet.apache.org/docs/contribution-guidelines/releasing/).
