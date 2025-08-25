@@ -19,9 +19,6 @@
 
 # Variant Binary Encoding
 
-> [!IMPORTANT]
-> **This specification is still under active development, and has not been formally adopted.**
-
 A Variant represents a type that contains one of:
 - Primitive: A type and corresponding value (e.g. INT, STRING)
 - Array: An ordered list of Variant values
