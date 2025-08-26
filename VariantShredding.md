@@ -120,18 +120,21 @@ Shredded values must use the following Parquet types:
 Primitive values can be shredded using the equivalent Parquet primitive type from the table above for `typed_value`.
 
 Unless the value is shredded as an object (see [Objects](#objects)), exactly one of `typed_value` or `value` must be present in each row.
-Missing values in an optional group are encoded as missing values of the entire group.
+
+NULL values in an optional group are encoded in the usual way, with a definition level that excludes
+that group. For example, if `measurement` above were a top-level column in the parquet file, NULL
+measurements would have definition level 0.
 
 #### Arrays
 
 Arrays can be shredded by using a 3-level Parquet list for `typed_value`.
 
-If the value is not an array, `typed_value` must be missing.
-If the value is an array, `value` must be missing.
+If the value is not an array, `typed_value` must be NULL.
+If the value is an array, `value` must be NULL.
 
 The list `element` must be a required group.
 The `element` group can contain `value` and `typed_value` fields.
-The element's `value` field stores the element as Variant-encoded `binary` when the element is missing or `typed_value` cannot represent it.
+The element's `value` field stores the element as Variant-encoded `binary` when the `typed_value` field is missing or cannot represent it.
 The `typed_value` field may be omitted when not shredding elements as a specific type.
 The `value` field may be omitted when shredding elements as a specific type.
 However, at least one of the two fields must be present.
@@ -152,9 +155,8 @@ optional group tags (VARIANT) {
 }
 ```
 
-All elements of a variant array must be present (not missing) because the `array` Variant encoding does not allow missing elements.
-That is, either `typed_value` or `value` (but not both) must be present.
-When converting an array with (SQL) nullable elements to variant, missing (SQL NULL) elements must be encoded in `value` as Variant null (`00`).
+All elements of a variant array must be present (not missing) because the `array` Variant arrays cannot encode missing (NULL) elements.
+That is, at least one of `typed_value` or `value` must be present (possibly both, if the elements are partially shredded objects).
 
 The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "drama", "romance"], null` would be stored as:
 
@@ -202,8 +204,8 @@ optional group event (VARIANT) {
 
 The group for each named field must use repetition level `required`.
 
-A field's `value` and `typed_value` are both missing to indicate that the field does not exist in the variant.
-To encode a field that is present with a SQL NULL value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
+A field's `value` and `typed_value` are both NULL if the field does not exist in the variant.
+To encode a field that is present with a `null` value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
 
 When both `value` and `typed_value` for a field are present, engines should fail.
 If engines choose to read in such cases, then the `typed_value` column must be used.
