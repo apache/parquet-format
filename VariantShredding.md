@@ -204,13 +204,14 @@ optional group event (VARIANT) {
 
 The group for each named field must use repetition level `required`.
 
-A field's `value` and `typed_value` are both NULL if the field does not exist in the variant.
+At least one of `value` and `typed_value` should be NULL, unless the field is a partially shredded object. If both of them are NULL, the variant does not contain that field at all.
+
 To encode a field that is present with a `null` value, the `value` must contain a Variant null: basic type 0 (primitive) and physical type 0 (null).
 
-When both `value` and `typed_value` for a field are present, engines should fail.
-If engines choose to read in such cases, then the `typed_value` column must be used.
-Readers may always assume that data is written correctly and that only one of `value` or `typed_value` is present.
-As a result, reads when both `value` and `typed_value` are present may be inconsistent with optimized reads that require only one of the columns.
+Readers may always assume that shredded data is written correctly, and that only one of `value` or `typed_value` is present (unless the field is a partially shredded object).
+In particular, if a reader determines, based on the shredding schema, that a query needs only one of the two columns, the reader is not required to validate the other column.
+A reader that accesses both both `value` and `typed_value` columns should fail if they are both non-NULL and the value is not a partially shredded object.
+If readers choose to tolerate such cases, then the `typed_value` column must be used.
 
 The table below shows how the series of objects in the first column would be stored:
 
