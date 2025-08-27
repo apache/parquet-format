@@ -172,8 +172,8 @@ The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "
 Fields of an object can be shredded using a Parquet group for `typed_value` that contains shredded fields.
 
 If the value is an object, `typed_value` must be present.
-If the value is not an object, `typed_value` must be missing.
-Readers can assume that a value is not an object if `typed_value` is missing and that `typed_value` field values are correct when present; that is, readers do not need to read the `value` column if `typed_value` fields satisfy the required fields.
+If the value is not an object, `typed_value` must be NULL.
+Readers can assume that a value is not an object if `typed_value` is NULL and that `typed_value` field values are correct when present; that is, readers do not need to read the `value` column if `typed_value` fields satisfy the required fields.
 
 Each shredded field in the `typed_value` group is represented as a required group that contains optional `value` and `typed_value` fields.
 The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
