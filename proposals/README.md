@@ -7,7 +7,7 @@ Bug fixes, code only features or minor changes to the spec that can be ignored b
 
 ## Proposal lifecycle
 
-Discuss -> Draft/POC -> Implementation -> Release
+Discuss -> Draft/POC -> Implementation -> Approval
 
 ### Discuss
 Start a [DISCUSS] thread on the mailing list (dev@parquet.apache.org) with your idea. At this point, the community can discuss whether the impact of the proposal requires a document here or just be a github issue.
@@ -20,6 +20,8 @@ Attaching a google doc to collect feedback and collaborate with the community wo
 Once you feel the discussion has stabilized and you are ready to start a POC, open a PR to add a new Markdown file in the proposals folder and give more visibility to the work in progress.
 The proposal document can evolve along the course of the POC. In particular to add more links to findings and performance evaluations. Collaboration is encouraged. More validation on the POC increases the chances of success.
 
+Example: [https://github.com/apache/parquet-format/pull/221]
+
 Make sure you consider the [requirements document](https://docs.google.com/document/d/1qGDnOyoNyPvcN4FCRhbZGAvp0SfewlWo-WVsai5IKUo/edit?tab=t.0#heading=h.v4emiipkghrx)  to ensure the success of the POC. (Note: this doc would become a markdown page in the repo)
 
 *Transition:* There is enough clarity on the spec for the new feature and we have identified the reference implementations to be implemented to be able to release.
@@ -31,7 +33,7 @@ See [CONTRIBUTING guidelines](https://github.com/apache/parquet-format/blob/mast
 
 *Transition:* A PMC vote will formalize that we have concluded the implementation and are ready to release.
 
-### Release
+### Approval
 Once the implementation phase is finished, we can include the contribution in the next release. Congrats!
 
 ## Active Proposals 
