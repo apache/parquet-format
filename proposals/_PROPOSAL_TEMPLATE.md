@@ -5,11 +5,14 @@ Author: ~your name~
 Created: ~date~
 Name: *short sentence describing the proposal*
 Issue: https://github.com/apache/parquet-format/issues/NNN
-Status: DRAFT|POC|ACCEPTED|COMPLETED
+Status: DRAFT|IMPLEMENTATION|COMPLETED
 ---
 
 ## Description
 *Short description of the proposal. Is it a new encoding? Is it backwards compatible (old readers will just ignore it)? Is it additional metadata?*
+
+## Rationale
+Describe why this is a feature that will improve the parquet format and what alternatives currently exist for the usecase (e.g. must use a different format, or "must build additional infrastructure to avoid re-parsing footer on each query", or "must use a general purpose compression algorithm to achieve the same space, thus slowing down query performance)
 
 ## Spec
 
