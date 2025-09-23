@@ -1,7 +1,7 @@
 # Proposals
 
-This proposal process is intended for significantly impactfull additions to the Parquet spec. The goal is to facilitate those projects and help them being contributed to Parquet.
-For example, changes that are not backward compatible like adding a new encoding or a new compression algorithm (older implementations can not read new files).
+This proposal process is intended for significantly impactful additions to the Parquet spec. The goal is to facilitate those projects and help them being contributed to Parquet.
+For example, changes that are not forward compatible like adding a new encoding or a new compression algorithm (older implementations can not read new files). [see guidelines for more details](https://github.com/apache/parquet-format/blob/master/CONTRIBUTING.md#general-guidelinespreferences-on-additions)
 This gives better visibility to those projects which require coordination in several implementations.
 Bug fixes, code only features or minor changes to the spec that can be ignored by older implementations can simply be filed as a github issue.
 
@@ -17,7 +17,7 @@ Attaching a google doc to collect feedback and collaborate with the community wo
 *Transition:* Once you feel you received enough feedback or need to start the POC to have better answers to questions you get, you can move to the next step. Anybody is free to start POCs anytime. We just recommend getting feedback before you spend a significant amount of your time.
 
 ### Draft/POC
-Once you feel the discussion has stabilized and you are ready to start a POC, open a PR to add a new Markdown file in the proposals folder and give more visibility to the work in progress.
+Once you feel the discussion has stabilized and you are ready to start a POC, open a PR to add the proposal to the table in the [Active Proposals](#active-proposals) section bellow. Link all relevant discussion documents in the body of the corresponding github issue. If using google docs, make sure docs are owned by an account that will maintain them publicly (preffer personal account over a work account). Alternativaly you can create a new Markdown file in the proposals folder and give more visibility to the work in progress (see [the example](1_BASE64_ENCODING.md) ).
 The proposal document can evolve along the course of the POC. In particular to add more links to findings and performance evaluations. Collaboration is encouraged. More validation on the POC increases the chances of success.
 
 Example: [https://github.com/apache/parquet-format/pull/221]
@@ -27,7 +27,7 @@ Make sure you consider the [requirements document](https://docs.google.com/docum
 *Transition:* There is enough clarity on the spec for the new feature and we have identified the reference implementations to be implemented to be able to release.
 
 ### Implementation
-Once we have reached enough consensus on the formalized spec change and validated it through the POC, we should have a clear idea of whether we want to pursue the implementation accross the ecosystem. 
+Once we have reached enough consensus on the formalized spec change and validated it through the POC, we should have a clear idea of whether we want to pursue the implementation across the ecosystem. 
 At this stage we should finalize a formal spec contribution to parquet-format and we need to meet the contribution guidelines to consider the implementation finished. 
 See [CONTRIBUTING guidelines](https://github.com/apache/parquet-format/blob/master/CONTRIBUTING.md#additionschanges-to-the-format).
 
@@ -46,7 +46,7 @@ Once the implementation phase is finished, we can include the contribution in th
 ## Implemented
 | ID  | Description  | Status  | release it was added  |
 |-----|--------------|---------|-----------------------|
-| [gihub issue] | encryption | Completed |  x.y.z | 
+| [github issue] | encryption | Completed |  x.y.z | 
 
 ## Archived
 

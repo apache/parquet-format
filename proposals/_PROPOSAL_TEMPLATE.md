@@ -12,7 +12,7 @@ Status: DRAFT|IMPLEMENTATION|COMPLETED
 *Short description of the proposal. Is it a new encoding? Is it backwards compatible (old readers will just ignore it)? Is it additional metadata?*
 
 ## Rationale
-Describe why this is a feature that will improve the parquet format and what alternatives currently exist for the usecase (e.g. must use a different format, or "must build additional infrastructure to avoid re-parsing footer on each query", or "must use a general purpose compression algorithm to achieve the same space, thus slowing down query performance)
+Describe why this is a feature that will improve the parquet format and what alternatives currently exist for the use case (e.g. must use a different format, or "must build additional infrastructure to avoid re-parsing footer on each query", or "must use a general purpose compression algorithm to achieve the same space, thus slowing down query performance")
 
 ## Spec
 
