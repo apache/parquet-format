@@ -29,7 +29,7 @@ Discuss -> Draft/POC -> Implementation -> Approval
 
 ### Discuss
 Start a [DISCUSS] thread on the mailing list (dev@parquet.apache.org) with your idea. At this point, the community can discuss whether the impact of the proposal requires a document here or just be a github issue.
-Once you have a better idea of the general consensus on the proposal, open a github issue using the [proposal template](proposals/1_BASE64_ENCODING.md)
+Once you have a better idea of the general consensus on the proposal, open a github issue using the [proposal template](proposals/_PROPOSAL_TEMPLATE.md)
 Attaching a google doc to collect feedback and collaborate with the community works usually well early on.
 
 *Transition:* Once you feel you received enough feedback or need to start the POC to have better answers to questions you get, you can move to the next step. Anybody is free to start POCs anytime. We just recommend getting feedback before you spend a significant amount of your time.
@@ -61,10 +61,14 @@ Once the implementation phase is finished, we can include the contribution in th
 | [github issue] | adding this new encoding | POC |
 | [github issue] | add Variant type | Implementation |
 
+(Those are examples to be removed as we start using this) 
+
 ## Implemented
 | ID  | Description  | Status  | release it was added  |
 |-----|--------------|---------|-----------------------|
 | [github issue] | encryption | Completed |  x.y.z | 
+
+(Those are examples to be removed as we start using this)
 
 ## Archived
 
@@ -72,3 +76,4 @@ Once the implementation phase is finished, we can include the contribution in th
 |-----|--------------|---------|-----------------------|
 | [github issue] | [adding base64 compression](1_BASE64_ENCODING.md) | Archived | POC showed that compression ratio was not practical | 
 
+(Those are examples to be removed as we start using this)
