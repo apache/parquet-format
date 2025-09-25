@@ -27,6 +27,8 @@ Reason: Did not compress
 
 # Proposal
 
+**NOTE**: This is an example proposal for use as a template
+
 ## Description
 Add Base64 to compression algorithms.
 This is not backwards compatible as a new compression alg.

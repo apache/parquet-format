@@ -29,7 +29,7 @@ Discuss -> Draft/POC -> Implementation -> Approval
 
 ### Discuss
 Start a [DISCUSS] thread on the mailing list (dev@parquet.apache.org) with your idea. At this point, the community can discuss whether the impact of the proposal requires a document here or just be a github issue.
-Once you have a better idea of the general consensus on the proposal, open a github issue using the proposal template.
+Once you have a better idea of the general consensus on the proposal, open a github issue using the [proposal template](proposals/1_BASE64_ENCODING.md)
 Attaching a google doc to collect feedback and collaborate with the community works usually well early on.
 
 *Transition:* Once you feel you received enough feedback or need to start the POC to have better answers to questions you get, you can move to the next step. Anybody is free to start POCs anytime. We just recommend getting feedback before you spend a significant amount of your time.
@@ -42,7 +42,7 @@ Example: [https://github.com/apache/parquet-format/pull/221]
 
 Make sure you consider the [requirements document](https://docs.google.com/document/d/1qGDnOyoNyPvcN4FCRhbZGAvp0SfewlWo-WVsai5IKUo/edit?tab=t.0#heading=h.v4emiipkghrx)  to ensure the success of the POC. (Note: this doc would become a markdown page in the repo)
 
-*Transition:* There is enough clarity on the spec for the new feature and we have identified the reference implementations to be implemented to be able to release.
+*Transition:* There is enough clarity on the spec for the new feature and we have identified the 2 initial reference implementations for verification.
 
 ### Implementation
 Once we have reached enough consensus on the formalized spec change and validated it through the POC, we should have a clear idea of whether we want to pursue the implementation across the ecosystem. 
