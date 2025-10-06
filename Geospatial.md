@@ -41,6 +41,9 @@ may also be used if the WKB representation remains wire-compatible.
 Coordinate Reference System (CRS) is a mapping of how coordinates refer to
 locations on Earth.
 
+For `geometry` type, the CRS does not affect geometric calculations, which 
+are always Cartesian.
+
 The default CRS `OGC:CRS84` means that the geospatial features must be stored
 in the order of longitude/latitude based on the WGS84 datum.
 
@@ -100,7 +103,7 @@ only null or NaN values, that dimension is omitted from the bounding box. If
 either the X or Y dimension is missing, then the bounding box itself is not 
 produced.
 
-For the X values only, xmin may be greater than xmax. In this case, an object
+For `geography` type only, xmin may be greater than xmax. In this case, an object
 in this bounding box may match if it contains an X such that `x >= xmin` OR
 `x <= xmax`. This wraparound occurs only when the corresponding bounding box
 crosses the antimeridian line. In geographic terminology, the concepts of `xmin`,
