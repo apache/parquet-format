@@ -160,7 +160,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.16.1</version>
+        <version>0.17</version>
         <executions>
           <execution>
             <phase>test</phase>
