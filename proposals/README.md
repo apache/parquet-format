@@ -58,8 +58,7 @@ Once the implementation phase is finished, we can include the contribution in th
 
 | ID  | Description  | Status  |
 |-----|--------------|---------|
-| [github issue] | adding this new encoding | POC |
-| [github issue] | add Variant type | Implementation |
+| [Issue #531](https://github.com/apache/parquet-format/issues/531) | FSST support for Parquet format | Draft/PoC |
 
 (Those are examples to be removed as we start using this) 
 
