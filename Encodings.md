@@ -176,7 +176,7 @@ repetition and definition levels.
 Supported Types: INT32, INT64
 
 This encoding is adapted from the Binary packing described in
-["Decoding billions of integers per second through vectorization"](http://arxiv.org/pdf/1209.2137v5.pdf)
+["Decoding billions of integers per second through vectorization"](https://arxiv.org/pdf/1209.2137v5.pdf)
 by D. Lemire and L. Boytsov.
 
 In delta encoding we make use of variable length integers for storing various
@@ -207,7 +207,7 @@ Each block contains
    positive integers for bit packing)
  * the bitwidth of each block is stored as a byte
  * each miniblock is a list of bit packed ints according to the bit width
-   stored at the begining of the block
+   stored at the beginning of the block
 
 To encode a block, we will:
 

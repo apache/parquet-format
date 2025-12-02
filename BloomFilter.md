@@ -170,7 +170,7 @@ unsigned int32 i = (h_top_bits * z_as_64_bit) >> 32;
 ```
 
 The first line extracts the most significant 32 bits from `h` and
-assignes them to a 64-bit unsigned integer. The second line is
+assigns them to a 64-bit unsigned integer. The second line is
 simpler: it just sets an unsigned 64-bit value to the same value as
 the 32-bit unsigned value `z`. The purpose of having both `h_top_bits`
 and `z_as_64_bit` be 64-bit values is so that their product is a
@@ -233,14 +233,14 @@ with a seed of 0 and [following the specification version
 
 The `check` operation in SBBFs can return `true` for an argument that
 was never inserted into the SBBF. These are called "false
-positives". The "false positive probabilty" is the probability that
+positives". The "false positive probability" is the probability that
 any given hash value that was never `insert`ed into the SBBF will
 cause `check` to return `true` (a false positive). There is not a
 simple closed-form calculation of this probability, but here is an
 example:
 
 A filter that uses 1024 blocks and has had 26,214 hash values
-`insert`ed will have a false positive probabilty of around 1.26%. Each
+`insert`ed will have a false positive probability of around 1.26%. Each
 of those 1024 blocks occupies 256 bits of space, so the total space
 usage is 262,144. That means that the ratio of bits of space to hash
 values is 10-to-1. Adding more hash values increases the denominator
