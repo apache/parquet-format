@@ -65,7 +65,7 @@ that writers refrain from creating such pages by default for better interoperabi
 ### LZO
 
 A codec based on or interoperable with the
-[LZO compression library](http://www.oberhumer.com/opensource/lzo/).
+[LZO compression library](https://www.oberhumer.com/opensource/lzo/).
 
 ### BROTLI
 
@@ -91,11 +91,11 @@ switch to the newer, interoperable `LZ4_RAW` codec.
 A codec based on the Zstandard format defined by
 [RFC 8478](https://tools.ietf.org/html/rfc8478).  If any ambiguity arises
 when implementing this format, the implementation provided by the
-[ZStandard compression library](https://facebook.github.io/zstd/)
+[Zstandard compression library](https://facebook.github.io/zstd/)
 is authoritative.
 
 ### LZ4_RAW
 
 A codec based on the [LZ4 block format](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md).
 If any ambiguity arises when implementing this format, the implementation
-provided by the [LZ4 compression library](http://www.lz4.org/) is authoritative.
+provided by the [LZ4 compression library](https://www.lz4.org/) is authoritative.
