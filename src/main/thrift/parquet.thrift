@@ -715,6 +715,10 @@ struct DictionaryPageHeader {
  * New page format allowing reading levels without decompressing the data
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
+ *
+ * N.B. this page header is not necessarily strictly better then DataPageHeader.
+ * Page indexes already require that rows are aligned on page boundaries, and compressing
+ * repetition and definition levels can still be effective in some cases.
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -1255,7 +1259,12 @@ union EncryptionAlgorithm {
  * Description for file metadata
  */
 struct FileMetaData {
-  /** Version of this file **/
+  /** Version of this file 
+    * 
+    * Deprecated.  Readers should determine if they support reading based on
+    * specific metadata (e.g. encoding enum) rather then relying on this field
+    * to make this determination.
+    */
   1: required i32 version
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
