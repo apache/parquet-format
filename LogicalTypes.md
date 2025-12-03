@@ -521,7 +521,12 @@ as shown below.
     </tr>
 </table>
 
-### INTERVAL
+### Interval types
+
+#### INTERVAL
+
+`INTERVAL` is *deprecated*. Please use `YEAR_MONTH_INTERVAL` and `DURATION`
+as a more precise representation per [ANSI SQL Standard](https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F).
 
 `INTERVAL` is used for an interval of time. It must annotate a
 `fixed_len_byte_array` of length 12. This array stores three little-endian
@@ -538,6 +543,31 @@ conversion from days to months.
 The sort order used for `INTERVAL` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
 are found during reading, they must be ignored.
+
+#### YEAR_MONTH_INTERVAL
+
+`YEAR_MONTH_INTERVAL` is used to represent a year-month time interval, such as
+`4 years and 6 months`. It must annotate an `int32` that stores the total number
+of months as a signed integer, which represents the interval and can be negative.
+
+While ANSI SQL systems typically restrict supported intervals to a range of 
+±10,000 years and enforce this constraint internally, the Parquet format 
+does not impose any limitations on the interval values that may be stored.
+
+#### DURATION
+
+`DURATION` is used to represent a span of time, such as `5 days`. It must 
+annotate an `int64` value that stores the total number of time units for the 
+duration. The value is a signed integer, where a negative value indicates the
+duration moves backward in time (e.g., -5 days means going backward for 5 days).  
+The duration is purely a measure of time and is independent of any time zone.
+
+The `DURATION` type takes `unit` as a parameter, and the value must be one of
+`MILLIS`, `MICROS` or  `NANOS`.
+
+`Duration` can be used to represent DayTime Intervals as defined by ANSI SQL. In 
+this context, a duration of 1 day is strictly defined as 24 hours, regardless of 
+the actual number of hours in a calendar day. 
 
 ## Embedded Types
 
