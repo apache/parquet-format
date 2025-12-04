@@ -22,7 +22,7 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-Unless otherwise stated in page documentation, any encoding can be
+Unless otherwise stated in page or encoding documentation, any encoding can be
 used with any page type.
 
 <a name="PLAIN"></a>
@@ -62,8 +62,8 @@ Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
-Using the PLAIN_DICTIONARY enum value is deprecated in the Parquet 2.0 specification. Prefer using RLE_DICTIONARY
-in a data page and PLAIN in a dictionary page for Parquet 2.0+ files.
+Using the PLAIN_DICTIONARY enum value is deprecated. Prefer using RLE_DICTIONARY
+in a data page and PLAIN in a dictionary page for new Parquet files.
 
 <a name="RLE"></a>
 ### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
