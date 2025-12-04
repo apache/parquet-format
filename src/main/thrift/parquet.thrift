@@ -716,7 +716,12 @@ struct DictionaryPageHeader {
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
  *
- * 
+ * Implementation note - this header is not necessarily a strict improvement over
+ * DataPageHeader in all cases (in particular the original header might provide better compression 
+ * in some scenarios). Page indexes require pages start and end at row boundaries regardless of which
+ * page header is used.
+ *
+ * As of December 2025, most known Parquet readers can read pages using this header. 
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
