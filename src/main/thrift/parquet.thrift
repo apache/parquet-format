@@ -716,9 +716,7 @@ struct DictionaryPageHeader {
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
  *
- * N.B. this page header is not necessarily strictly better then DataPageHeader.
- * Page indexes already require that rows are aligned on page boundaries, and compressing
- * repetition and definition levels can still be effective in some cases.
+ * 
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -1261,9 +1259,12 @@ union EncryptionAlgorithm {
 struct FileMetaData {
   /** Version of this file 
     * 
-    * Deprecated.  Readers should determine if they support reading based on
-    * specific metadata (e.g. encoding enum) rather then relying on this field
-    * to make this determination.
+    * Deprecated. Writers should always populate "1" for version. As a 
+    * practical matter, the exact semantics of this value are not well
+    * defined. Any existing forward-compatible breaking changes are detectable by 
+    * readers via other methods (i.e. encountering an unknown enum). Any
+    * new forward incompatible changes will use a different mechanism for
+    * signaling the change to readers.
     */
   1: required i32 version
 
