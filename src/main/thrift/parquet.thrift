@@ -1264,12 +1264,9 @@ union EncryptionAlgorithm {
 struct FileMetaData {
   /** Version of this file 
     * 
-    * Deprecated. Writers should always populate "1" for version. As a 
-    * practical matter, the exact semantics of this value are not well
-    * defined. Any existing forward-compatible breaking changes are detectable by 
-    * readers via other methods (i.e. encountering an unknown enum). Any
-    * new forward incompatible changes will use a different mechanism for
-    * signaling the change to readers.
+    * Writers should always populate "1" for version. Readers should
+    * accept "1" and "2" interchangeably.  All other versions are Currently
+    * reserved for potential future use-cases.
     */
   1: required i32 version
 
