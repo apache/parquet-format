@@ -22,10 +22,8 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
-Some Parquet implementations distinguish encodings as "v1" and "v2". From
-a specification perspective this distinction is considered meaningless. Writers may use any 
-encoding with both data page v1 and data page v2. Readers should lazily evaluate if they can 
-read a file (e.g. only error when required to a read a page with an unknown encoding).
+Unless otherwise stated in page documentation, any encoding can be
+used with any page type.
 
 <a name="PLAIN"></a>
 ### Plain: (PLAIN = 0)
