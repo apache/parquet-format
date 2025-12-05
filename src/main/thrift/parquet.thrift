@@ -1265,7 +1265,7 @@ struct FileMetaData {
   /** Version of this file 
     * 
     * Writers should always populate "1" for version. Readers should
-    * accept "1" and "2" interchangeably.  All other versions are Currently
+    * accept "1" and "2" interchangeably.  All other versions are currently
     * reserved for potential future use-cases.
     */
   1: required i32 version
