@@ -720,8 +720,8 @@ struct DictionaryPageHeader {
  * `DataPageHeader` (in particular the original header might provide better compression 
  * in some scenarios). Page indexes require pages start and end at row boundaries regardless of which
  * page header is used.
- * https://parquet.apache.org/docs/file-format/implementationstatus/  tracks implementation readers and 
- * writers that support this version. 
+ * https://parquet.apache.org/docs/file-format/implementationstatus/  tracks the implementation of readers and 
+ * writers that support this page format. 
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -1266,7 +1266,7 @@ struct FileMetaData {
     * 
     * As of December 2025, there is no agreed upon consensus of what constitutes 
     * version 2 of the file. For maximum compatibility with readers, writers should 
-    * always populate "1" for version. For maximum with writers compatibility, 
+    * always populate "1" for version. For maximum compatibility with writers, 
     * readers should accept "1" and "2" interchangeably.  All other versions are 
     * reserved for potential future use-cases.
     */
