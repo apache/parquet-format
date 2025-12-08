@@ -712,7 +712,7 @@ struct DictionaryPageHeader {
 }
 
 /**
- * New page format allowing reading levels without decompressing the data
+ * Alternate page format allowing reading levels without decompressing the data
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
  *
@@ -720,8 +720,8 @@ struct DictionaryPageHeader {
  * `DataPageHeader` (in particular the original header might provide better compression 
  * in some scenarios). Page indexes require pages start and end at row boundaries regardless of which
  * page header is used.
- *
- * As of December 2025, most known Parquet readers can read pages using this header. 
+ * https://parquet.apache.org/docs/file-format/implementationstatus/  tracks implementation readers and 
+ * writers that support this version. 
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -1264,8 +1264,10 @@ union EncryptionAlgorithm {
 struct FileMetaData {
   /** Version of this file 
     * 
-    * Writers should always populate "1" for version. Readers should
-    * accept "1" and "2" interchangeably.  All other versions are currently
+    * As of December 2025, there is no agreed upon consensus of what constitutes 
+    * version 2 of the file. For maximum compatibility with readers, writers should 
+    * always populate "1" for version. For maximum with writers compatibility, 
+    * readers should accept "1" and "2" interchangeably.  All other versions are 
     * reserved for potential future use-cases.
     */
   1: required i32 version
