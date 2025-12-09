@@ -720,7 +720,7 @@ struct DictionaryPageHeader {
  * `DataPageHeader` (in particular the original header might provide better compression 
  * in some scenarios). Page indexes require pages start and end at row boundaries regardless of which
  * page header is used.
- * https://parquet.apache.org/docs/file-format/implementationstatus/  tracks the implementation of readers and 
+ * https://parquet.apache.org/docs/file-format/implementationstatus/ tracks the implementation of readers and 
  * writers that support this page format. 
  **/
 struct DataPageHeaderV2 {
