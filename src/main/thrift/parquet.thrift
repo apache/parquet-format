@@ -958,6 +958,22 @@ union ColumnCryptoMetaData {
 struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as
     * metadata.  This path is relative to the current file.
+    *
+    * As of December 2025, there are no known released Parquet implementations
+    * that make use of this field when reading columns. Readers should check 
+    * that the field is empty before retrieving a column from within the file, 
+    * and error if it isn't. 
+    *
+    * Writers should not populate this field.
+    *
+    * Any new use of this field must go through the normal Parquet feature 
+    * addition process. CONTRIBUTING.md in the parquet-format repository 
+    * provides details on the process.
+    *
+    * One known use-case for this field is to batch parquet footers together 
+    * in a single file that serves as an index. As such, Parquet implementations 
+    * expose an accessor to this field, but orchestrating column reads is left to 
+    * data processing engines and generally not done in Parquet implementations.
     **/
   1: optional string file_path
 
