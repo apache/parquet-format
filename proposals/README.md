@@ -58,6 +58,7 @@ Once the implementation phase is finished, we can include the contribution in th
 
 | ID  | Description  | Status  |
 |-----|--------------|---------|
+| [Issue #530](https://github.com/apache/parquet-format/issues/530) | Flatbuf footer for wide table support | Draft/PoC |
 | [Issue #531](https://github.com/apache/parquet-format/issues/531) | FSST support for Parquet format | Draft/PoC |
 | [Issue #533](https://github.com/apache/parquet-format/issues/533) | ALP support for Parquet format  | Draft/PoC |
 
