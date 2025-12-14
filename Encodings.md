@@ -62,8 +62,8 @@ Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
 followed by the values encoded using RLE/Bit packed described above (with the given bit width).
 
-Using the `PLAIN_DICTIONARY` enum value is deprecated, prefer using `RLE_DICTIONARY`.
-in a data page and PLAIN in a dictionary page for new Parquet files.
+Using the `PLAIN_DICTIONARY` enum value is deprecated, use `RLE_DICTIONARY`
+in a data page and `PLAIN` in a dictionary page for new Parquet files.
 
 <a name="RLE"></a>
 ### Run Length Encoding / Bit-Packing Hybrid (RLE = 3)
