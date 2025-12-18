@@ -718,8 +718,8 @@ struct DictionaryPageHeader {
  *
  * Implementation note - this header is not necessarily a strict improvement over
  * `DataPageHeader` (in particular the original header might provide better compression 
- * in some scenarios). Page indexes require pages start and end at row boundaries regardless of which
- * page header is used.
+ * in some scenarios). Page indexes require pages to start and end at row boundaries,
+ * regardless of which page header is used.
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
