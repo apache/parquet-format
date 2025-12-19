@@ -971,7 +971,6 @@ struct ColumnChunk {
     * within a standard parquet file. Making use of the field for this purpose is currently 
     * not considered part of the Parquet specification.
     *
-    *
     * Any new use of this field must go through the normal Parquet feature 
     * addition process.
     *
