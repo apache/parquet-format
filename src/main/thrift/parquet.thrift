@@ -963,7 +963,8 @@ struct ColumnChunk {
     * parquet files (i.e. "_metadata" files).  These files consolidate footers from 
     * multiple parquet files to allow for efficient reading of footers to avoid file 
     * listing costs and prune out files that do not need to be read based on statistics. 
-    * This is legacy feature.
+    * This is legacy feature as modern table formats (e.g. Iceberg, Hudi and Delta Lake)
+    * are more scalable and serve effectively the same purpose.
     *
     * There is no other known use-case for this field. Specifically, there are no known 
     * readers that will read externally stored column data if this field is populated 
