@@ -968,7 +968,8 @@ struct ColumnChunk {
     *
     * There is no other known usage of this field. Specifically, there are no known 
     * readers that will read externally stored column data if this field is populated 
-    * within a standard parquet file.
+    * within a standard parquet file. Making use of the field for this purpose is currently 
+    * not considered part of the parquet specification.
     *
     *
     * Any new use of this field must go through the normal Parquet feature 
