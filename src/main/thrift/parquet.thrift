@@ -966,7 +966,7 @@ struct ColumnChunk {
     * This is legacy feature as modern table formats (e.g. Iceberg, Hudi and Delta Lake)
     * are more scalable and serve effectively the same purpose.
     *
-    * There is no other known use-case for this field. Specifically, there are no known 
+    * There is no other known usage of this field. Specifically, there are no known 
     * readers that will read externally stored column data if this field is populated 
     * within a standard parquet file.
     *
