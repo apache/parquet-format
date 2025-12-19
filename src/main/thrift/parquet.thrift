@@ -970,8 +970,6 @@ struct ColumnChunk {
     * readers that will read externally stored column data if this field is populated 
     * within a standard parquet file.
     *
-    * Writers should not populate this field except for in parquet summary files. Readers
-    * should ensure this field is empty.
     *
     * Any new use of this field must go through the normal Parquet feature 
     * addition process.
