@@ -973,7 +973,6 @@ struct ColumnChunk {
     * readers that will read externally stored column data if this field is populated 
     * within a standard parquet file. Making use of the field for this purpose is  
     * not considered part of the Parquet specification.
-    *
     **/
   1: optional string file_path
 
