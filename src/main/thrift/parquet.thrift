@@ -962,17 +962,17 @@ struct ColumnChunk {
     * As of December 2025, the only known use-case for this field is writing summary 
     * parquet files (i.e. "_metadata" files).  These files consolidate footers from 
     * multiple parquet files to allow for efficient reading of footers to avoid file 
-    * listing costs and prune out files that do not need to be read based on statistics. 
-    * This is legacy feature as modern table formats (e.g. Iceberg, Hudi and Delta Lake)
-    * are more scalable and serve effectively the same purpose.
+    * listing costs and prune out files that do not need to be read based on statistics.
+    *
+    * These files do not appear to have ever been formally specified in the specification.
+    * and are potentially problematic from correctness perspective [1].
+    * 
+    * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
     *
     * There is no other known usage of this field. Specifically, there are no known 
     * readers that will read externally stored column data if this field is populated 
-    * within a standard parquet file. Making use of the field for this purpose is currently 
+    * within a standard parquet file. Making use of the field for this purpose is  
     * not considered part of the Parquet specification.
-    *
-    * Any new use of this field must go through the normal Parquet feature 
-    * addition process.
     *
     **/
   1: optional string file_path
