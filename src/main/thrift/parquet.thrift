@@ -965,7 +965,7 @@ struct ColumnChunk {
     * listing costs and prune out files that do not need to be read based on statistics.
     *
     * These files do not appear to have ever been formally specified in the specification.
-    * and are potentially problematic from correctness perspective [1].
+    * and are potentially problematic from a correctness perspective [1].
     * 
     * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
     *
