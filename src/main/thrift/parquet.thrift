@@ -970,7 +970,7 @@ struct ColumnChunk {
     * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
     *
     * There is no other known usage of this field. Specifically, there are no known 
-    * readers that will read externally stored column data if this field is populated 
+    * reference implementations that will read externally stored column data if this field is populated 
     * within a standard parquet file. Making use of the field for this purpose is  
     * not considered part of the Parquet specification.
     **/
