@@ -369,7 +369,6 @@ Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
 
 ### Adaptive Lossless floating-Point: (ADAPTIVE_LOSSLESS_FLOATING_POINT = 10)
 
-
 Supported Types: FLOAT, DOUBLE, INT32, INT64
 
 This encoding is adapted from the paper "ALP: Adaptive Lossless floating-Point Compression"

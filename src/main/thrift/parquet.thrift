@@ -628,6 +628,11 @@ enum Encoding {
       Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
    */
   BYTE_STREAM_SPLIT = 9;
+
+  /** Encoding for FLOAT, DOUBLE that first losslessly transforms the values to a
+      integer representation which can be quickly decoded using other techniques.
+   */
+   ADAPTIVE_LOSSLESS_FLOATING_POINT = 10;
 }
 
 /**
