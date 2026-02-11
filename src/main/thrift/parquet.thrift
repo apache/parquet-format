@@ -309,11 +309,11 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
-   /** 
-    * count of NaN values in the column; only present if physical type is FLOAT
-    * or DOUBLE, or logical type is FLOAT16. 
-    * Readers MUST distinguish between nan_count not being present and nan_count == 0.
-    * If nan_count is not present, readers MUST NOT assume nan_count == 0.
+   /**
+    * Count of NaN values in the column; only present if physical type is FLOAT
+    * or DOUBLE, or logical type is FLOAT16.
+    * If this field is not present, readers must assume NaNs may be present
+    * (MUST NOT assume nan_count == 0).
     */
    9: optional i64 nan_count;
 }
@@ -677,7 +677,7 @@ enum BoundaryOrder {
 /** Data page header */
 struct DataPageHeader {
   /**
-   * Number of values, including nulls, in this data page.
+   * Number of values, including NULLs, in this data page.
    *
    * If a OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
@@ -729,9 +729,9 @@ struct DictionaryPageHeader {
  * regardless of which page header is used.
  **/
 struct DataPageHeaderV2 {
-  /** Number of values, including nulls, in this data page. **/
+  /** Number of values, including NULLs, in this data page. **/
   1: required i32 num_values
-  /** Number of null values, in this data page.
+  /** Number of NULL values, in this data page.
       Number of non-null = num_values - num_nulls which is also the number of values in the data section **/
   2: required i32 num_nulls
   /**
@@ -1122,10 +1122,9 @@ union ColumnOrder {
    *      64-bit signed integer (nanos)
    *    See https://github.com/apache/parquet-format/issues/502 for more details
    *
-   * (*) Because the precise sorting order is ambiguous for floating
-   *     point types due to underspecified handling of NaN and -0/+0,
-   *     it is recommended that writers use IEEE_754_TOTAL_ORDER
-   *     for these types.
+   * (*) Because TYPE_ORDER is ambiguous for floating point types due to
+   *     underspecified handling of NaN and -0/+0, it is recommended that writers
+   *     use IEEE_754_TOTAL_ORDER for these types.
    *
    *     If TYPE_ORDER is used for floating point types, then the following
    *     compatibility rules should be applied when reading statistics:
@@ -1134,20 +1133,19 @@ union ColumnOrder {
    *     - If the nan_count field is set, a reader can compute
    *       nan_count + null_count == num_values to deduce whether all non-null
    *       values are NaN.
-   *     - When looking for NaN values, min and max should be ignored.
-   *       If the nan_count field is set, it can be used to check whether
-   *       NaNs are present.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
+   *       If the nan_count field is set, it can be used to check whether
+   *       NaNs are present.
    *
    *     When writing statistics the following rules should be followed:
-   *     - It is suggested to always set the nan_count field for floating
-   *       point types, especially also if it is zero.
+   *     - Always set the nan_count field for floating point types, especially
+   *       even if it is zero.
    *     - NaNs should not be written to min or max statistics fields except
-   *       in the column index, where min_values and max_values are not optional
-   *       so a NaN value must be written if all non-null values in a page
-   *       are NaN.
+   *       in the column index when a page contains only NaN values. In this
+   *       case, since min_values and max_values are required, a NaN value
+   *       must be written.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
@@ -1202,14 +1200,10 @@ union ColumnOrder {
    *
    * When writing statistics for columns with this order, the following rules
    * must be followed:
-   * - Writing the nan_count field is mandatory when using this ordering,
-   *   especialy also if it is zero.
-   * - NaNs should not be written to min or max statistics fields except
-   *   in the column index, where min_values and max_values are not optional
-   *   so a NaN value must be written if all non-null values in a page
-   *   are NaN. In this case, the min_values[i] and max_values[i] fields
-   *   should be set to the smallest and largest NaN values contained
-   *   in the page, as defined by the IEEE 754 total order.
+   * - Writing the nan_count field is mandatory when using this ordering.
+   * - Min and max statistics must contain the smallest and largest non-NaN
+   *   values respectively, or if all non-null values are NaN, the smallest and
+   *   largest NaN values as defined by IEEE 754 total order.
    *
    * When reading statistics for columns with this order, the following rules
    * should be followed:
@@ -1292,19 +1286,17 @@ struct ColumnIndex {
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
+   *
    * For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16,
    * NaN values are not to be included in these bounds. If all non-null values
    * of a page are NaN, then a writer must do the following:
-   * - If the order of this column is TypeDefinedOrder, then no column index
+   * - If the order of this column is TYPE_ORDER, then no column index
    *   must be written for this column chunk. While this is unfortunate for
    *   performance, it is necessary to avoid conflict with legacy files that
    *   still included NaN in min_values and max_values even if the page had
    *   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
    * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
-   * * If IEEE754_TOTAL_ORDER is used for the column and all non-null values
-   *   of a page are NaN, then min_values[i] and max_values[i] must be set to
-   *   the smallest and largest NaN value contained in the page, as defined
-   *   by the IEEE 754 total order.
+   *   and max_values[i] of that page must be set to a standard NaN value.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1328,6 +1320,7 @@ struct ColumnIndex {
    * null counts are 0.
    */
   5: optional list<i64> null_counts
+
   /**
    * Contains repetition level histograms for each page
    * concatenated together.  The repetition_level_histogram field on
@@ -1346,12 +1339,11 @@ struct ColumnIndex {
     **/
    7: optional list<i64> definition_level_histograms;
 
-   /** 
+   /**
     * A list containing the number of NaN values for each page. Only present
     * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
-    * If this field is not present, readers MUST assume that there might or
-    * might not be NaN values in any page, as NaNs should not be included
-    * in min_values or max_values.
+    * If this field is not present, readers MUST assume that there might be
+    * NaN values in any page.
     */
    8: optional list<i64> nan_counts
 
