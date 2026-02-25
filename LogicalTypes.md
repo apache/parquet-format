@@ -584,7 +584,7 @@ value, or a shredded Variant value.
 
 This is the expected representation of an unshredded Variant in Parquet:
 ```
-optional group variant_unshredded (VARIANT) {
+optional group variant_unshredded (VARIANT(1)) {
   required binary metadata;
   required binary value;
 }
@@ -592,7 +592,7 @@ optional group variant_unshredded (VARIANT) {
 
 This is an example representation of a shredded Variant in Parquet:
 ```
-optional group variant_shredded (VARIANT) {
+optional group variant_shredded (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
