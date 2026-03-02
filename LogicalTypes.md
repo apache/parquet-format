@@ -258,11 +258,49 @@ The sort order for `FLOAT16` is signed (with special handling of NANs and signed
 
 ### FIXED_SIZE_LIST
 
-The `FIXED_SIZE_LIST` annotation represents a fixed-size list of elements
-of a non-array primitive data type. It must annotate a `FIXED_LEN_BYTE_ARRAY` primitive type.
+The `FIXED_SIZE_LIST` annotation represents a fixed-size sequence of elements
+of the same non-array primitive physical type. It must annotate a
+`FIXED_LEN_BYTE_ARRAY` primitive type and uses the `FixedSizeListType`
+parameters:
+* `type`: the primitive physical type of each element
+* `num_values`: the number of elements in each list value
 
-The `FIXED_LEN_BYTE_ARRAY` data is interpreted as a fixed size sequence of
-elements of the same primitive data type encoded with plain encoding.
+`num_values` must be a positive integer. `type` must be a fixed-width primitive
+physical type and must not be `BOOLEAN`, `INT96`, or `BYTE_ARRAY`.
+Writers must not emit `FIXED_SIZE_LIST` metadata that violates these
+constraints. Readers must treat violating metadata as invalid.
+
+The annotated field's `type_length` must equal the encoded size, in bytes, of
+`num_values` elements using the PLAIN representation of `type`:
+* `INT32` or `FLOAT`: `type_length` = `num_values` * 4
+* `INT64` or `DOUBLE`: `type_length` = `num_values` * 8
+* `FIXED_LEN_BYTE_ARRAY`: `type_length` must be divisible by `num_values`;
+  each element is `type_length` / `num_values` bytes
+Writers must not emit `FIXED_SIZE_LIST` metadata where `type_length` does not
+match these rules. Readers must treat violating metadata as invalid.
+
+For example, a column of 128-element float vectors:
+
+    optional fixed_len_byte_array(512) embeddings (FIXED_SIZE_LIST(type=FLOAT, num_values=128));
+
+Each `FIXED_LEN_BYTE_ARRAY` value stores one fixed-size list value.
+`FIXED_SIZE_LIST` is intentionally represented as a primitive leaf and does not
+use the 3-level `LIST` structure.
+
+This annotation defines only the intra-value element layout. The surrounding
+column encoding is unchanged: any encoding that supports
+`FIXED_LEN_BYTE_ARRAY` may be used. Note that `BYTE_STREAM_SPLIT` operates at
+the full `type_length` width, creating `type_length` byte-streams; this
+naturally groups corresponding element bytes across rows.
+
+If the annotated field is `optional`, list values may be null. Individual
+elements are always non-null and are not represented with their own definition
+or repetition levels. Nested element types are not supported by
+`FIXED_SIZE_LIST`; use `LIST` for nested or element-nullable data.
+
+Writers must validate that `type` is not `BOOLEAN`, `INT96`, or `BYTE_ARRAY`
+and that `type_length` matches the expected size for the given `type` and
+`num_values`. Readers should reject files that violate these constraints.
 
 The sort order used for `FIXED_SIZE_LIST` is undefined.
 

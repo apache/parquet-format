@@ -319,9 +319,10 @@ struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
 struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
-struct FixedSizeListType {        // allowed for FIXED_LEN_BYTE_ARRAY[num_values * width of type],
-    1: required Type type;        // see LogicalTypes.md
-    2: required i32 num_values;
+struct FixedSizeListType {        // allowed for FIXED_LEN_BYTE_ARRAY; see LogicalTypes.md
+    1: required Type type;        // element type (fixed-width primitive; must not be BOOLEAN, INT96, or BYTE_ARRAY)
+    2: required i32 num_values;   // number of elements in each value; must be > 0
+    // Writers must not emit violating values. Readers must treat violating metadata as invalid.
 }
 
 /**
