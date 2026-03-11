@@ -23,11 +23,13 @@ namespace parquet.format;
 // while removing duplicated fields, unused details, and inefficient encodings that
 // waste space and memory.
 // It can currently be attached as a footer extension, and may fully replace the
-// Thrift footer in the future.
+// Thrift footer in the future. As of now, the Thrift footer is still required;
+// this FlatBuffers footer is supplementary.
 //
 // Optimization notes:
 // 1. Statistics use fixed-width integral types when possible; otherwise they are
-//    encoded as prefix + suffix.
+//    encoded as prefix + suffix. SizeStatistics and Statistics.distinct_count
+//    are removed.
 // 2. ColumnChunk file_path and file_offset are removed since they are unused.
 // 3. ColumnMetaData.encoding_stats are removed and replaced by
 //    ColumnMetaData.is_fully_dict_encoded.
@@ -180,8 +182,8 @@ table Empty {}
  * Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
  */
 table DecimalOptions {
-  precision: int;
   scale: int;
+  precision: int;
 }
 
 /** Time units for logical types */
@@ -295,7 +297,7 @@ union LogicalType {
 }
 
 table Statistics {
-  null_count: int = null;
+  null_count: long = null;
   // Store min/max values as fixed-width entities depending on the physical type.
   // If min_len/max_len is present then the corresponding min/max value is present.
   //
@@ -303,7 +305,7 @@ table Statistics {
   // - INT32/FLOAT: min_lo4/max_lo4 (little-endian, 4 bytes)
   // - INT64/DOUBLE: min_lo8/max_lo8 (little-endian, 8 bytes)
   // - INT96: lo4 contains the low 4 bytes, lo8 contains the high 8 bytes (little-endian, 12 bytes total)
-  // - FIXED_LEN_BYTE_ARRAY:
+  // - FIXED_LEN_BYTE_ARRAY: Encoded the same way as BYTE_ARRAY below
   // - BYTE_ARRAY:
   //   prefix: the longest common prefix of min and max values
   //   lo8+hi8: zero-padded 16 bytes (big-endian) of the suffix after removing the prefix
@@ -324,12 +326,35 @@ table Statistics {
   min_lo4: uint;
   min_lo8: ulong;
   min_hi8: ulong;
-  min_len: byte = null;
+  min_len: int = null;
   max_lo4: uint;
   max_lo8: ulong;
   max_hi8: ulong;
-  max_len: byte = null;
-  prefix: string;
+  max_len: int = null;
+  prefix: [byte];
+}
+
+/**
+ * Bounding box for GEOMETRY or GEOGRAPHY type in the representation of min/max
+ * value pair of coordinates from each axis.
+ */
+table BoundingBox {
+  xmin: double;
+  xmax: double;
+  ymin: double;
+  ymax: double;
+  zmin: double = null;
+  zmax: double = null;
+  mmin: double = null;
+  mmax: double = null;
+}
+
+/** Statistics specific to Geometry and Geography logical types */
+table GeospatialStatistics {
+  /** A bounding box of geospatial instances */
+  bbox: BoundingBox;
+  /** Geospatial type codes of all instances, or an empty list if not known */
+  geospatial_types: [int];
 }
 
 /**
@@ -394,7 +419,7 @@ table SchemaElement {
 
   /** repetition of the field. The root of the schema does not have a repetition_type.
    * All other nodes must have one */
-  repetition_type: FieldRepetitionType;
+  repetition_type: FieldRepetitionType = null;
 
   /** The logical type of this SchemaElement */
   logical_type: LogicalType;
@@ -469,11 +494,22 @@ table ColumnMetadata {
 
   /** Optional Bloom filter information for this column chunk */
   bloom_filter: BloomFilterInfo;
+
+  /** Optional statistics specific for Geometry and Geography logical types */
+  geospatial_statistics: GeospatialStatistics;
+}
+
+table EncryptionWithColumnKey {
+  /** Column path in schema **/
+  path_in_schema: [string];
+
+  /** Retrieval metadata of column encryption key **/
+  key_metadata: [byte];
 }
 
 union ColumnCryptoMetadata {
   EncryptionWithFooterKey:Empty,
-  EncryptionWithColumnKey:Empty,
+  EncryptionWithColumnKey:EncryptionWithColumnKey,
 }
 
 table ColumnChunk {
