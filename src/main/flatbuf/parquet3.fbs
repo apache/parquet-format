@@ -28,7 +28,7 @@ namespace parquet.format;
 //
 // Optimization notes:
 // 1. Statistics use fixed-width integral types when possible; otherwise they are
-//    encoded as prefix + suffix. SizeStatistics and Statistics.distinct_count
+//    encoded as prefix + truncated suffix. SizeStatistics and Statistics.distinct_count
 //    are removed.
 // 2. ColumnChunk file_path and file_offset are removed since they are unused.
 // 3. ColumnMetaData.encoding_stats are removed and replaced by
@@ -309,28 +309,28 @@ table Statistics {
   // - BYTE_ARRAY:
   //   prefix: the longest common prefix of min and max values
   //   lo8+hi8: zero-padded 16 bytes (big-endian) of the suffix after removing the prefix
-  //   min_len/max_len: the length of the suffix of the original value after removing the prefix.
-  //        If > 16 then the value stored in lo8+hi8 is a truncated approximation (inexact).
-  //        If <= 16 then the value is exact.
+  //   min_len/max_len: the absolute value is the min/max length without prefix if prefix exists.
+  //       If >= 0, the value is exact. If < 0, the value is inexact.
   //
-  // Example for BYTE_ARRAY with min="apple" and max="application":
-  //   prefix = "appl"  (longest common prefix)
-  //   min suffix = "e" (1 byte), max suffix = "ication" (7 bytes)
-  //   min_lo8 = big-endian encoding of "e" zero-padded to 16 bytes
-  //   min_len = 1 (exact, since 1 <= 16)
-  //   max_lo8 = big-endian encoding of "ication" zero-padded to 16 bytes
-  //   max_len = 7 (exact, since 7 <= 16)
+  // Example for BYTE_ARRAY with min="apple" and max="application_is_a_very_long_suffix":
+  //   prefix = "appl"  (longest common prefix, 4 bytes)
+  //   min suffix = "e" (1 byte), max suffix = "ication_is_a_very_long_suffix" (29 bytes)
+  //   min_lo8 = big-endian encoding of "e" (1 byte)
+  //   min_len = 1 (>= 0, exact)
+  //   max_lo8+max_hi8 = big-endian encoding of "ication_is_a_ves" (truncated to 16 bytes,
+  //       last byte incremented by 1 to ensure it is still an upper bound)
+  //   max_len = -16 (< 0, inexact)
   //
   // Example for INT32 with min=42:
   //   min_lo4 = 0x2A000000 (42 in little-endian)
   min_lo4: uint;
   min_lo8: ulong;
   min_hi8: ulong;
-  min_len: int = null;
+  min_len: byte = null;
   max_lo4: uint;
   max_lo8: ulong;
   max_hi8: ulong;
-  max_len: int = null;
+  max_len: byte = null;
   prefix: [byte];
 }
 
