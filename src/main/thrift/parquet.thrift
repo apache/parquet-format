@@ -280,7 +280,7 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** 
+   /**
     * Count of null values in the column.
     *
     * Writers SHOULD always write this field even if it is zero (i.e. no null value)
@@ -717,7 +717,7 @@ struct DictionaryPageHeader {
  * The remaining section containing the data is compressed if is_compressed is true
  *
  * Implementation note - this header is not necessarily a strict improvement over
- * `DataPageHeader` (in particular the original header might provide better compression 
+ * `DataPageHeader` (in particular the original header might provide better compression
  * in some scenarios). Page indexes require pages to start and end at row boundaries,
  * regardless of which page header is used.
  **/
@@ -897,7 +897,7 @@ struct ColumnMetaData {
   /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed, and potentially encrypted, pages 
+  /** total byte size of all compressed, and potentially encrypted, pages
    *  in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
@@ -964,19 +964,19 @@ struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as
     * metadata.  This path is relative to the current file.
     *
-    * As of December 2025, the only known use-case for this field is writing summary 
-    * parquet files (i.e. "_metadata" files).  These files consolidate footers from 
-    * multiple parquet files to allow for efficient reading of footers to avoid file 
+    * As of December 2025, the only known use-case for this field is writing summary
+    * parquet files (i.e. "_metadata" files).  These files consolidate footers from
+    * multiple parquet files to allow for efficient reading of footers to avoid file
     * listing costs and prune out files that do not need to be read based on statistics.
     *
     * These files do not appear to have ever been formally specified in the specification.
     * and are potentially problematic from a correctness perspective [1].
-    * 
+    *
     * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
     *
-    * There is no other known usage of this field. Specifically, there are no known 
-    * reference implementations that will read externally stored column data if this field is populated 
-    * within a standard parquet file. Making use of the field for this purpose is  
+    * There is no other known usage of this field. Specifically, there are no known
+    * reference implementations that will read externally stored column data if this field is populated
+    * within a standard parquet file. Making use of the field for this purpose is
     * not considered part of the Parquet specification.
     **/
   1: optional string file_path
@@ -1039,10 +1039,10 @@ struct RowGroup {
    * in this row group **/
   5: optional i64 file_offset
 
-  /** Total byte size of all compressed (and potentially encrypted) column data 
+  /** Total byte size of all compressed (and potentially encrypted) column data
    *  in this row group **/
   6: optional i64 total_compressed_size
-  
+
   /** Row group ordinal in the file **/
   7: optional i16 ordinal
 }
@@ -1119,7 +1119,7 @@ union ColumnOrder {
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
-   * 
+   *
    *     When writing statistics the following rules should be followed:
    *     - NaNs should not be written to min or max statistics fields.
    *     - If the computed max value is zero (whether negative or positive),
@@ -1212,13 +1212,13 @@ struct ColumnIndex {
   4: required BoundaryOrder boundary_order
 
   /**
-   * A list containing the number of null values for each page 
+   * A list containing the number of null values for each page
    *
    * Writers SHOULD always write this field even if no null values
    * are present or the column is not nullable.
-   * Readers MUST distinguish between null_counts not being present 
+   * Readers MUST distinguish between null_counts not being present
    * and null_count being 0.
-   * If null_counts are not present, readers MUST NOT assume all 
+   * If null_counts are not present, readers MUST NOT assume all
    * null counts are 0.
    */
   5: optional list<i64> null_counts
@@ -1275,12 +1275,12 @@ union EncryptionAlgorithm {
  * Description for file metadata
  */
 struct FileMetaData {
-  /** Version of this file 
-    * 
-    * As of December 2025, there is no agreed upon consensus of what constitutes 
-    * version 2 of the file. For maximum compatibility with readers, writers should 
-    * always populate "1" for version. For maximum compatibility with writers, 
-    * readers should accept "1" and "2" interchangeably.  All other versions are 
+  /** Version of this file
+    *
+    * As of December 2025, there is no agreed upon consensus of what constitutes
+    * version 2 of the file. For maximum compatibility with readers, writers should
+    * always populate "1" for version. For maximum compatibility with writers,
+    * readers should accept "1" and "2" interchangeably.  All other versions are
     * reserved for potential future use-cases.
     */
   1: required i32 version
@@ -1326,30 +1326,30 @@ struct FileMetaData {
    */
   7: optional list<ColumnOrder> column_orders;
 
-  /** 
+  /**
    * Encryption algorithm. This field is set only in encrypted files
    * with plaintext footer. Files with encrypted footer store algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
 
-  /** 
-   * Retrieval metadata of key used for signing the footer. 
-   * Used only in encrypted files with plaintext footer. 
-   */ 
+  /**
+   * Retrieval metadata of key used for signing the footer.
+   * Used only in encrypted files with plaintext footer.
+   */
   9: optional binary footer_signing_key_metadata
 }
 
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
-  /** 
+  /**
    * Encryption algorithm. This field is only used for files
    * with encrypted footer. Files with plaintext footer store algorithm id
    * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
-    
-  /** Retrieval metadata of key used for encryption of footer, 
+
+  /** Retrieval metadata of key used for encryption of footer,
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }
