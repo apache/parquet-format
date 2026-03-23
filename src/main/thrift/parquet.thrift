@@ -312,8 +312,8 @@ struct Statistics {
    /**
     * Count of NaN values in the column; only present if physical type is FLOAT
     * or DOUBLE, or logical type is FLOAT16.
-    * If this field is not present, readers must assume NaNs may be present
-    * (MUST NOT assume nan_count == 0).
+    * If this field is not present, readers MUST assume NaNs may be present
+    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
     */
    9: optional i64 nan_count;
 }
@@ -1140,8 +1140,8 @@ union ColumnOrder {
    *       NaNs are present.
    *
    *     When writing statistics the following rules should be followed:
-   *     - Always set the nan_count field for floating point types, especially
-   *       even if it is zero.
+   *     - Always set the nan_count field for floating point types, even if
+   *       it is zero.
    *     - NaNs should not be written to min or max statistics fields except
    *       in the column index when a page contains only NaN values. In this
    *       case, since min_values and max_values are required, a NaN value
@@ -1296,7 +1296,8 @@ struct ColumnIndex {
    *   still included NaN in min_values and max_values even if the page had
    *   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
    * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
-   *   and max_values[i] of that page must be set to a standard NaN value.
+   *   and max_values[i] of that page must be set to the smallest and largest
+   *   NaN values as defined by IEEE 754 total order.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
