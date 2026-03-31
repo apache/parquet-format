@@ -44,8 +44,12 @@ locations on Earth.
 The default CRS `OGC:CRS84` means that the geospatial features must be stored
 in the order of longitude/latitude based on the WGS84 datum.
 
-Custom CRS can be specified by a string value. It is recommended to use an
-identifier-based approach like [Spatial reference identifier][srid].
+Non-defaullt CRS values are specified by any string that uniquely identifies coordinate reference system associated with this type.
+To maximize interoperability suggested (but not limited to) formats for CRS are:
+* `authorithy:identifier` - where `authorithy` represents some well known authorities - examples are `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`.
+* `inlined_projjson` - Inlining whole CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) format.
+* `srid:identifier` - [SRID - Spatial reference identifier](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), `identifier` is the SRID itself.
+* `projjson:table_property_name` - where `table_property_name` is the name of a table property where the projjson string is stored
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
 by [-90, 90].
@@ -85,19 +89,19 @@ associated with each point.
 The Z values introduce the third dimension coordinate. Usually they are used to
 indicate the height, or elevation.
 
-M values are an opportunity for a geospatial instance to track a value in a 
-fourth dimension. These values can be used as a linear reference value (e.g., 
+M values are an opportunity for a geospatial instance to track a value in a
+fourth dimension. These values can be used as a linear reference value (e.g.,
 highway milepost value), a timestamp, or some other value as defined by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
 min/max value pair of coordinates from each axis. Note that X and Y Values are
 always present. Z and M are omitted for 2D geospatial instances.
 
-When calculating a bounding box, null or NaN values in a coordinate 
-dimension are skipped. For example, `POINT (1 NaN)` contributes a value to X 
-but no values to Y, Z, or M dimension of the bounding box. If a dimension has 
-only null or NaN values, that dimension is omitted from the bounding box. If 
-either the X or Y dimension is missing, then the bounding box itself is not 
+When calculating a bounding box, null or NaN values in a coordinate
+dimension are skipped. For example, `POINT (1 NaN)` contributes a value to X
+but no values to Y, Z, or M dimension of the bounding box. If a dimension has
+only null or NaN values, that dimension is omitted from the bounding box. If
+either the X or Y dimension is missing, then the bounding box itself is not
 produced.
 
 For the X values only, xmin may be greater than xmax. In this case, an object
@@ -149,18 +153,6 @@ In addition, the following rules are applied:
 
 [geometry-types]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L159
 [wkb-integer-code]: https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
-
-# CRS Customization
-
-CRS is represented as a string value. Writer and reader implementations are
-responsible for serializing and deserializing the CRS, respectively.
-
-As a convention to maximize the interoperability, custom CRS values can be
-specified by a string of the format `type:identifier`, where `type` is one of
-the following values:
-
-* `srid`: [Spatial reference identifier](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), `identifier` is the SRID itself.
-* `projjson`: [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), `identifier` is the name of a table property or a file property where the projjson string is stored.
 
 # Coordinate axis order
 
