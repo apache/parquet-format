@@ -44,7 +44,7 @@ When `typed_value` is present, readers **must** reconstruct shredded values acco
 
 For example, a Variant field, `measurement` may be shredded as long values by adding `typed_value` with type `int64`:
 ```
-required group measurement (VARIANT) {
+required group measurement (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
@@ -128,7 +128,7 @@ However, at least one of the two fields must be present.
 
 For example, a `tags` Variant may be shredded as a list of strings using the following definition:
 ```
-optional group tags (VARIANT) {
+optional group tags (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional group typed_value (LIST) {   # must be optional to allow a null list
@@ -174,7 +174,7 @@ As a result, reads when a field is defined in both `value` and a `typed_value` s
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
-optional group event (VARIANT) {
+optional group event (VARIANT(1)) {
   required binary metadata;
   optional binary value;                # a variant, expected to be an object
   optional group typed_value {          # shredded fields for the variant object
@@ -229,7 +229,7 @@ The `typed_value` associated with any Variant `value` field can be any shredded 
 For example, the `event` object above may also shred sub-fields as object (`location`) or array (`tags`).
 
 ```
-optional group event (VARIANT) {
+optional group event (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional group typed_value {

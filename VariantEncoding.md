@@ -53,7 +53,7 @@ A Variant value in Parquet is represented by a group with 2 fields, named `value
 This is the expected unshredded representation in Parquet:
 
 ```
-optional group variant_name (VARIANT) {
+optional group variant_name (VARIANT(1)) {
   required binary metadata;
   required binary value;
 }
@@ -61,7 +61,7 @@ optional group variant_name (VARIANT) {
 
 This is an example representation of a shredded Variant in Parquet:
 ```
-optional group shredded_variant_name (VARIANT) {
+optional group shredded_variant_name (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
