@@ -51,8 +51,6 @@ To maximize interoperability, suggested (but not limited to) formats for CRS are
 * `projjson:table_property_name` - where `table_property_name` is a reference to a CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), stored in the table property.
 * `projjson` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for OGC:CRS83:
 ```
-* `projjson` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification.
-```
 {
   "type": "GeographicCRS",
   "name": "NAD83",
