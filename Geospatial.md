@@ -46,7 +46,7 @@ in the order of longitude/latitude based on the WGS84 datum.
 
 Non-default CRS values are specified by any case insensitive string that uniquely identifies a coordinate reference system associated with this type.
 To maximize interoperability, suggested (but not limited to) formats for CRS are:
-* `authority:code` - where `authority` represents some well known authorities, and `code` is the code used by the authority to identify the CRS  - examples are `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`,  `EPSG:3857`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
+* `authority:code` - where `authority` represents some well known authorities, and `code` is the code used by the authority to identify the CRS  - examples are `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
 * `srid:identifier` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where identifier is the numeric SRID value. For example: `SRID:0`.
 * `projjson:table_property_name` - where `table_property_name` is a reference to a CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), stored in a file level key/value metadata key or table property.
 * `projjson` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`:
