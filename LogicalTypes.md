@@ -572,7 +572,7 @@ The `VARIANT` annotated group can be used to store either an unshredded Variant
 value, or a shredded Variant value.
 
 * The Variant group must be annotated with the `VARIANT` logical type, with the version number
-  "1" included in the declaration.
+  included in the declaration.
 * Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY`
   in the Parquet thrift definition).
 * The `metadata` field is required and must be a valid Variant metadata component,
