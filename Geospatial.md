@@ -46,55 +46,10 @@ in the order of longitude/latitude based on the WGS84 datum.
 
 Non-default CRS values are specified by any string that uniquely identifies a coordinate reference system associated with this type.
 To maximize interoperability, suggested (but not limited to) formats for CRS are:
-* `authority:code` - where `authority` represents some well known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
-* `srid:identifier` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where identifier is the numeric SRID value. For example: `SRID:0`. 
-* `projjson:table_property_name` - where `table_property_name` is a reference to a CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), stored in a file level key/value metadata key or table property.
-* `projjson` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`:
-```
-{
-  "$schema": "https://proj.org/schemas/v0.7/projjson.schema.json",
-  "type": "GeographicCRS",
-  "name": "NAD83 (CRS83)",
-  "datum": {
-    "type": "GeodeticReferenceFrame",
-    "name": "North American Datum 1983",
-    "ellipsoid": {
-      "name": "GRS 1980",
-      "semi_major_axis": 6378137,
-      "inverse_flattening": 298.257222101
-    }
-  },
-  "coordinate_system": {
-    "subtype": "ellipsoidal",
-    "axis": [
-      {
-        "name": "Geodetic longitude",
-        "abbreviation": "Lon",
-        "direction": "east",
-        "unit": "degree"
-      },
-      {
-        "name": "Geodetic latitude",
-        "abbreviation": "Lat",
-        "direction": "north",
-        "unit": "degree"
-      }
-    ]
-  },
-  "scope": "Not known.",
-  "area": "North America - onshore and offshore: Canada - Alberta; British Columbia; Manitoba; New Brunswick; Newfoundland and Labrador; Northwest Territories; Nova Scotia; Nunavut; Ontario; Prince Edward Island; Quebec; Saskatchewan; Yukon. Puerto Rico. United States (USA) - Alabama; Alaska; Arizona; Arkansas; California; Colorado; Connecticut; Delaware; Florida; Georgia; Hawaii; Idaho; Illinois; Indiana; Iowa; Kansas; Kentucky; Louisiana; Maine; Maryland; Massachusetts; Michigan; Minnesota; Mississippi; Missouri; Montana; Nebraska; Nevada; New Hampshire; New Jersey; New Mexico; New York; North Carolina; North Dakota; Ohio; Oklahoma; Oregon; Pennsylvania; Rhode Island; South Carolina; South Dakota; Tennessee; Texas; Utah; Vermont; Virginia; Washington; West Virginia; Wisconsin; Wyoming. US Virgin Islands. British Virgin Islands.",
-  "bbox": {
-    "south_latitude": 14.92,
-    "west_longitude": 167.65,
-    "north_latitude": 86.45,
-    "east_longitude": -40.73
-  },
-  "id": {
-    "authority": "OGC",
-    "code": "CRS83"
-  }
-}
-```
+* `<projjson>` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`: `{"$schema": "https://proj.org/schemas/v0.7/projjson.schema.json","type": "GeographicCRS","name": "NAD83 (CRS83)","datum": {"type": "GeodeticReferenceFrame"...`
+* `<authority>:<code>` - where `<authority>` represents some well known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`, `IGNF:ATI`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
+* `srid:<identifier>` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where <identifier> is the numeric SRID value. For example: `SRID:0`. 
+* `projjson:<table_property_name>` - where `<table_property_name>` is a reference to a CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), stored in a file level key/value metadata key or table property.
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
 by [-90, 90].
