@@ -49,7 +49,7 @@ To maximize interoperability, suggested (but not limited to) formats for CRS are
 * `<projjson>` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`: `{"$schema": "https://proj.org/schemas/v0.7/projjson.schema.json","type": "GeographicCRS","name": "NAD83 (CRS83)","datum": {"type": "GeodeticReferenceFrame"...`
 * `<authority>:<code>` - where `<authority>` represents some well known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`, `IGNF:ATI`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
 * `srid:<identifier>` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where <identifier> is the numeric SRID value. For example: `SRID:0`. 
-* `projjson:<table_property_name>` - where `<table_property_name>` is a reference to a CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html), stored in a file level key/value metadata key or table property.
+* `projjson:<key_name>` - where <key_name> refers to a key within the file key-value metadata, where CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) format is stored.
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
 by [-90, 90].
