@@ -35,8 +35,6 @@ namespace parquet.format;
 //    ColumnMetaData.is_fully_dict_encoded.
 // 4. ColumnMetaData.path_in_schema is removed since it can be derived from the schema.
 // 5. ConvertedType is fully dropped as it is superseded by LogicalType.
-// 6. Offset and column indexes are removed since they are small and their offsets
-//    alone take comparable space.
 
 /**
  * Types supported by Parquet. These types are intended to be used in combination
@@ -95,19 +93,19 @@ enum Encoding : byte {
   /**
    * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
-   * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead
+   * In a data page use RLE_DICTIONARY instead.
+   * In a Dictionary page use PLAIN instead.
    */
-  PLAIN_DICTIONARY = 2,
+  // PLAIN_DICTIONARY = 2,
 
   /** Group packed run length encoding. Usable for definition/repetition levels
    * encoding and Booleans (on one bit: 0 is false; 1 is true.)
    */
   RLE = 3,
 
-  /** Bit packed encoding. This can only be used if the data has a known max
+  /** Deprecated: Bit packed encoding. This can only be used if the data has a known max
    * width. Usable for definition/repetition levels encoding.
-   * This encoding is deprecated and is replaced by the RLE/bit-packing hybrid encoding. 
+   * This encoding is replaced by the RLE/bit-packing hybrid encoding.
    */
   // BIT_PACKED = 4,
 
@@ -175,9 +173,6 @@ table Empty {}
  *
  * Scale must be zero or a positive integer less than or equal to the precision.
  * Precision must be a non-zero positive integer.
- *
- * To maintain forward-compatibility in v1, implementations using this logical
- * type must also set scale and precision on the annotated SchemaElement.
  *
  * Allowed for physical types: INT32, INT64, FIXED_LEN_BYTE_ARRAY, and BYTE_ARRAY.
  */
@@ -275,9 +270,13 @@ table GeographyType {
 
 /**
  * LogicalType annotations to replace ConvertedType.
+ *
+ * Types with no parameters use `Empty`. To add parameters later, append a new
+ * union member (e.g., StringTypeV2:StringOptions); new readers remain
+ * backward-compatible with old files.
  */
 union LogicalType {
-  StringType:Empty, 
+  StringType:Empty,
   MapType:Empty,
   ListType:Empty,
   EnumType:Empty,
@@ -298,6 +297,8 @@ union LogicalType {
 
 table Statistics {
   null_count: long = null;
+  /** count of distinct values occurring */
+  distinct_count: long = null;
   // Store min/max values as fixed-width entities depending on the physical type.
   // If min_len/max_len is present then the corresponding min/max value is present.
   //
@@ -411,18 +412,8 @@ union ColumnOrder {
  * the nodes are listed in depth first traversal order.
  */
 table SchemaElement {
-  /** Name of the field in the schema */
-  name: string;
-
   /** Data type for this field. Not set if the current element is a non-leaf node */
   type: Type = null;
-
-  /** repetition of the field. The root of the schema does not have a repetition_type.
-   * All other nodes must have one */
-  repetition_type: FieldRepetitionType = null;
-
-  /** The logical type of this SchemaElement */
-  logical_type: LogicalType;
 
   /** If type is FIXED_LEN_BYTE_ARRAY, this is the byte length of the values.
    * Otherwise, if specified, this is the maximum bit length to store any of the values.
@@ -430,6 +421,13 @@ table SchemaElement {
    * in the schema, and therefore fixed for the entire file.
    */
   type_length: int = null;
+
+  /** repetition of the field. The root of the schema does not have a repetition_type.
+   * All other nodes must have one */
+  repetition_type: FieldRepetitionType = null;
+
+  /** Name of the field in the schema */
+  name: string;
 
   /** Nested fields.  Since thrift does not support nested fields,
    * the nesting is flattened to a single list by a depth-first traversal.
@@ -442,7 +440,12 @@ table SchemaElement {
    * original field id in the parquet schema
    */
   field_id: int = null;
-  column_order: ColumnOrder;  // only present for leaf nodes
+
+  /** The logical type of this SchemaElement */
+  logical_type: LogicalType;
+
+  /** Column ordering for leaf nodes, used to interpret min/max statistics */
+  column_order: ColumnOrder;
 }
 
 enum PageType : byte {
@@ -489,7 +492,9 @@ table ColumnMetadata {
   /** optional statistics for this column chunk */
   statistics: Statistics;
 
-  /** Indicates whether the column chunk pages are fully dictionary encoded. */
+  /** True if every data page in this column chunk is dictionary-encoded
+   * (no fallback). Replaces Thrift encoding_stats.
+   */
   is_fully_dict_encoded: bool;
 
   /** Optional Bloom filter information for this column chunk */
@@ -517,7 +522,7 @@ table ColumnChunk {
    * Note: while marked as optional, this field is in fact required by most major
    * Parquet implementations. As such, writers MUST populate this field.
    **/
-  meta_data: ColumnMetadata;
+  metadata: ColumnMetadata;
 
   /** Crypto metadata of encrypted columns **/
   crypto_metadata: ColumnCryptoMetadata;
@@ -547,7 +552,7 @@ table RowGroup {
    **/
   columns: [ColumnChunk];
 
-  /** Total byte size of all the uncompressed column data in this row group **/
+  /** Sum of total_uncompressed_size across all columns (uncompressed, encoded) **/
   total_byte_size: long;
 
   /** Number of rows in this row group **/
@@ -568,22 +573,6 @@ table RowGroup {
 
   /** Row group ordinal in the file **/
   ordinal: short = null;
-}
-
-/**
- * Crypto metadata for files with encrypted footer.
- */
-table FileCryptoMetaData {
-  /** 
-   * Encryption algorithm. This field is only used for files
-   * with encrypted footer. Files with plaintext footer store algorithm id
-   * inside footer (FileMetaData structure).
-   */
-  encryption_algorithm: EncryptionAlgorithm;
-    
-  /** Retrieval metadata of key used for encryption of footer, 
-   * and (possibly) columns **/
-  key_metadata: [byte];
 }
 
 /**
