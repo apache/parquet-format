@@ -888,7 +888,7 @@ struct ColumnMetaData {
   /**
    * Path in schema
    *
-   * The writing of this field has been made optional as of version 2.X.0.
+   * The writing of this field has been made optional as of June 2026.
    * The information contained in this field is easily obtainable from
    * the schema, and redundantly storing it here can lead to unnecessary
    * bloat in the footer. Writers are encouraged to make the writing of
