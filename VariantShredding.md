@@ -303,6 +303,8 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
                 assert typed_value.keys().isdisjoint(value.keys()), "object keys must be disjoint"
 
                 # union the shredded fields and non-shredded fields
+                # (the result is a Variant object; field ID ordering rules
+                # from VariantEncoding.md apply)
                 return VariantObject(metadata, object_fields).union(VariantObject(metadata, value))
 
             else:
