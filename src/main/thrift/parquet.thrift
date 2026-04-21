@@ -628,6 +628,11 @@ enum Encoding {
       Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
    */
   BYTE_STREAM_SPLIT = 9;
+
+  /** Patched Frame of Reference encoding for INT32/INT64 columns.
+      See Encodings.md for specification details.
+   */
+  PFOR = 11;
 }
 
 /**
