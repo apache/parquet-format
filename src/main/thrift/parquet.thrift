@@ -319,6 +319,11 @@ struct ListType {}    // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
 struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
+struct FixedSizeListType {        // allowed for FIXED_LEN_BYTE_ARRAY; see LogicalTypes.md
+    1: required Type type;        // element type (fixed-width primitive; must not be BOOLEAN, INT96, or BYTE_ARRAY)
+    2: required i32 num_values;   // number of elements in each value; must be > 0
+    // Writers must not emit violating values. Readers must treat violating metadata as invalid.
+}
 
 /**
  * Logical type to annotate a column that is always null.
@@ -485,15 +490,16 @@ union LogicalType {
   8:  TimestampType TIMESTAMP
 
   // 9: reserved for INTERVAL
-  10: IntType INTEGER         // use ConvertedType INT_* or UINT_*
-  11: NullType UNKNOWN        // no compatible ConvertedType
-  12: JsonType JSON           // use ConvertedType JSON
-  13: BsonType BSON           // use ConvertedType BSON
-  14: UUIDType UUID           // no compatible ConvertedType
-  15: Float16Type FLOAT16     // no compatible ConvertedType
-  16: VariantType VARIANT     // no compatible ConvertedType
-  17: GeometryType GEOMETRY   // no compatible ConvertedType
-  18: GeographyType GEOGRAPHY // no compatible ConvertedType
+  10: IntType INTEGER                          // use ConvertedType INT_* or UINT_*
+  11: NullType UNKNOWN                         // no compatible ConvertedType
+  12: JsonType JSON                            // use ConvertedType JSON
+  13: BsonType BSON                            // use ConvertedType BSON
+  14: UUIDType UUID                            // no compatible ConvertedType
+  15: Float16Type FLOAT16                      // no compatible ConvertedType
+  16: VariantType VARIANT                      // no compatible ConvertedType
+  17: GeometryType GEOMETRY                    // no compatible ConvertedType
+  18: GeographyType GEOGRAPHY                  // no compatible ConvertedType
+  19: FixedSizeListType FIXED_SIZE_LIST        // no compatible ConvertedType
 }
 
 /**
