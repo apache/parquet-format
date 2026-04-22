@@ -885,8 +885,17 @@ struct ColumnMetaData {
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
-  3: required list<string> path_in_schema
+  /**
+   * Path in schema
+   *
+   * The writing of this field has been made optional as of June 2026.
+   * The information contained in this field is easily obtainable from
+   * the schema, and redundantly storing it here can lead to unnecessary
+   * bloat in the footer. Writers are encouraged to make the writing of
+   * this field optional, but for maximal compatibility should default to
+   * writing the field until at least September 2028.
+   */
+  3: optional list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
