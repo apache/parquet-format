@@ -893,7 +893,7 @@ struct ColumnMetaData {
    * the schema, and redundantly storing it here can lead to unnecessary
    * bloat in the footer. Writers are encouraged to make the writing of
    * this field optional, but for maximal compatibility should default to
-   * writing the field until at least Month 202X.
+   * writing the field until at least September 2028.
    */
   3: optional list<string> path_in_schema
 
