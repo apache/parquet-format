@@ -22,6 +22,18 @@ Parquet encoding definitions
 
 This file contains the specification of all supported encodings.
 
+| Encoding | ID | Supported Types |
+|----------|----|-----------------|
+| [Plain](#PLAIN) | 0 | All |
+| [Dictionary](#dictionary-encoding-plain_dictionary--2-and-rle_dictionary--8) | 2, 8 | All |
+| [RLE/Bit-Packing Hybrid](#RLE) | 3 | BOOLEAN (data), INT32 (levels) |
+| [Bit-Packed (Deprecated)](#BITPACKED) | 4 | (deprecated) |
+| [Delta Binary Packed](#DELTA_BINARY_PACKED) | 5 | INT32, INT64 |
+| [Delta-Length Byte Array](#DELTA_LENGTH_BYTE_ARRAY) | 6 | BYTE_ARRAY |
+| [Delta Byte Array](#DELTA_BYTE_ARRAY) | 7 | BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY |
+| [Byte Stream Split](#BYTE_STREAM_SPLIT) | 9 | FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY |
+| [ALP](#ALP) | 10 | FLOAT, DOUBLE |
+
 <a name="PLAIN"></a>
 ### Plain: (PLAIN = 0)
 
@@ -373,11 +385,13 @@ This encoding is adapted from the paper
 ["ALP: Adaptive Lossless floating-Point Compression"](https://dl.acm.org/doi/10.1145/3626717)
 by Afroozeh and Boncz (SIGMOD 2024).
 
-ALP works by converting floating-point values to integers using decimal scaling,
-then applying Frame of Reference (FOR) encoding and bit-packing. Values that
-cannot be losslessly converted are stored as exceptions. The encoding achieves
-high compression for decimal-like floating-point data (e.g., monetary values,
-sensor readings) while remaining fully lossless.
+ALP works by converting floating-point values to integers using decimal scaling
+(controlled by an *exponent* `e` and *factor* `f`), then applying Frame of
+Reference (FOR) encoding and bit-packing. Values that cannot be losslessly
+converted are stored separately as *exceptions*. The encoding achieves high
+compression for decimal-like floating-point data (e.g., monetary values, sensor
+readings) while remaining fully lossless. Each value is encoded independently,
+enabling random access to individual vectors and parallel encode/decode.
 
 #### Overview
 
@@ -402,16 +416,14 @@ The compression pipeline for each vector is:
                               |
                               v
     +----------------------------------------------------------+
-    |  1. SAMPLING & PRESET GENERATION                         |
-    |     Sample vectors from column chunk                     |
-    |     Try all (exponent, factor) combinations              |
-    |     Select best k combinations for preset                |
+    |  1. CHOOSE PARAMETERS                                    |
+    |     Select (exponent, factor) pair for this vector       |
     +----------------------------------------------------------+
                               |
                               v
     +----------------------------------------------------------+
     |  2. DECIMAL ENCODING                                     |
-    |     encoded[i] = round(value[i] * 10^e * 10^(-f))       |
+    |     encoded[i] = fast_round(value[i] * 10^e * 10^(-f))  |
     |     Detect exceptions where decode(encode(v)) != v       |
     +----------------------------------------------------------+
                               |
@@ -437,7 +449,7 @@ The compression pipeline for each vector is:
 
 ##### Header (7 bytes)
 
-All multi-byte values are little-endian.
+All multi-byte values are stored in little-endian order.
 
 ```
  Byte:    0              1               2              3    4    5    6
@@ -449,18 +461,16 @@ All multi-byte values are little-endian.
 
 | Offset | Field | Size | Type | Description |
 |--------|-------|------|------|-------------|
-| 0 | compression_mode | 1 byte | uint8 | Compression mode (must be 0 = ALP) |
+| 0 | compression_mode | 1 byte | uint8 | Compression mode (0 = ALP). Reserved for future variants (e.g., ALP-RD). |
 | 1 | integer_encoding | 1 byte | uint8 | Integer encoding (must be 0 = FOR + bit-packing) |
-| 2 | log_vector_size | 1 byte | uint8 | log2(vector\_size). Must be in \[3, 15\]. Default: 10 (vector size 1024) |
+| 2 | log_vector_size | 1 byte | uint8 | log2(vector\_size). Must be in the inclusive range \[3, 15\]. Recommended default: 10 (vector size 1024) |
 | 3 | num_elements | 4 bytes | int32 | Total number of floating-point values in the page |
 
 The number of vectors is `ceil(num_elements / vector_size)`. The last vector may
 contain fewer than `vector_size` elements.
 
-**Note:** The number of elements per vector and the packed data size are NOT stored
-in the header. They are derived:
-* Elements per vector: `vector_size` for all vectors except the last, which may be smaller.
-* Packed data size: `ceil(num_elements_in_vector * bit_width / 8)`.
+**Note:** The number of elements per vector is NOT stored in the header — it is
+derived: `vector_size` for all vectors except the last, which may be smaller.
 
 ##### Offset Array
 
@@ -468,7 +478,7 @@ Immediately following the header is an array of `num_vectors` little-endian uint
 values. Each offset gives the byte position of the corresponding vector's data,
 measured from the start of the offset array itself.
 
-The first offset equals `num_vectors * 4` (pointing just past the offset array).
+The first offset always equals `num_vectors * 4` (pointing just past the offset array).
 Each subsequent offset equals the previous offset plus the stored size of the
 previous vector.
 
@@ -493,9 +503,9 @@ Vector header sizes:
 Data section sizes:
 | Section             | Size Formula                | Description                  |
 |---------------------|-----------------------------|------------------------------|
-| PackedValues        | ceil(N * bit\_width / 8)    | Bit-packed delta values      |
+| PackedValues        | ceil(num\_elements\_in\_vector * bit\_width / 8) | Bit-packed delta values      |
 | ExceptionPositions  | num\_exceptions * 2 bytes   | uint16 indices of exceptions |
-| ExceptionValues     | num\_exceptions * sizeof(T) | Original float/double values |
+| ExceptionValues     | num\_exceptions * sizeof(type) (4 for FLOAT, 8 for DOUBLE) | Original float/double values |
 
 ###### AlpInfo (4 bytes, both types)
 
@@ -546,8 +556,7 @@ Data section sizes:
 ###### PackedValues
 
 The FOR-encoded deltas, bit-packed into `ceil(num_elements_in_vector * bit_width / 8)` bytes.
-Values are packed from the least significant bit of each byte to the most significant bit,
-in groups of 8 values, using the same bit-packing order as the
+Values are bit-packed using the same LSB-first packing order as the
 [RLE/Bit-Packing Hybrid](#RLE) encoding.
 
 If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
@@ -571,7 +580,7 @@ the same order as the corresponding positions.
 ```
 +-------------------------------------------------------------------+
 |                                                                   |
-|   encoded = round( value  *  10^e  *  10^(-f) )                  |
+|   encoded = fast_round( value  *  10^e  *  10^(-f) )             |
 |                                                                   |
 |   decoded = encoded  *  10^f  *  10^(-e)                          |
 |                                                                   |
@@ -580,9 +589,8 @@ the same order as the corresponding positions.
 
 The encoding uses two separate multiplications (not a single multiplication by
 `10^(e-f)`, and not division) to ensure that implementations produce identical
-floating-point rounding across languages. The powers of 10 MUST be stored as
-precomputed floating-point constants (i.e., literal values like `1e-3f`), not
-computed at runtime.
+floating-point rounding across languages. Implementations must ensure that the
+encoder and decoder use identical power-of-10 values for a given exponent.
 
 ##### Fast Rounding
 
@@ -590,10 +598,10 @@ The rounding function uses a "magic number" technique for branchless rounding:
 
 | Type   | Magic Number                      | Formula                          |
 |--------|-----------------------------------|----------------------------------|
-| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int)((value + magic) - magic)` |
-| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(long)((value + magic) - magic)` |
+| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` |
+| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` |
 
-For negative values, the signs are reversed: `(int)((value - magic) + magic)`.
+For negative values, the signs are reversed: `(int32_t)((value - magic) + magic)` for FLOAT, `(int64_t)((value - magic) + magic)` for DOUBLE.
 
 ##### Parameter Selection
 
