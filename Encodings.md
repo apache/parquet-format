@@ -496,7 +496,7 @@ measured from the start of the offset array itself.
 
 The first offset always equals `num_vectors * 4` (pointing just past the offset array).
 Each subsequent offset equals the previous offset plus the stored size of the
-previous vector.
+previous vector. No padding is inserted between vectors.
 
 ##### Vector Format
 
@@ -521,7 +521,7 @@ Data section sizes:
 |---------------------|-----------------------------|------------------------------|
 | PackedValues        | ceil(num\_elements\_in\_vector * bit\_width / 8) | Bit-packed delta values      |
 | ExceptionPositions  | num\_exceptions * 2 bytes   | uint16 indices of exceptions |
-| ExceptionValues     | num\_exceptions * sizeof(type) (4 for FLOAT, 8 for DOUBLE) | Original float/double values |
+| ExceptionValues     | num\_exceptions * sizeof(encoded type) (float=4 and double=8) | Original float/double values |
 
 ###### AlpInfo (4 bytes, both types)
 
