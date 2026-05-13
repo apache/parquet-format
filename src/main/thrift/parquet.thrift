@@ -1139,7 +1139,8 @@ union ColumnOrder {
    *       If the nan_count field is set, it can be used to check whether
    *       NaNs are present.
    *
-   *     When writing statistics the following rules should be followed:
+   *     When writing statistics for columns with TYPE_ORDER order, then
+   *     following rules must be followed:
    *     - Always set the nan_count field for floating point types, even if
    *       it is zero.
    *     - NaNs should not be written to min or max statistics fields except
@@ -1198,8 +1199,8 @@ union ColumnOrder {
    *     return x_int <= y_int;
    *   }
    *
-   * When writing statistics for columns with this order, the following rules
-   * must be followed:
+   * When writing statistics for columns with IEEE_754_TOTAL_ORDER order, then
+   * following rules must be followed:
    * - Writing the nan_count field is mandatory when using this ordering.
    * - Min and max statistics must contain the smallest and largest non-NaN
    *   values respectively, or if all non-null values are NaN, the smallest and
