@@ -407,7 +407,7 @@ Reference (FOR) encoding and bit-packing. Values that cannot be losslessly
 converted are stored separately as *exceptions*. The encoding achieves high
 compression for decimal-like floating-point data (e.g., monetary values, sensor
 readings) while remaining fully lossless. Each value is encoded independently,
-enabling random access to individual vectors and parallel encode/decode.
+enabling random access to individual values and parallel encode/decode.
 
 #### Overview
 
@@ -605,19 +605,19 @@ the same order as the corresponding positions.
 
 The encoding uses two separate multiplications (not a single multiplication by
 `10^(e-f)`, and not division) to ensure that implementations produce identical
-floating-point rounding across languages. Implementations must ensure that the
-encoder and decoder use identical power-of-10 values for a given exponent.
+floating-point results. All implementations MUST use the exact same floating-point
+arithmetic and power-of-10 constants to guarantee cross-language interoperability.
 
 ##### Fast Rounding
 
-The rounding function uses a "magic number" technique for branchless rounding:
+The `fast_round` function uses a "magic number" technique for branchless rounding.
+
+`fast_round(value)` is defined as follows:
 
 | Type   | Magic Number                      | Formula                          |
 |--------|-----------------------------------|----------------------------------|
 | FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` |
 | DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` |
-
-For negative values, the signs are reversed: `(int32_t)((value - magic) + magic)` for FLOAT, `(int64_t)((value - magic) + magic)` for DOUBLE.
 
 ##### Parameter Selection
 
@@ -630,15 +630,15 @@ Valid combinations satisfy 0 &le; factor &le; exponent:
 | DOUBLE | 18           | 190                |
 
 To avoid the cost of exhaustive search on every vector, implementations
-SHOULD use sampling to select up to 5 candidate (exponent, factor)
-combinations (the "encoding preset") at the start of each column chunk.
-Each vector then searches only those 5 candidates.
+can use a sampling approach. One such approach, described in the paper, is to
+select up to 5 candidate (exponent, factor) combinations (the "encoding preset")
+at the start of each column chunk, and when encoding each vector,
+test each of the 5 candidates for the fewest exceptions.
 
-Sampling parameters:
+Suggested sampling parameters (from the paper):
 
 | Parameter            | Value | Description                         |
 |----------------------|-------|-------------------------------------|
-| Vector Size          | 1024  | Elements compressed as a unit       |
 | Sample Size          | 256   | Values sampled per vector           |
 | Max Combinations     | 5     | Best (e,f) pairs kept in preset     |
 | Sample Vectors       | 8     | Vectors sampled per row group       |
@@ -659,9 +659,9 @@ Exception values at positions in the vector are replaced with a placeholder
 (the encoded integer of the first non-exception value, or 0 if all values
 are exceptions) before FOR encoding. This keeps the FOR range tight.
 
-##### Frame of Reference and Bit-Packing
+##### Example: Frame of Reference and Bit-Packing
 
-After decimal encoding and exception substitution:
+Given the following data after decimal encoding and exception substitution:
 
 ```
 +---------------------------------------------------------------------+
@@ -724,185 +724,54 @@ For each vector:
 5. Patch exceptions: for each (position, value) in the exception arrays,
    overwrite the decoded output at that position with the stored value.
 
-#### Example 1: Simple Decimal Values
+#### Worked Example: Exceptions and Non-Zero Factor
 
-**Input:** `float values[4] = { 1.23, 4.56, 7.89, 0.12 }`
+**Input:** `double values[4] = { 1500.0, NaN, 2500.0, 333.3 }`
 
-**Step 1: Find Best Exponent/Factor**
+Best encoding found: (exponent=4, factor=3). This means:
+`encoded = fast_round(value * 10^4 * 10^(-3)) = fast_round(value * 10)`
 
-Testing (exponent=2, factor=0) means multiply by 10^2 = 100:
+**Step 1: Decimal Encoding**
 
-| Value | value * 100 | Rounded | Verify: rounded * 1.0 * 0.01 | Match? |
-|-------|-------------|---------|-------------------------------|--------|
-| 1.23  | 123.0       | 123     | 1.23                          | Yes    |
-| 4.56  | 456.0       | 456     | 4.56                          | Yes    |
-| 7.89  | 789.0       | 789     | 7.89                          | Yes    |
-| 0.12  | 12.0        | 12      | 0.12                          | Yes    |
-
-All values round-trip correctly -- no exceptions.
-
-**Step 2: Frame of Reference**
-
-| Encoded | min = 12 | Delta (encoded - min) |
-|---------|----------|-----------------------|
-| 123     | -        | 111                   |
-| 456     | -        | 444                   |
-| 789     | -        | 777                   |
-| 12      | -        | 0                     |
-
-**Step 3: Bit Packing**
-
-max\_delta = 777, bit\_width = ceil(log2(778)) = 10 bits,
-packed\_size = ceil(4 * 10 / 8) = 5 bytes
-
-**Serialized Vector:**
-
-| Section             | Content                                | Size     |
-|---------------------|----------------------------------------|----------|
-| AlpInfo             | e=2, f=0, num\_exceptions=0            | 4 bytes  |
-| ForInfo             | frame\_of\_reference=12, bit\_width=10 | 5 bytes  |
-| PackedValues        | \[111, 444, 777, 0\] at 10 bits each  | 5 bytes  |
-| ExceptionPositions  | (none)                                 | 0 bytes  |
-| ExceptionValues     | (none)                                 | 0 bytes  |
-| **Total**           |                                        | **14 bytes** |
-
-Compared to PLAIN encoding (4 * 4 = 16 bytes). With 1024 values, the 9-byte
-vector header becomes negligible and compression ratios of 2-8x are typical.
-
-#### Example 2: Values with Exceptions
-
-**Input:** `float values[4] = { 1.5, NaN, 2.5, 0.333... }`
-
-**Step 1: Decimal Encoding with (e=1, f=0)**
-
-Multiply by 10^1 = 10:
-
-| Index | Value    | value * 10 | Rounded | Verify         | Exception? |
-|-------|----------|------------|---------|----------------|------------|
-| 0     | 1.5      | 15.0       | 15      | 1.5 = 1.5      | No         |
-| 1     | NaN      | -          | -       | -              | Yes (NaN)  |
-| 2     | 2.5      | 25.0       | 25      | 2.5 = 2.5      | No         |
-| 3     | 0.333... | 3.333...   | 3       | 0.3 != 0.333...| Yes (round-trip) |
+| Index | Value   | value * 10^4 * 10^(-3) | Rounded | Decoded: rounded * 10^3 * 10^(-4) | Exception? |
+|-------|---------|------------------------|---------|------------------------------------|------------|
+| 0     | 1500.0  | 15000.0                | 15000   | 1500.0                             | No         |
+| 1     | NaN     | -                      | -       | -                                  | Yes (NaN)  |
+| 2     | 2500.0  | 25000.0                | 25000   | 2500.0                             | No         |
+| 3     | 333.3   | 3333.0                 | 3333    | 333.3                              | No         |
 
 **Step 2: Handle Exceptions**
 
-Exception positions: \[1, 3\]
-Exception values: \[NaN, 0.333...\]
-Placeholder: 15 (first non-exception encoded value)
-Encoded with placeholders: \[15, 15, 25, 15\]
+Exception positions: \[1\]
+Exception values: \[NaN\]
+Placeholder: 15000 (first non-exception encoded value)
+Encoded with placeholders: \[15000, 15000, 25000, 3333\]
 
 **Step 3: Frame of Reference**
 
-| Encoded          | min = 15 | Delta |
-|------------------|----------|-------|
-| 15               | -        | 0     |
-| 15 (placeholder) | -        | 0     |
-| 25               | -        | 10    |
-| 15 (placeholder) | -        | 0     |
+| Encoded            | min = 3333 | Delta |
+|--------------------|------------|-------|
+| 15000              | -          | 11667 |
+| 15000 (placeholder)| -          | 11667 |
+| 25000              | -          | 21667 |
+| 3333               | -          | 0     |
 
 **Step 4: Bit Packing**
 
-max\_delta = 10, bit\_width = ceil(log2(11)) = 4 bits,
-packed\_size = ceil(4 * 4 / 8) = 2 bytes
+max\_delta = 21667, bit\_width = ceil(log2(21668)) = 15 bits,
+packed\_size = ceil(4 * 15 / 8) = 8 bytes
 
 **Serialized Vector:**
 
-| Section             | Content                                | Size     |
-|---------------------|----------------------------------------|----------|
-| AlpInfo             | e=1, f=0, num\_exceptions=2            | 4 bytes  |
-| ForInfo             | frame\_of\_reference=15, bit\_width=4  | 5 bytes  |
-| PackedValues        | \[0, 0, 10, 0\] at 4 bits each        | 2 bytes  |
-| ExceptionPositions  | \[1, 3\]                               | 4 bytes  |
-| ExceptionValues     | \[NaN, 0.333...\]                      | 8 bytes  |
-| **Total**           |                                        | **23 bytes** |
+| Section             | Content                                          | Size     |
+|---------------------|--------------------------------------------------|----------|
+| AlpInfo             | e=4, f=3, num\_exceptions=1                      | 4 bytes  |
+| ForInfo             | frame\_of\_reference=3333, bit\_width=15          | 9 bytes  |
+| PackedValues        | \[11667, 11667, 21667, 0\] at 15 bits each       | 8 bytes  |
+| ExceptionPositions  | \[1\]                                             | 2 bytes  |
+| ExceptionValues     | \[NaN\]                                           | 8 bytes  |
+| **Total**           |                                                   | **31 bytes** |
 
-#### Example 3: Monetary Data (1024 values)
+Compared to PLAIN encoding (4 * 8 = 32 bytes). With 1024 values, the 13-byte
+vector header becomes negligible and compression ratios of 2-8x are typical.
 
-1024 price values ranging from $0.01 to $999.99 (e.g., product prices).
-
-Optimal encoding: (exponent=2, factor=0)
-
-| Metric        | Value       | Calculation                          |
-|---------------|-------------|--------------------------------------|
-| Exponent      | 2           | Multiply by 100 for 2 decimal places |
-| Factor        | 0           | No additional scaling needed         |
-| Encoded range | 1 to 99,999 | $0.01 -> 1, $999.99 -> 99999         |
-| FOR min       | 1           | Assuming $0.01 is present            |
-| Delta range   | 0 to 99,998 | After FOR subtraction                |
-| Bit width     | 17          | ceil(log2(99999)) = 17 bits          |
-| Packed size   | 2,176 bytes | ceil(1024 * 17 / 8)                  |
-
-**Size Comparison:**
-
-| Encoding      | Size         | Ratio               |
-|---------------|--------------|----------------------|
-| PLAIN (float) | 4,096 bytes  | 1.0x                 |
-| ALP           | ~2,185 bytes | 0.53x (47% smaller)  |
-
-#### Characteristics
-
-| Property       | Description                                                                            |
-|----------------|----------------------------------------------------------------------------------------|
-| Lossless       | All original floating-point values are perfectly recoverable, including NaN, Inf, -0.0 |
-| Adaptive       | Exponent/factor selection adapts per vector based on data characteristics               |
-| Vectorized     | Fixed-size vectors enable SIMD-optimized bit packing/unpacking                         |
-| Exception-safe | Values that don't fit decimal model are stored separately                              |
-
-**Best use cases:**
-
-* Monetary/financial data (prices, transactions)
-* Sensor readings with fixed precision
-* Scientific measurements with limited decimal places
-* GPS coordinates and geographic data
-* Normalized scores and percentages
-
-**Worst case scenarios:**
-
-* Random floating-point values (high exception rate)
-* High-precision scientific data (many decimal places)
-* Data with many special values (NaN, Inf)
-* Very small datasets (header overhead dominates)
-
-**Comparison with other encodings:**
-
-| Encoding            | Type Support | Compression | Best For            |
-|---------------------|--------------|-------------|---------------------|
-| PLAIN               | All          | None        | General purpose     |
-| BYTE\_STREAM\_SPLIT | Float/Double | Moderate    | Random floats       |
-| ALP                 | Float/Double | High        | Decimal-like floats |
-| DELTA\_BINARY\_PACKED | Int32/Int64 | High       | Sequential integers |
-
-Unlike [Byte Stream Split](#BYTE_STREAM_SPLIT), ALP does not require a subsequent
-compression step to achieve size reduction -- the bit-packing directly reduces the
-encoded size. However, ALP and Byte Stream Split can be complementary: ALP
-exploits decimal structure while Byte Stream Split exploits byte-level correlation.
-
-#### Size Calculations
-
-##### Vector Size Formula
-
-```
-vector_bytes = vector_header_size                  // FLOAT: 9, DOUBLE: 13
-             + ceil(num_elements * bit_width / 8)  // packed values
-             + num_exceptions * 2                  // exception positions (uint16)
-             + num_exceptions * sizeof(T)          // exception values (4 or 8)
-```
-
-##### Page Size Formula
-
-```
-page_bytes = 7                                   // page header
-           + num_vectors * 4                     // offset array
-           + sum(vector_bytes for each vector)   // all vectors
-```
-
-#### Constants Reference
-
-| Constant          | Value   | Description                             |
-|-------------------|---------|-----------------------------------------|
-| Vector size       | 1024    | Default elements per compressed vector  |
-| Max combinations  | 5       | Max (e,f) pairs in preset               |
-| Samples per vector| 256     | Values sampled per vector               |
-| Sample vectors    | 8       | Vectors sampled per row group           |
-| FLOAT max exponent| 10      | 10^10 ~ 10 billion                      |
-| DOUBLE max exponent| 18     | 10^18 ~ 1 quintillion                   |
