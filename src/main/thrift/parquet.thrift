@@ -1139,18 +1139,31 @@ union ColumnOrder {
    *       If the nan_count field is set, it can be used to check whether
    *       NaNs are present.
    *
-   *     When writing statistics for columns with TYPE_ORDER order, then
-   *     following rules must be followed:
-   *     - Always set the nan_count field for floating point types, even if
+   *     When writing page or column chunk statistics for columns with
+   *     TYPE_ORDER order, the following rules must be followed:
+   *     - The nan_count field must be set for floating point types, even if
    *       it is zero.
-   *     - NaNs should not be written to min or max statistics fields except
-   *       in the column index when a page contains only NaN values. In this
-   *       case, since min_values and max_values are required, a NaN value
-   *       must be written.
+   *     - If the nan_count field is set, min and max statistics fields, when
+   *       present, must not contain NaN values and must be computed from
+   *       non-NaN values only. This signals to readers that the min and max
+   *       statistics are reliable for non-NaN values.
+   *     - If all non-null values are NaN, min and max statistics must not be
+   *       written.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
    *       `-0.0` should be written into the min statistics field.
+   *
+   *     When writing column indexes for columns with TYPE_ORDER order, the
+   *     following rules must be followed:
+   *     - NaNs must not be written to min_values or max_values.
+   *     - If all non-null values of a page are NaN, a column index must not
+   *       be written for this column chunk because min_values and max_values
+   *       are required.
+   *     - If the computed max value is zero (whether negative or positive),
+   *       `+0.0` should be written into the corresponding max_values entry.
+   *     - If the computed min value is zero (whether negative or positive),
+   *       `-0.0` should be written into the corresponding min_values entry.
    */
   1: TypeDefinedOrder TYPE_ORDER;
 
@@ -1256,8 +1269,8 @@ struct ColumnIndex {
    * For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16,
    * NaN values are not to be included in these bounds. If all non-null values
    * of a page are NaN, then a writer must do the following:
-   * - If the order of this column is TYPE_ORDER, then no column index
-   *   must be written for this column chunk. While this is unfortunate for
+   * - If the order of this column is TYPE_ORDER, then a column index must
+   *   not be written for this column chunk. While this is unfortunate for
    *   performance, it is necessary to avoid conflict with legacy files that
    *   still included NaN in min_values and max_values even if the page had
    *   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
