@@ -1164,41 +1164,6 @@ union ColumnOrder {
    * anything else. It also defines an order between different bit representations
    * of the same value.
    *
-   * The formal definition is as follows:
-   *   a) If x<y, totalOrder(x, y) is true.
-   *   b) If x>y, totalOrder(x, y) is false.
-   *   c) If x=y:
-   *     1) totalOrder(−0, +0) is true.
-   *     2) totalOrder(+0, −0) is false.
-   *     3) If x and y represent the same floating-point datum:
-   *        i) If x and y have negative sign, totalOrder(x, y) is true if and
-   *           only if the exponent of x ≥ the exponent of y
-   *       ii) otherwise totalOrder(x, y) is true if and only if the exponent
-   *           of x ≤ the exponent of y.
-   *   d) If x and y are unordered numerically because x or y is NaN:
-   *     1) totalOrder(−NaN, y) is true where −NaN represents a NaN with
-   *        negative sign bit and y is a non-NaN floating-point number.
-   *     2) totalOrder(x, +NaN) is true where +NaN represents a NaN with
-   *        positive sign bit and x is a non-NaN floating-point number.
-   *     3) If x and y are both NaNs, then totalOrder reflects a total ordering
-   *        based on:
-   *         i) negative sign orders below positive sign
-   *        ii) signaling orders below quiet for +NaN, reverse for −NaN
-   *       iii) lesser payload, when regarded as an integer, orders below
-   *            greater payload for +NaN, reverse for −NaN.
-   *
-   * Note that this ordering can be implemented efficiently in software by bit-wise
-   * operations on the integer representation of the floating point values.
-   * E.g., this is a possible implementation for DOUBLE in Rust:
-   *
-   *   pub fn totalOrder(x: f64, y: f64) -> bool {
-   *     let mut x_int = x.to_bits() as i64;
-   *     let mut y_int = y.to_bits() as i64;
-   *     x_int ^= (((x_int >> 63) as u64) >> 1) as i64;
-   *     y_int ^= (((y_int >> 63) as u64) >> 1) as i64;
-   *     return x_int <= y_int;
-   *   }
-   *
    * When writing statistics for columns with IEEE_754_TOTAL_ORDER order, then
    * following rules must be followed:
    * - Writing the nan_count field is mandatory when using this ordering.
