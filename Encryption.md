@@ -101,7 +101,7 @@ other on a combination of GCM and CTR modes.
 AES GCM is an authenticated encryption. Besides the data confidentiality (encryption), it 
 supports two levels of integrity verification (authentication): of the data (default), 
 and of the data combined with an optional AAD (“additional authenticated data”). The 
-authentication allows to make sure the data has not been tampered with. An AAD 
+authentication makes it possible to verify that the data has not been tampered with. An AAD
 is a free text to be authenticated, together with the data. The user can, for example, pass the 
 file name with its version (or creation timestamp) as an AAD input, to verify that the 
 file has not been replaced with an older version. The details on how Parquet creates 
@@ -161,8 +161,9 @@ tag used to verify the ciphertext and AAD integrity.
 
 
 #### 4.2.2 AES_GCM_CTR_V1
+
 In this Parquet algorithm, all modules except pages are encrypted with the GCM cipher, as described 
-above. The pages are encrypted by the CTR cipher without padding. This allows to encrypt/decrypt 
+above. The pages are encrypted by the CTR cipher without padding. This makes it possible to encrypt/decrypt
 the bulk of the data faster, while still verifying the metadata integrity and making 
 sure the file has not been replaced with a wrong version. However, tampering with the 
 page data might go unnoticed. The AES CTR cipher
@@ -221,7 +222,7 @@ group 1. The module AAD is a direct concatenation of the prefix and suffix parts
 
 #### 4.4.1 AAD prefix
 File swapping can be prevented by an AAD prefix string, that uniquely identifies the file and 
-allows to differentiate it e.g. from older versions of the file or from other partition files in the same 
+makes it possible to differentiate it e.g. from older versions of the file or from other partition files in the same
 data set (table). This string is optionally passed by a writer upon file creation. If provided,
 the AAD prefix is stored in an `aad_prefix` field in the file, and is made available to the readers. 
 This field is not encrypted. If a user is concerned about keeping the file identity inside the file, 
@@ -262,8 +263,8 @@ The following module types are defined:
    * ColumnMetaData (1)
    * Data Page (2)
    * Dictionary Page (3)
-   * Data PageHeader (4)
-   * Dictionary PageHeader (5)
+   * Data Page Header (4)
+   * Dictionary Page Header (5)
    * ColumnIndex (6)
    * OffsetIndex (7)
    * BloomFilter Header (8)

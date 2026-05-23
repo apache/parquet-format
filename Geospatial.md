@@ -48,7 +48,7 @@ Non-default CRS values are specified by any string that uniquely identifies a co
 To maximize interoperability, suggested (but not limited to) formats for CRS are:
 * `<projjson>` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`: `{"$schema": "https://proj.org/schemas/v0.7/projjson.schema.json","type": "GeographicCRS","name": "NAD83 (CRS83)","datum": {"type": "GeodeticReferenceFrame"...`
 * `<authority>:<code>` - where `<authority>` represents some well known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`, `IGNF:ATI`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
-* `srid:<identifier>` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where <identifier> is the numeric SRID value. For example: `SRID:0`. 
+* `srid:<identifier>` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where <identifier> is the numeric SRID value. For example: `srid:0`.
 * `projjson:<key_name>` - where <key_name> refers to a key within the file key-value metadata, where CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) format is stored.
 
 For geographic CRS, longitudes are bound by [-180, 180] and latitudes are bound
@@ -60,11 +60,11 @@ by [-90, 90].
 
 An algorithm for interpolating edges, and is one of the following values:
 
-* `spherical`: edges are interpolated as geodesics on a sphere.
-* `vincenty`: [https://en.wikipedia.org/wiki/Vincenty%27s_formulae](https://en.wikipedia.org/wiki/Vincenty%27s_formulae)
-* `thomas`: Thomas, Paul D. Spheroidal geodesics, reference systems, & local geometry. US Naval Oceanographic Office, 1970.
-* `andoyer`: Thomas, Paul D. Mathematical models for navigation systems. US Naval Oceanographic Office, 1965.
-* `karney`: [Karney, Charles FF. "Algorithms for geodesics." Journal of Geodesy 87 (2013): 43-55](https://link.springer.com/content/pdf/10.1007/s00190-012-0578-z.pdf), and [GeographicLib](https://geographiclib.sourceforge.io/)
+* `SPHERICAL`: edges are interpolated as geodesics on a sphere.
+* `VINCENTY`: [https://en.wikipedia.org/wiki/Vincenty%27s_formulae](https://en.wikipedia.org/wiki/Vincenty%27s_formulae)
+* `THOMAS`: Thomas, Paul D. Spheroidal geodesics, reference systems, & local geometry. US Naval Oceanographic Office, 1970.
+* `ANDOYER`: Thomas, Paul D. Mathematical models for navigation systems. US Naval Oceanographic Office, 1965.
+* `KARNEY`: [Karney, Charles FF. "Algorithms for geodesics." Journal of Geodesy 87 (2013): 43-55](https://link.springer.com/content/pdf/10.1007/s00190-012-0578-z.pdf), and [GeographicLib](https://geographiclib.sourceforge.io/)
 
 # Logical Types
 
@@ -137,7 +137,7 @@ values in the list are [WKB (ISO-variant) integer codes][wkb-integer-code].
 Table below shows the most common geospatial types and their codes:
 
 | Type               | XY   | XYZ  | XYM  | XYZM |
-| :----------------- | :--- | :--- | :--- | :--: |
+| :----------------- | :--- | :--- | :--- | :--- |
 | Point              | 0001 | 1001 | 2001 | 3001 |
 | LineString         | 0002 | 1002 | 2002 | 3002 |
 | Polygon            | 0003 | 1003 | 2003 | 3003 |

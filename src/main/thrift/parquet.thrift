@@ -1201,8 +1201,8 @@ struct PageLocation {
   1: required i64 offset
 
   /**
-   * Size of the page, including header. Sum of compressed_page_size and header
-   * length
+   * Size of the page, including header. Equal to the sum of the page's
+   * PageHeader.compressed_page_size and the size of the serialized PageHeader.
    */
   2: required i32 compressed_page_size
 
@@ -1260,7 +1260,7 @@ struct ColumnIndex {
    * Two lists containing lower and upper bounds for the values of each page
    * determined by the ColumnOrder of the column. These may be the actual
    * minimum and maximum values found on a page, but can also be (more compact)
-   * values that do not exist on a page. For example, instead of storing ""Blart
+   * values that do not exist on a page. For example, instead of storing "Blart
    * Versenwald III", a writer may set min_values[i]="B", max_values[i]="C".
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before

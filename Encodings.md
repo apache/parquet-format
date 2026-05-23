@@ -56,7 +56,8 @@ intended to be the simplest encoding.  Values are encoded back to back.
 
 The plain encoding is used whenever a more efficient encoding can not be used. It
 stores the data in the following format:
- - BOOLEAN: [Bit Packed](#BITPACKED), LSB first
+ - BOOLEAN: bit-packed, LSB first (using the same packing scheme as the
+   [RLE/bit-packing hybrid](#RLE) encoding)
  - INT32: 4 bytes little endian
  - INT64: 8 bytes little endian
  - INT96: 12 bytes little endian (deprecated)
@@ -151,7 +152,7 @@ data:
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
-Whether prepending the four-byte `length` to the `encoded-data` is summarized as the table below:
+Whether prepending the four-byte `length` to the `encoded-data` is summarized in the table below:
 ```
 +--------------+------------------------+-----------------+
 | Page kind    | RLE-encoded data kind  | Prepend length? |
@@ -171,7 +172,7 @@ Whether prepending the four-byte `length` to the `encoded-data` is summarized as
 <a name="BITPACKED"></a>
 ### Bit-packed (Deprecated) (BIT_PACKED = 4)
 
-This is a bit-packed only encoding, which is deprecated and will be replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
+This is a bit-packed only encoding, which is deprecated; it has been replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
 There is no padding between values (except for the last byte, which is padded with 0s).
 For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
@@ -230,7 +231,7 @@ Each block contains
 ```
  * the min delta is a zigzag ULEB128 int (we compute a minimum as we need
    positive integers for bit packing)
- * the bitwidth of each block is stored as a byte
+ * the bitwidth of each miniblock is stored as a byte
  * each miniblock is a list of bit packed ints according to the bit width
    stored at the beginning of the block
 

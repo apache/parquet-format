@@ -81,7 +81,7 @@ Some observations:
 * We store lower and upper bounds for the values of each page. These may be the
   actual minimum and maximum values found on a page, but can also be (more
   compact) values that do not exist on a page. For example, instead of storing
-  ""Blart Versenwald III", a writer may set `min_values[i]="B"`,
+  `"Blart Versenwald III"`, a writer may set `min_values[i]="B"`,
   `max_values[i]="C"`. This allows writers to truncate large values and writers
   should use this to enforce some reasonable bound on the size of the index
   structures.

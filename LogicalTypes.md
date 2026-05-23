@@ -243,7 +243,7 @@ comparison.
 
 *Compatibility*
 
-To support compatibility with older readers, implementations of parquet-format should
+To support compatibility with older readers, implementations of parquet-format must
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
 ### FLOAT16
@@ -274,7 +274,7 @@ The sort order used for `DATE` is signed.
 `TIME` is used for a logical time type without a date with millisecond, microsecond,
 or nanosecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
-and unit (`MILLIS` or `MICROS`, `NANOS`).
+and unit (`MILLIS`, `MICROS`, or `NANOS`).
 
 `TIME` with unit `MILLIS` is used for millisecond precision.
 It must annotate an `int32` that stores the number of
@@ -300,7 +300,7 @@ counterpart, it must annotate an `int32`.
 type that is UTC normalized and has `MICROS` precision. Like the logical type
 counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local time semantic,
+Although there is no exact corresponding ConvertedType for local time semantic,
 in order to support forward compatibility with those libraries, which annotated
 their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotation,
 Parquet writer implementation *must* annotate local time with legacy annotations too,

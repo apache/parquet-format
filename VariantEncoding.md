@@ -77,7 +77,7 @@ The encoded metadata always starts with a header byte.
 ```
              7     6  5   4  3             0
             +-------+---+---+---------------+
-header      |       |   |   |    version    |
+header      |       | R |   |    version    |
             +-------+---+---+---------------+
                 ^         ^
                 |         +-- sorted_strings
@@ -87,6 +87,7 @@ The `version` is a 4-bit value that must always contain the value `1`.
 `sorted_strings` is a 1-bit value indicating whether dictionary strings are sorted and unique.
 `offset_size_minus_one` is a 2-bit value providing the number of bytes per dictionary size and offset field.
 The actual number of bytes, `offset_size`, is `offset_size_minus_one + 1`.
+Bit 5 (marked `R`) is reserved; it must be set to 0 by writers and ignored by readers.
 
 The entire metadata is encoded as the following diagram shows:
 ```
@@ -129,7 +130,7 @@ The grammar for encoded metadata is as follows
 metadata: <header> <dictionary_size> <dictionary>
 header: 1 byte (<version> | <sorted_strings> << 4 | (<offset_size_minus_one> << 6))
 version: a 4-bit version ID. Currently, must always contain the value 1
-sorted_strings: a 1-bit value indicating whether metadata strings are sorted
+sorted_strings: a 1-bit value indicating whether dictionary strings are sorted and unique
 offset_size_minus_one: 2-bit value providing the number of bytes per dictionary size and offset field.
 dictionary_size: `offset_size` bytes. unsigned little-endian value indicating the number of strings in the dictionary
 dictionary: <offset>* <bytes>
@@ -195,7 +196,7 @@ When `basic_type` is `2`, `value_header` is made up of `field_offset_size_minus_
 ```
                   5   4  3     2 1     0
                 +---+---+-------+-------+
-value_header    |   |   |       |       |
+value_header    | R |   |       |       |
                 +---+---+-------+-------+
                       ^     ^       ^
                       |     |       +-- field_offset_size_minus_one
@@ -206,6 +207,7 @@ value_header    |   |   |       |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1` and `field_id_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
+Bit 5 (marked `R`) is reserved; it must be set to 0 by writers and ignored by readers.
 
 #### Value Header for Array (`basic_type`=3)
 
@@ -213,7 +215,7 @@ When `basic_type` is `3`, `value_header` is made up of `field_offset_size_minus_
 ```
                  5         3  2  1     0
                 +-----------+---+-------+
-value_header    |           |   |       |
+value_header    |    RRR    |   |       |
                 +-----------+---+-------+
                               ^     ^
                               |     +-- field_offset_size_minus_one
@@ -223,6 +225,7 @@ value_header    |           |   |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
+Bits 5-3 (marked `RRR`) are reserved; they must be set to 0 by writers and ignored by readers.
 
 ### Value Data
 
@@ -388,7 +391,7 @@ It is valid for an implementation to use a larger value than necessary for any o
 The "short string" basic type may be used as an optimization to fold string length into the type byte for strings less than 64 bytes.
 It is semantically identical to the "string" primitive type.
 
-The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(val)) + 1`.
+The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(|val|)) + 1` (and `1` when `val` is `0`).
 
 Note: Decimal values in the Variant binary encoding use little-endian byte order for the
 unscaled value. This differs from Parquet's DECIMAL logical type which uses big-endian
@@ -411,10 +414,10 @@ two's complement encoding for `BYTE_ARRAY` and `FIXED_LEN_BYTE_ARRAY` physical t
 | NullType             | null                        | `0`     | UNKNOWN                     | none                                                                                                                |
 | Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                                                |
 | Boolean              | boolean (False)             | `2`     | BOOLEAN                     | none                                                                                                                |
-| Exact Numeric        | int8                        | `3`     | INT(8, signed)              | 1 byte                                                                                                              |
-| Exact Numeric        | int16                       | `4`     | INT(16, signed)             | 2 byte little-endian                                                                                                |
-| Exact Numeric        | int32                       | `5`     | INT(32, signed)             | 4 byte little-endian                                                                                                |
-| Exact Numeric        | int64                       | `6`     | INT(64, signed)             | 8 byte little-endian                                                                                                |
+| Exact Numeric        | int8                        | `3`     | INT(8, true)                | 1 byte                                                                                                              |
+| Exact Numeric        | int16                       | `4`     | INT(16, true)               | 2 byte little-endian                                                                                                |
+| Exact Numeric        | int32                       | `5`     | INT(32, true)               | 4 byte little-endian                                                                                                |
+| Exact Numeric        | int64                       | `6`     | INT(64, true)               | 8 byte little-endian                                                                                                |
 | Double               | double                      | `7`     | DOUBLE                      | IEEE little-endian                                                                                                  |
 | Exact Numeric        | decimal4                    | `8`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
 | Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
