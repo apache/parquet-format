@@ -131,7 +131,7 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
    ```
 
    The reason for this packing order is to have fewer word-boundaries on little-endian hardware
-   when deserializing more than one byte at at time. This is because 4 bytes can be read into a
+   when deserializing more than one byte at a time. This is because 4 bytes can be read into a
    32 bit register (or 8 bytes into a 64 bit register) and values can be unpacked just by
    shifting and ORing with a mask. (to make this optimization work on a big-endian machine,
    you would have to use the ordering used in the [deprecated bit-packing](#BITPACKED) encoding)

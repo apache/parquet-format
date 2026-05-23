@@ -23,7 +23,7 @@ In Parquet, a *page index* is optional metadata for a
 ColumnChunk, containing statistics for DataPages that can be used
 to skip those pages when scanning in ordered and unordered columns.
 The page index is stored using the OffsetIndex and ColumnIndex structures,
-defined in [`parquet.thrift`](src/main/thrift/parquet.thrift)
+defined in [`parquet.thrift`](src/main/thrift/parquet.thrift).
 
 ## Problem Statement
 In previous versions of the format, Statistics are stored for ColumnChunks in

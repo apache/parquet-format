@@ -97,7 +97,7 @@ The sort order used for `UUID` values is unsigned byte-wise comparison.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 For signed integers, the second parameter should be `true`,
-for example, a signed integer with bit width of 8 is defined as `INT(8, true)`
+for example, a signed integer with bit width of 8 is defined as `INT(8, true)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -120,7 +120,7 @@ along with a maximum number of bits in the stored value.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 In case of unsigned integers, the second parameter should be `false`,
-for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`
+for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -166,7 +166,7 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -227,7 +227,7 @@ integer. A precision too large for the underlying type (see below) is an error.
 * `int32`: for 1 &lt;= precision &lt;= 9
 * `int64`: for 1 &lt;= precision &lt;= 18; precision &lt; 10 will produce a
   warning
-* `fixed_len_byte_array`: precision is limited by the array size. Length `n`
+* `fixed_len_byte_array`: `precision` is limited by the array size. Length `n`
   can store &lt;= `floor(log_10(2^(8*n - 1) - 1))` base-10 digits
 * `byte_array`: `precision` is not limited, but is required. The minimum number of
   bytes to store the unscaled value should be used.
@@ -316,7 +316,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -476,7 +476,7 @@ type counterpart, it must annotate an `int64`.
 logical type that is UTC normalized and has `MICROS` precision. Like the logical
 type counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local timestamp semantic,
+Although there is no exact corresponding ConvertedType for local timestamp semantic,
 in order to support forward compatibility with those libraries, which annotated
 their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotation,
 Parquet writer implementation *must* annotate local timestamps with legacy annotations too,
@@ -492,7 +492,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -836,7 +836,7 @@ to values. `MAP` must annotate a 3-level structure:
   field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
   be `required`, `optional`, or omitted. It must always be the second field of
-  the repeated `key_value` group if present. In case of not present, it can be
+  the repeated `key_value` group if present. If not present, it can be
   represented as a map with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to

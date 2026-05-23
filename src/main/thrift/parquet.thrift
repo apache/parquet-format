@@ -504,7 +504,7 @@ union LogicalType {
 }
 
 /**
- * Represents a element inside a schema definition.
+ * Represents an element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
  * the nodes are listed in depth first traversal order.
@@ -583,7 +583,7 @@ enum Encoding {
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64.
-   * This encoding is deprecated. It was never used
+   * This encoding is deprecated. It was never used.
    */
   //  GROUP_VAR_INT = 1;
 
@@ -591,7 +591,7 @@ enum Encoding {
    * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
    * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead
+   * in a Dictionary page use PLAIN instead.
    */
   PLAIN_DICTIONARY = 2;
 
@@ -600,8 +600,9 @@ enum Encoding {
    */
   RLE = 3;
 
-  /** Bit packed encoding.  This can only be used if the data has a known max
+  /** Deprecated: Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.
+   * Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
    */
   BIT_PACKED = 4;
 

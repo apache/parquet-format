@@ -209,7 +209,7 @@ it can't prevent replacement of one ciphertext with another (encrypted with the 
 Parquet modular encryption leverages AADs to protect against swapping ciphertext modules (encrypted 
 with AES GCM) inside a file or between files. Parquet can also protect against swapping full 
 files - for example, replacement of a file with an old version, or replacement of one table 
-partition with another. AADs are built to reflects the identity of a file and of the modules 
+partition with another. AADs are built to reflect the identity of a file and of the modules 
 inside the file. 
 
 Parquet constructs a module AAD from two components: an optional AAD prefix - a string provided 
@@ -227,7 +227,7 @@ data set (table). This string is optionally passed by a writer upon file creatio
 the AAD prefix is stored in an `aad_prefix` field in the file, and is made available to the readers. 
 This field is not encrypted. If a user is concerned about keeping the file identity inside the file, 
 the writer code can explicitly request Parquet not to store the AAD prefix. Then the aad_prefix field 
-will be empty; AAD prefixes must be fully managed by the caller code and supplied explictly to Parquet 
+will be empty; AAD prefixes must be fully managed by the caller code and supplied explicitly to Parquet 
 readers for each file.
 
 The protection against swapping full files is optional. It is not enabled by default because 
@@ -277,8 +277,8 @@ The following module types are defined:
 | ColumnMetaData       |       yes        |   yes (1)   |        yes        |      yes       |     no      |
 | Data Page            |       yes        |   yes (2)   |        yes        |      yes       |     yes     |
 | Dictionary Page      |       yes        |   yes (3)   |        yes        |      yes       |     no      |
-| Data PageHeader      |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
-| Dictionary PageHeader|       yes        |   yes (5)   |        yes        |      yes       |     no      |
+| Data Page Header     |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
+| Dictionary Page Header|      yes        |   yes (5)   |        yes        |      yes       |     no      |
 | ColumnIndex          |       yes        |   yes (6)   |        yes        |      yes       |     no      |
 | OffsetIndex          |       yes        |   yes (7)   |        yes        |      yes       |     no      |
 | BloomFilter Header   |       yes        |   yes (8)   |        yes        |      yes       |     no      |
@@ -440,7 +440,7 @@ little endian integer, followed by a final magic string, "PARE". The same magic 
 written at the beginning of the file (offset 0). Parquet readers start file parsing by 
 reading and checking the magic string. Therefore, the encrypted footer mode uses a new 
 magic string ("PARE") in order to instruct readers to look for a file crypto metadata 
-before the footer - and also to immediately inform legacy readers (expecting ‘PAR1’ 
+before the footer - and also to immediately inform legacy readers (expecting "PAR1" 
 bytes) that they can’t parse this file.
 
 ```c
@@ -491,14 +491,14 @@ The plaintext footer is signed in order to prevent tampering with the
 structure with the 
 AES GCM algorithm - using a footer signing key, and an AAD constructed according to the instructions 
 of the section 4.4. Only the nonce and GCM tag are stored in the file – as a 28-byte 
-fixed-length array, written right after  the footer itself. The ciphertext is not stored, 
+fixed-length array, written right after the footer itself. The ciphertext is not stored, 
 because it is not required for footer integrity verification by readers.
 
 | nonce (12 bytes) |  tag (16 bytes) |
 |------------------|-----------------|
 
 
-The plaintext footer mode sets the following fields in the the FileMetaData structure:
+The plaintext footer mode sets the following fields in the FileMetaData structure:
 
 ```c
 struct FileMetaData {
@@ -523,7 +523,7 @@ The 28-byte footer signature is written after the plaintext footer, followed by 
 that contains the combined length of the footer and its signature. A final magic string, 
 "PAR1", is written at the end of the 
 file. The same magic string is written at the beginning of the file (offset 0). The magic bytes 
-for plaintext footer mode are ‘PAR1’ to allow legacy readers to read projections of the file 
+for plaintext footer mode are "PAR1" to allow legacy readers to read projections of the file 
 that do not include encrypted columns.
 
  ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionPF.png)
