@@ -41,7 +41,7 @@ enum Type {
 }
 
 /**
- * DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+ * DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet.
  * ConvertedType is superseded by LogicalType.  This enum should not be extended.
  *
  * See LogicalTypes.md for conversion between ConvertedType and LogicalType.
@@ -431,7 +431,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and edge interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -450,13 +450,13 @@ struct GeometryType {
  * Embedded Geography logical type annotation
  *
  * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
- * edges interpolation algorithm.
+ * edge interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
  * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
  * defaults to "OGC:CRS84".
  *
- * An optional algorithm can be set to correctly interpret edges interpolation
+ * An optional algorithm can be set to correctly interpret edge interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
@@ -680,7 +680,7 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a OffsetIndex is present, a page must begin at a row
+   * If an OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
    * within a row (repetition_level > 0).
    **/
@@ -820,7 +820,7 @@ struct PageHeader {
   /** The 32-bit CRC checksum for the page, to be calculated as follows:
    *
    * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
-   *   the same as in e.g. GZip).
+   *   the same as in e.g. GZIP).
    * - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
    *   etc.).
    * - The CRC is computed on the serialization binary representation of the page

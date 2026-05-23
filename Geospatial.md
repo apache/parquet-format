@@ -28,7 +28,7 @@ The Geometry and Geography class hierarchy and its Well-Known Text (WKT) and
 Well-Known Binary (WKB) serializations (ISO variant supporting XY, XYZ, XYM,
 XYZM) are defined by [OpenGIS Implementation Specification for Geographic
 information - Simple feature access - Part 1: Common architecture][sfa-part1],
-from [OGC(Open Geospatial Consortium)][ogc].
+from [OGC (Open Geospatial Consortium)][ogc].
 
 The version of the OGC standard first used here is 1.2.1, but future versions
 may also be used if the WKB representation remains wire-compatible.
@@ -47,7 +47,7 @@ in the order of longitude/latitude based on the WGS84 datum.
 Non-default CRS values are specified by any string that uniquely identifies a coordinate reference system associated with this type.
 To maximize interoperability, suggested (but not limited to) formats for CRS are:
 * `<projjson>` - A complete CRS definition embedded directly using the [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) specification. Example for `OGC:CRS83`: `{"$schema": "https://proj.org/schemas/v0.7/projjson.schema.json","type": "GeographicCRS","name": "NAD83 (CRS83)","datum": {"type": "GeodeticReferenceFrame"...`
-* `<authority>:<code>` - where `<authority>` represents some well known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`, `IGNF:ATI`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well known authorities.
+* `<authority>:<code>` - where `<authority>` represents some well-known authorities, and `code` is the code used by the authority to identify the CRS. Examples are - `OGC:CRS84`, `OGC:CRS83`, `OGC:CRS27`, `EPSG:4326`, `EPSG:3857`, `IGNF:ATI`. See [https://spatialreference.org/](https://spatialreference.org/) for definitions of coordinate reference systems provided by some well-known authorities.
 * `srid:<identifier>` -  A reference using a [Spatial reference identifier (SRID)](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifier), where <identifier> is the numeric SRID value. For example: `srid:0`.
 * `projjson:<key_name>` - where <key_name> refers to a key within the file key-value metadata, where CRS definition in [PROJJSON](https://proj.org/en/stable/specifications/projjson.html) format is stored.
 
@@ -58,7 +58,7 @@ by [-90, 90].
 
 ## Edge Interpolation Algorithm
 
-An algorithm for interpolating edges, and is one of the following values:
+An algorithm for interpolating edges. It is one of the following values:
 
 * `SPHERICAL`: edges are interpolated as geodesics on a sphere.
 * `VINCENTY`: [https://en.wikipedia.org/wiki/Vincenty%27s_formulae](https://en.wikipedia.org/wiki/Vincenty%27s_formulae)
@@ -69,8 +69,8 @@ An algorithm for interpolating edges, and is one of the following values:
 # Logical Types
 
 Two geospatial logical type annotations are supported:
-* `GEOMETRY`: geospatial features in the WKB format with linear/planar edges interpolation. See [Geometry](LogicalTypes.md#geometry)
-* `GEOGRAPHY`: geospatial features in the WKB format with an explicit (non-linear/non-planar) edges interpolation algorithm. See [Geography](LogicalTypes.md#geography)
+* `GEOMETRY`: geospatial features in the WKB format with linear/planar edge interpolation. See [Geometry](LogicalTypes.md#geometry)
+* `GEOGRAPHY`: geospatial features in the WKB format with an explicit (non-linear/non-planar) edge interpolation algorithm. See [Geography](LogicalTypes.md#geography)
 
 # Statistics
 
@@ -94,7 +94,7 @@ fourth dimension. These values can be used as a linear reference value (e.g.,
 highway milepost value), a timestamp, or some other value as defined by the CRS.
 
 Bounding box is defined as the thrift struct below in the representation of
-min/max value pair of coordinates from each axis. Note that X and Y Values are
+min/max value pair of coordinates from each axis. Note that X and Y values are
 always present. Z and M are omitted for 2D geospatial instances.
 
 When calculating a bounding box, null or NaN values in a coordinate 
@@ -134,7 +134,7 @@ column, or an empty list if they are not known.
 
 This is borrowed from [geometry_types of GeoParquet][geometry-types] except that
 values in the list are [WKB (ISO-variant) integer codes][wkb-integer-code].
-Table below shows the most common geospatial types and their codes:
+The table below shows the most common geospatial types and their codes:
 
 | Type               | XY   | XYZ  | XYM  | XYZM |
 | :----------------- | :--- | :--- | :--- | :--- |
@@ -154,7 +154,7 @@ In addition, the following rules are applied:
 [geometry-types]: https://github.com/opengeospatial/geoparquet/blob/v1.1.0/format-specs/geoparquet.md?plain=1#L159
 [wkb-integer-code]: https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary
 
-# Coordinate axis order
+# Coordinate Axis Order
 
 The axis order of the coordinates in WKB and bounding box stored in Parquet
 follows the de facto standard for axis order in WKB and is therefore always

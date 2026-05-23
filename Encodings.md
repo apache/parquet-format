@@ -54,7 +54,7 @@ Supported Types: all
 This is the plain encoding that must be supported for types.  It is
 intended to be the simplest encoding.  Values are encoded back to back.
 
-The plain encoding is used whenever a more efficient encoding can not be used. It
+The plain encoding is used whenever a more efficient encoding cannot be used. It
 stores the data in the following format:
  - BOOLEAN: bit-packed, LSB first (using the same packing scheme as the
    [RLE/bit-packing hybrid](#RLE) encoding)
@@ -69,7 +69,7 @@ stores the data in the following format:
 For native types, this outputs the data as little endian. Floating
     point types are encoded in IEEE.
 
-For the byte array type, it encodes the length as a 4 byte little
+For the byte array type, it encodes the length as a 4-byte little
 endian, followed by the bytes.
 
 <a name="DICTIONARY"></a>
@@ -83,7 +83,7 @@ written first, before the data pages of the column chunk.
 Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) encoding.
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
-followed by the values encoded using RLE/Bit packed described above (with the given bit width).
+followed by the values encoded using RLE/Bit-Packed described above (with the given bit width).
 
 Using the `PLAIN_DICTIONARY` enum value is deprecated, use `RLE_DICTIONARY`
 in a data page and `PLAIN` in a dictionary page for new Parquet files.
@@ -132,7 +132,7 @@ repeated-value := value that is repeated, using a fixed-width of round-up-to-nex
 
    The reason for this packing order is to have fewer word-boundaries on little-endian hardware
    when deserializing more than one byte at a time. This is because 4 bytes can be read into a
-   32 bit register (or 8 bytes into a 64 bit register) and values can be unpacked just by
+   32-bit register (or 8 bytes into a 64-bit register) and values can be unpacked just by
    shifting and ORing with a mask. (to make this optimization work on a big-endian machine,
    you would have to use the ordering used in the [deprecated bit-packing](#BITPACKED) encoding)
 
@@ -175,7 +175,7 @@ Whether prepending the four-byte `length` to the `encoded-data` is summarized in
 This is a bit-packed only encoding, which is deprecated; it has been replaced by the [RLE/bit-packing](#RLE) hybrid encoding.
 Each value is encoded back to back using a fixed width.
 There is no padding between values (except for the last byte, which is padded with 0s).
-For example, if the max repetition level was 3 (2 bits) and the max definition level as 3
+For example, if the max repetition level was 3 (2 bits) and the max definition level was 3
 (2 bits), to encode 30 values, we would have 30 * 2 = 60 bits = 8 bytes.
 
 This implementation is deprecated because the [RLE/bit-packing](#RLE) hybrid is a superset of this implementation.
@@ -232,7 +232,7 @@ Each block contains
  * the min delta is a zigzag ULEB128 int (we compute a minimum as we need
    positive integers for bit packing)
  * the bitwidth of each miniblock is stored as a byte
- * each miniblock is a list of bit packed ints according to the bit width
+ * each miniblock is a list of bit-packed ints according to the bit width
    stored at the beginning of the block
 
 To encode a block, we will:

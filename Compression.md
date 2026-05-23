@@ -48,7 +48,7 @@ No-op codec.  Data is left uncompressed.
 A codec based on the
 [Snappy compression format](https://github.com/google/snappy/blob/master/format_description.txt).
 If any ambiguity arises when implementing this format, the implementation
-provided by Google Snappy [library](https://github.com/google/snappy/)
+provided by the [Snappy compression library](https://github.com/google/snappy/)
 is authoritative.
 
 ### GZIP
@@ -58,7 +58,7 @@ formats) defined by [RFC 1952](https://tools.ietf.org/html/rfc1952).
 If any ambiguity arises when implementing this format, the implementation
 provided by the [zlib compression library](https://zlib.net/) is authoritative.
 
-Readers should support reading pages containing multiple GZIP members, however,
+Readers should support reading pages containing multiple GZIP members; however,
 as this has historically not been supported by all implementations, it is recommended
 that writers refrain from creating such pages by default for better interoperability.
 

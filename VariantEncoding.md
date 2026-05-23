@@ -142,7 +142,7 @@ Notes:
 - Offsets are relative to the start of the `bytes` array.
 - The length of the ith string can be computed as `offset[i+1] - offset[i]`.
 - The offset of the first string is always equal to 0 and is therefore redundant. It is included in the spec to simplify in-memory-processing.
-- `offset_size_minus_one` indicates the number of bytes per `dictionary_size` and `offset` entry. I.e. a value of 0 indicates 1-byte offsets, 1 indicates 2-byte offsets, 2 indicates 3 byte offsets and 3 indicates 4-byte offsets.
+- `offset_size_minus_one` indicates the number of bytes per `dictionary_size` and `offset` entry. I.e. a value of 0 indicates 1-byte offsets, 1 indicates 2-byte offsets, 2 indicates 3-byte offsets and 3 indicates 4-byte offsets.
 - If `sorted_strings` is set to 1, strings in the dictionary must be unique and sorted in lexicographic order. If the value is set to 0, readers may not make any assumptions about string order or uniqueness.
 
 
@@ -370,9 +370,9 @@ primitive_val: see table for binary representation
 short_string_val: UTF-8 encoded bytes
 object_val: <num_elements> <field_id>* <field_offset>* <fields>
 array_val: <num_elements> <field_offset>* <fields>
-num_elements: a 1 or 4 byte unsigned little-endian value (depending on is_large in <object_header>/<array_header>)
-field_id: a 1, 2, 3 or 4 byte unsigned little-endian value (depending on field_id_size_minus_one in <object_header>), indexing into the dictionary
-field_offset: a 1, 2, 3 or 4 byte unsigned little-endian value (depending on field_offset_size_minus_one in <object_header>/<array_header>), providing the offset in bytes within fields
+num_elements: a 1- or 4-byte unsigned little-endian value (depending on is_large in <object_header>/<array_header>)
+field_id: a 1-, 2-, 3-, or 4-byte unsigned little-endian value (depending on field_id_size_minus_one in <object_header>), indexing into the dictionary
+field_offset: a 1-, 2-, 3-, or 4-byte unsigned little-endian value (depending on field_offset_size_minus_one in <object_header>/<array_header>), providing the offset in bytes within fields
 fields: <value>*
 ```
 
@@ -383,8 +383,8 @@ The last entry is the offset that is one byte past the last field (i.e. the tota
 All offsets are relative to the first byte of the first field in the object/array.
 
 `field_id_size_minus_one` and `field_offset_size_minus_one` indicate the number of bytes per field ID/offset.
-For example, a value of 0 indicates 1-byte IDs, 1 indicates 2-byte IDs, 2 indicates 3 byte IDs and 3 indicates 4-byte IDs.
-The `is_large` flag for arrays and objects is used to indicate whether the number of elements is indicated using a one or four byte value.
+For example, a value of 0 indicates 1-byte IDs, 1 indicates 2-byte IDs, 2 indicates 3-byte IDs and 3 indicates 4-byte IDs.
+The `is_large` flag for arrays and objects is used to indicate whether the number of elements is indicated using a one- or four-byte value.
 When more than 255 elements are present, `is_large` must be set to true.
 It is valid for an implementation to use a larger value than necessary for any of these fields (e.g. `is_large` may be true for an object with less than 256 elements).
 

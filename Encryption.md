@@ -79,7 +79,7 @@ in order to verify its integrity. New footer fields keep an
 information about the file encryption algorithm and the footer signing key.
 
 For encrypted columns, the following modules are always encrypted, with the same column key: 
-pages and  page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
+pages and page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
 headers and bitsets.  If the 
 column key is different from the footer encryption key, the column metadata is serialized 
 separately and encrypted with the column key. In this case, the column metadata is also 
@@ -247,15 +247,15 @@ of all partition files (prefixes) from 0 to N-1.
    
 #### 4.4.2 AAD suffix
 The suffix part of a module AAD protects against module swapping inside a file. It also protects against 
-module swapping between files  - in situations when an encryption key is re-used in multiple files and the 
+module swapping between files - in situations when an encryption key is re-used in multiple files and the 
 writer has not provided a unique AAD prefix for each file. 
 
 Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenation of the following parts: 
 1.	[All modules] internal file identifier - a random byte array generated for each file (implementation-defined length)
 2.	[All modules] module type (1 byte)
-3.	[All modules except footer] row group ordinal (2 byte short, little endian)
-4.	[All modules except footer] column ordinal (2 byte short, little endian)
-5.	[Data page and header only] page ordinal (2 byte short, little endian)
+3.	[All modules except footer] row group ordinal (2-byte short, little-endian)
+4.	[All modules except footer] column ordinal (2-byte short, little-endian)
+5.	[Data page and header only] page ordinal (2-byte short, little-endian)
 
 The following module types are defined:  
 
@@ -286,7 +286,7 @@ The following module types are defined:
 
 
 
-## 5 File Format
+## 5. File Format
 
 ### 5.1 Encrypted module serialization
 All modules, except column pages, are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
@@ -393,7 +393,7 @@ struct ColumnChunk {
 
 ### 5.3 Protection of sensitive metadata
 The Parquet file footer, and its nested structures, contain sensitive information - ranging 
-from a secret data (column statistics) to other information that can be exploited by an 
+from secret data (column statistics) to other information that can be exploited by an 
 attacker (e.g. schema, num_values, key_value_metadata, encoding 
 and crypto_metadata). This information is automatically protected when the footer and 
 secret columns are encrypted with the same key. In other cases - when column(s) and the 
@@ -409,7 +409,7 @@ field in the `ColumnChunk`.
 struct ColumnChunk {
 ...
   
-  /** Column metadata for this chunk.. **/
+  /** Column metadata for this chunk **/
   3: optional ColumnMetaData meta_data
 ..
   /** Crypto metadata of encrypted columns **/

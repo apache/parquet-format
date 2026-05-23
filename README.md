@@ -134,14 +134,14 @@ with a focus on how the types affect disk storage.  For example, 16-bit ints
 are not explicitly supported in the storage format since they are covered by
 32-bit ints with an efficient encoding.  This reduces the complexity of implementing
 readers and writers for the format.  The types are:
-  - BOOLEAN: 1 bit boolean
-  - INT32: 32 bit signed ints
-  - INT64: 64 bit signed ints
-  - INT96: 96 bit signed ints
+  - BOOLEAN: 1-bit boolean
+  - INT32: 32-bit signed ints
+  - INT64: 64-bit signed ints
+  - INT96: 96-bit signed ints
   - FLOAT: IEEE 32-bit floating point values
   - DOUBLE: IEEE 64-bit floating point values
   - BYTE_ARRAY: arbitrarily long byte arrays
-  - FIXED_LEN_BYTE_ARRAY: fixed length byte arrays
+  - FIXED_LEN_BYTE_ARRAY: fixed-length byte arrays
 
 ### Logical Types
 Logical types are used to extend the types that parquet can be used to store,
@@ -190,11 +190,11 @@ In order we have:
 
 The value of `uncompressed_page_size` specified in the header is for all the 3 pieces combined.
 
-The encoded values for the data page is always required.  The definition and repetition levels
+The encoded values for the data page are always required.  The definition and repetition levels
 are optional, based on the schema definition.  If the column is not nested (i.e.
-the path to the column has length 1), we do not encode the repetition levels (it would
+the path to the column has length 1), we do not encode the repetition levels (they would
 always have the value 0).  For data that is required, the definition levels are
-skipped (if encoded, it will always have the value of the max definition level).
+skipped (if encoded, they will always have the value of the max definition level).
 
 For example, in the case where the column is non-nested and required, the data in the
 page is only the encoded values.
@@ -224,7 +224,7 @@ the reasoning behind adding these to the format.
 ## Checksumming
 Pages of all kinds can be individually checksummed. This allows disabling of checksums
 at the HDFS file level, to better support single row lookups. Checksums are calculated
-using the standard CRC32 algorithm - as used in e.g. GZip - on the serialized binary
+using the standard CRC32 algorithm - as used in e.g. GZIP - on the serialized binary
 representation of a page (not including the page header itself).
 
 ## Error recovery
@@ -239,10 +239,10 @@ metadata at the end.  If an error happens while writing the file metadata, all t
 data written will be unreadable.  This can be fixed by writing the file metadata
 every Nth row group.
 Each file metadata would be cumulative and include all the row groups written so
-far.  Combining this with the strategy used for rc or avro files using sync markers,
+far.  Combining this with the strategy used for RCFile or Avro files using sync markers,
 a reader could recover partially written files.
 
-## Separating metadata and column data.
+## Separating metadata and column data
 The format is explicitly designed to separate the metadata from the data.  This
 allows splitting columns into multiple files, as well as having a single metadata
 file reference multiple parquet files.
@@ -256,7 +256,7 @@ one HDFS block.  Therefore, HDFS block sizes should also be set to be larger.  A
 optimized read setup would be: 1GB row groups, 1GB HDFS block size, 1 HDFS block
 per HDFS file.
 - Data page size: Data pages should be considered indivisible so smaller data pages
-allow for more fine grained reading (e.g. single row lookup).  Larger page sizes
+allow for more fine-grained reading (e.g. single row lookup).  Larger page sizes
 incur less space overhead (less page headers) and potentially less parsing overhead
 (processing headers).  Note: for sequential scans, it is not expected to read a page
 at a time; this is not the IO chunk.  We recommend 8KB for page sizes.

@@ -17,7 +17,7 @@
   - under the License.
   -->
 
-# Parquet page index: Layout to Support Page Skipping
+# Parquet Page Index: Layout to Support Page Skipping
 
 In Parquet, a *page index* is optional metadata for a
 ColumnChunk, containing statistics for DataPages that can be used
@@ -37,7 +37,7 @@ data from disk.
 1. Make both range scans and point lookups I/O efficient by allowing direct
    access to pages based on their min and max values. In particular:
     *  A single-row lookup in a row group based on the sort column of that row group
-  will only read one data page per the retrieved column.
+  will only read one data page per retrieved column.
     * Range scans on the sort column will only need to read the exact data 
       pages that contain relevant data.
     * Make other selective scans I/O efficient: if we have a very selective

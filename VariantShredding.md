@@ -148,7 +148,7 @@ Null elements must be encoded in `value` as Variant null: basic type 0 (primitiv
 
 The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "drama", "romance"], null` would be stored as:
 
-| Array                            | `value`     | `typed_value `| `typed_value...value` | `typed_value...typed_value`    |
+| Array                            | `value`     | `typed_value` | `typed_value...value` | `typed_value...typed_value`    |
 |----------------------------------|-------------|---------------|-----------------------|--------------------------------|
 | `["comedy", "drama"]`            | null        | non-null      | [null, null]          | [`comedy`, `drama`]            |
 | `["horror", null]`               | null        | non-null      | [null, `00`]          | [`horror`, null]               |
@@ -294,7 +294,7 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
             # this is a shredded object
             object_fields = {
                 name: construct_variant(metadata, field.value, field.typed_value)
-                for (name, field) in typed_value
+                for (name, field) in typed_value.items()
             }
 
             if value is not None:
