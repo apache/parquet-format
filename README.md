@@ -193,7 +193,7 @@ The value of `uncompressed_page_size` specified in the header is for all the 3 p
 The encoded values for the data page is always required.  The definition and repetition levels
 are optional, based on the schema definition.  If the column is not nested (i.e.
 the path to the column has length 1), we do not encode the repetition levels (it would
-always have the value 1).  For data that is required, the definition levels are
+always have the value 0).  For data that is required, the definition levels are
 skipped (if encoded, it will always have the value of the max definition level).
 
 For example, in the case where the column is non-nested and required, the data in the
@@ -278,7 +278,9 @@ Changes to this core format definition are proposed and discussed in depth on th
 
 ## Code of Conduct
 
-We hold ourselves and the Parquet developer community to a code of conduct as described by [Twitter OSS](https://engineering.twitter.com/opensource): <https://github.com/twitter/code-of-conduct/blob/master/code-of-conduct.md>.
+We hold ourselves and the Parquet developer community to two codes of conduct:
+1. [The Apache Software Foundation Code of Conduct](https://www.apache.org/foundation/policies/conduct.html)
+2. [The Apache Software Foundation Code of Conduct for GitHub](https://github.com/apache/.github/blob/main/CODE_OF_CONDUCT.md)
 
 ## License
 Copyright 2013 Twitter, Cloudera and other contributors.

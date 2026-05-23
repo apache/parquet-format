@@ -271,7 +271,8 @@ The sort order used for `DATE` is signed.
 
 ### TIME
 
-`TIME` is used for a logical time type without a date with millisecond or microsecond precision.
+`TIME` is used for a logical time type without a date with millisecond, microsecond,
+or nanosecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
 and unit (`MILLIS` or `MICROS`, `NANOS`).
 
@@ -544,7 +545,8 @@ are found during reading, they must be ignored.
 
 ## Embedded Types
 
-Embedded types do not have type-specific orderings.
+Embedded types do not have type-specific orderings beyond the unsigned
+byte-wise comparison of their physical type (`BYTE_ARRAY`).
 
 ### JSON
 

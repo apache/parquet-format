@@ -122,7 +122,7 @@ boolean block_check(block b, unsigned int32 x) {
   for i in [0..7] {
     for j in [0..31] {
       if (masked.getWord(i).isSet(j)) {
-        if (not b.getWord(i).setBit(j)) {
+        if (not b.getWord(i).isSet(j)) {
           return false
         }
       }
@@ -307,7 +307,7 @@ union BloomFilterCompression {
   * Bloom filter header is stored at beginning of Bloom filter data of each column
   * and followed by its bitset.
   **/
-struct BloomFilterPageHeader {
+struct BloomFilterHeader {
   /** The size of bitset in bytes **/
   1: required i32 numBytes;
   /** The algorithm for setting bits. **/
@@ -339,8 +339,8 @@ information such as the presence of value. Therefore the Bloom filter of columns
 data should be encrypted with the column key, and the Bloom filter of other (not sensitive) columns
 do not need to be encrypted.
 
-Bloom filters have two serializable modules - the PageHeader thrift structure (with its internal
-fields, including the BloomFilterPageHeader `bloom_filter_page_header`), and the Bitset. The header
+Bloom filters have two serializable modules - the Bloom filter header (the BloomFilterHeader thrift
+structure and its internal fields), and the Bitset. The header
 structure is serialized by Thrift, and written to file output stream; it is followed by the
 serialized Bitset.
 

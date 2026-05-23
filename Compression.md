@@ -89,7 +89,7 @@ switch to the newer, interoperable `LZ4_RAW` codec.
 ### ZSTD
 
 A codec based on the Zstandard format defined by
-[RFC 8478](https://tools.ietf.org/html/rfc8478).  If any ambiguity arises
+[RFC 8878](https://tools.ietf.org/html/rfc8878).  If any ambiguity arises
 when implementing this format, the implementation provided by the
 [Zstandard compression library](https://facebook.github.io/zstd/)
 is authoritative.

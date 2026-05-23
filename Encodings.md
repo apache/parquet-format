@@ -322,8 +322,6 @@ The delta encoding algorithm described above stores a bit width per miniblock an
 
 Supported Types: BYTE_ARRAY
 
-This encoding is always preferred over PLAIN for byte array columns.
-
 For this encoding, we will take all the byte array lengths and encode them using delta
 encoding (DELTA_BINARY_PACKED). The byte array data follows all of the length data just
 concatenated back to back. The expected savings is from the cost of encoding the lengths

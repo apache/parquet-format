@@ -390,6 +390,10 @@ It is semantically identical to the "string" primitive type.
 
 The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(val)) + 1`.
 
+Note: Decimal values in the Variant binary encoding use little-endian byte order for the
+unscaled value. This differs from Parquet's DECIMAL logical type which uses big-endian
+two's complement encoding for `BYTE_ARRAY` and `FIXED_LEN_BYTE_ARRAY` physical types.
+
 ## Encoding types
 *Variant basic types*
 
@@ -419,7 +423,7 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | Timestamp            | timestamp                   | `12`    | TIMESTAMP(isAdjustedToUTC=true, MICROS)     | 8-byte little-endian                                                                                |
 | TimestampNTZ         | timestamp without time zone | `13`    | TIMESTAMP(isAdjustedToUTC=false, MICROS)    | 8-byte little-endian                                                                                |
 | Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
-| Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
+| Binary               | binary                      | `15`    | BYTE_ARRAY                  | 4 byte little-endian size, followed by bytes                                                                        |
 | String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
 | TimeNTZ              | time without time zone      | `17`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                               |
 | Timestamp            | timestamp with time zone    | `18`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                               |

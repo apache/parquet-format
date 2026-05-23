@@ -752,7 +752,7 @@ struct DataPageHeaderV2 {
 
   /**  Whether the values are compressed.
   Which means the section of the page between
-  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
   7: optional bool is_compressed = true;
@@ -816,7 +816,7 @@ struct PageHeader {
   /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
-  /** The 32-bit CRC checksum for the page, to be be calculated as follows:
+  /** The 32-bit CRC checksum for the page, to be calculated as follows:
    *
    * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
    *   the same as in e.g. GZip).
@@ -1230,7 +1230,7 @@ struct OffsetIndex {
   /**
    * Unencoded/uncompressed size for BYTE_ARRAY types.
    *
-   * See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+   * See documentation for unencoded_byte_array_data_bytes in SizeStatistics for
    * more details on this field.
    */
   2: optional list<i64> unencoded_byte_array_data_bytes
@@ -1399,7 +1399,7 @@ struct FileMetaData {
    * Sort order used for the min_value and max_value fields in the Statistics
    * objects and the min_values and max_values fields in the ColumnIndex
    * objects of each column in this file. Sort orders are listed in the order
-   * matching the columns in the schema. The indexes are not necessary the same
+   * matching the columns in the schema. The indexes are not necessarily the same
    * though, because only leaf nodes of the schema are represented in the list
    * of sort orders.
    *
