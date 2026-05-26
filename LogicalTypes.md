@@ -254,7 +254,10 @@ Used in contexts where precision is traded off for smaller footprint and potenti
 
 The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
 
-The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
+Like `FLOAT` and `DOUBLE`, the sort order for `FLOAT16` is signed with special
+handling for NaNs and signed zeros. Writers should use IEEE754TotalOrder for
+consistent handling of these edge cases. See the `ColumnOrder` union in the
+[Thrift definition](src/main/thrift/parquet.thrift) for details.
 
 ## Temporal Types
 
