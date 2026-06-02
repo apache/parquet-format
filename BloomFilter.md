@@ -122,7 +122,7 @@ boolean block_check(block b, unsigned int32 x) {
   for i in [0..7] {
     for j in [0..31] {
       if (masked.getWord(i).isSet(j)) {
-        if (not b.getWord(i).setBit(j)) {
+        if (not b.getWord(i).isSet(j)) {
           return false
         }
       }
@@ -266,8 +266,8 @@ false positive rates:
 #### File Format
 
 Each multi-block Bloom filter is required to work for only one column chunk. The data of a multi-block
-bloom filter consists of the bloom filter header followed by the bloom filter bitset. The bloom filter
-header encodes the size of the bloom filter bit set in bytes that is used to read the bitset.
+Bloom filter consists of the Bloom filter header followed by the Bloom filter bitset. The Bloom filter
+header encodes the size of the Bloom filter bitset in bytes that is used to read the bitset.
 
 Here are the Bloom filter definitions in thrift:
 
@@ -282,7 +282,7 @@ union BloomFilterAlgorithm {
 }
 
 /** Hash strategy type annotation. xxHash is an extremely fast non-cryptographic hash
- * algorithm. It uses 64 bits version of xxHash. 
+ * algorithm. It uses the 64-bit version of xxHash.
  **/
 struct XxHash {}
 
@@ -307,14 +307,14 @@ union BloomFilterCompression {
   * Bloom filter header is stored at beginning of Bloom filter data of each column
   * and followed by its bitset.
   **/
-struct BloomFilterPageHeader {
-  /** The size of bitset in bytes **/
+struct BloomFilterHeader {
+  /** The size of bitset in bytes. **/
   1: required i32 numBytes;
   /** The algorithm for setting bits. **/
   2: required BloomFilterAlgorithm algorithm;
   /** The hash function used for Bloom filter. **/
   3: required BloomFilterHash hash;
-  /** The compression used in the Bloom filter **/
+  /** The compression used in the Bloom filter. **/
   4: required BloomFilterCompression compression;
 }
 
@@ -322,6 +322,14 @@ struct ColumnMetaData {
   ...
   /** Byte offset from beginning of file to Bloom filter data. **/
   14: optional i64 bloom_filter_offset;
+
+  /** Size of Bloom filter data including the serialized header, in bytes.
+   * Added in 2.10 so readers may not read this field from old files and
+   * it can be obtained after the BloomFilterHeader has been deserialized.
+   * Writers should write this field so readers can read the bloom filter
+   * in a single I/O.
+   */
+  15: optional i32 bloom_filter_length;
 }
 
 ```
@@ -339,8 +347,8 @@ information such as the presence of value. Therefore the Bloom filter of columns
 data should be encrypted with the column key, and the Bloom filter of other (not sensitive) columns
 do not need to be encrypted.
 
-Bloom filters have two serializable modules - the PageHeader thrift structure (with its internal
-fields, including the BloomFilterPageHeader `bloom_filter_page_header`), and the Bitset. The header
+Bloom filters have two serializable modules - the Bloom filter header (the BloomFilterHeader thrift
+structure and its internal fields), and the Bitset. The header
 structure is serialized by Thrift, and written to file output stream; it is followed by the
 serialized Bitset.
 
