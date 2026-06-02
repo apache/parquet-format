@@ -41,7 +41,7 @@ enum Type {
 }
 
 /**
- * DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+ * DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet.
  * ConvertedType is superseded by LogicalType.  This enum should not be extended.
  *
  * See LogicalTypes.md for conversion between ConvertedType and LogicalType.
@@ -431,7 +431,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and edge interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -450,13 +450,13 @@ struct GeometryType {
  * Embedded Geography logical type annotation
  *
  * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
- * edges interpolation algorithm.
+ * edge interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
  * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
  * defaults to "OGC:CRS84".
  *
- * An optional algorithm can be set to correctly interpret edges interpolation
+ * An optional algorithm can be set to correctly interpret edge interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
@@ -504,7 +504,7 @@ union LogicalType {
 }
 
 /**
- * Represents a element inside a schema definition.
+ * Represents an element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
  * the nodes are listed in depth first traversal order.
@@ -583,7 +583,7 @@ enum Encoding {
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64.
-   * This encoding is deprecated. It was never used
+   * This encoding is deprecated. It was never used.
    */
   //  GROUP_VAR_INT = 1;
 
@@ -591,7 +591,7 @@ enum Encoding {
    * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
    * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead
+   * in a Dictionary page use PLAIN instead.
    */
   PLAIN_DICTIONARY = 2;
 
@@ -600,8 +600,9 @@ enum Encoding {
    */
   RLE = 3;
 
-  /** Bit packed encoding.  This can only be used if the data has a known max
+  /** Deprecated: Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.
+   * Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
    */
   BIT_PACKED = 4;
 
@@ -679,7 +680,7 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a OffsetIndex is present, a page must begin at a row
+   * If an OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
    * within a row (repetition_level > 0).
    **/
@@ -752,7 +753,7 @@ struct DataPageHeaderV2 {
 
   /**  Whether the values are compressed.
   Which means the section of the page between
-  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
   7: optional bool is_compressed = true;
@@ -816,10 +817,10 @@ struct PageHeader {
   /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
-  /** The 32-bit CRC checksum for the page, to be be calculated as follows:
+  /** The 32-bit CRC checksum for the page, to be calculated as follows:
    *
    * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
-   *   the same as in e.g. GZip).
+   *   the same as in e.g. GZIP).
    * - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
    *   etc.).
    * - The CRC is computed on the serialization binary representation of the page
@@ -1201,8 +1202,8 @@ struct PageLocation {
   1: required i64 offset
 
   /**
-   * Size of the page, including header. Sum of compressed_page_size and header
-   * length
+   * Size of the page, including header. Equal to the sum of the page's
+   * PageHeader.compressed_page_size and the size of the serialized PageHeader.
    */
   2: required i32 compressed_page_size
 
@@ -1230,7 +1231,7 @@ struct OffsetIndex {
   /**
    * Unencoded/uncompressed size for BYTE_ARRAY types.
    *
-   * See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+   * See documentation for unencoded_byte_array_data_bytes in SizeStatistics for
    * more details on this field.
    */
   2: optional list<i64> unencoded_byte_array_data_bytes
@@ -1260,7 +1261,7 @@ struct ColumnIndex {
    * Two lists containing lower and upper bounds for the values of each page
    * determined by the ColumnOrder of the column. These may be the actual
    * minimum and maximum values found on a page, but can also be (more compact)
-   * values that do not exist on a page. For example, instead of storing ""Blart
+   * values that do not exist on a page. For example, instead of storing "Blart
    * Versenwald III", a writer may set min_values[i]="B", max_values[i]="C".
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
@@ -1399,7 +1400,7 @@ struct FileMetaData {
    * Sort order used for the min_value and max_value fields in the Statistics
    * objects and the min_values and max_values fields in the ColumnIndex
    * objects of each column in this file. Sort orders are listed in the order
-   * matching the columns in the schema. The indexes are not necessary the same
+   * matching the columns in the schema. The indexes are not necessarily the same
    * though, because only leaf nodes of the schema are represented in the list
    * of sort orders.
    *
