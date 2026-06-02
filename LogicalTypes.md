@@ -97,7 +97,7 @@ The sort order used for `UUID` values is unsigned byte-wise comparison.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 For signed integers, the second parameter should be `true`,
-for example, a signed integer with bit width of 8 is defined as `INT(8, true)`
+for example, a signed integer with bit width of 8 is defined as `INT(8, true)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -120,7 +120,7 @@ along with a maximum number of bits in the stored value.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 In case of unsigned integers, the second parameter should be `false`,
-for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`
+for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -166,7 +166,7 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -219,15 +219,15 @@ scale stores the number of digits of that value that are to the right of the
 decimal point, and the precision stores the maximum number of digits supported
 in the unscaled value.
 
-If not specified, the scale is 0. Scale must be zero or a positive integer less
-than or equal to the precision. Precision is required and must be a non-zero positive
+If not specified, the scale is 0. Scale must be a non-negative integer less
+than or equal to the precision. Precision is required and must be a positive
 integer. A precision too large for the underlying type (see below) is an error.
 
 `DECIMAL` can be used to annotate the following types:
 * `int32`: for 1 &lt;= precision &lt;= 9
 * `int64`: for 1 &lt;= precision &lt;= 18; precision &lt; 10 will produce a
   warning
-* `fixed_len_byte_array`: precision is limited by the array size. Length `n`
+* `fixed_len_byte_array`: `precision` is limited by the array size. Length `n`
   can store &lt;= `floor(log_10(2^(8*n - 1) - 1))` base-10 digits
 * `byte_array`: `precision` is not limited, but is required. The minimum number of
   bytes to store the unscaled value should be used.
@@ -243,7 +243,7 @@ comparison.
 
 *Compatibility*
 
-To support compatibility with older readers, implementations of parquet-format should
+To support compatibility with older readers, implementations of parquet-format must
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
 ### FLOAT16
@@ -271,9 +271,10 @@ The sort order used for `DATE` is signed.
 
 ### TIME
 
-`TIME` is used for a logical time type without a date with millisecond or microsecond precision.
+`TIME` is used for a logical time type without a date with millisecond, microsecond,
+or nanosecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
-and unit (`MILLIS` or `MICROS`, `NANOS`).
+and unit (`MILLIS`, `MICROS`, or `NANOS`).
 
 `TIME` with unit `MILLIS` is used for millisecond precision.
 It must annotate an `int32` that stores the number of
@@ -299,10 +300,10 @@ counterpart, it must annotate an `int32`.
 type that is UTC normalized and has `MICROS` precision. Like the logical type
 counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local time semantic,
+Although there is no exact corresponding ConvertedType for local time semantic,
 in order to support forward compatibility with those libraries, which annotated
-their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotation,
-Parquet writer implementation *must* annotate local time with legacy annotations too,
+their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotations,
+Parquet writer implementations *must* annotate local time with legacy annotations too,
 as shown below.
 
 *Backward compatibility:*
@@ -315,7 +316,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -358,7 +359,7 @@ time-line and such interpretations are allowed on purpose.
 
 The `TIMESTAMP` type has two type parameters:
 - `isAdjustedToUTC` must be either `true` or `false`.
-- `unit` must be one of `MILLIS`, `MICROS` or `NANOS`. This list is subject
+- `unit` must be one of `MILLIS`, `MICROS`, or `NANOS`. This list is subject
   to potential expansion in the future. Upon reading, unknown `unit`-s must
   be handled as unsupported features (rather than as errors in the data files).
 
@@ -448,7 +449,7 @@ limits and implementations may choose to only support a limited range.
 On the other hand, not every combination of year, month, day, hour, minute,
 second and subsecond values can be encoded into an `int64`. Most notably:
 
-- An arbitrary combination of timestamp fields can not be encoded as a single
+- An arbitrary combination of timestamp fields cannot be encoded as a single
   number if the values for some of the fields are outside of their normal range
   (where the "normal range" corresponds to everyday usage). For example, neither
   of the following can be represented in a timestamp:
@@ -459,7 +460,7 @@ second and subsecond values can be encoded into an `int64`. Most notably:
   - day = 29, month = 2, year = any non-leap year
 - Due to the range of the `int64` type, timestamps using the `NANOS` unit
   can only represent values between 1677-09-21 00:12:43 and 2262-04-11 23:47:16.
-  Values outside of this range can not be represented with the `NANOS`
+  Values outside of this range cannot be represented with the `NANOS`
   unit. (Other precisions have similar limits but those are outside of the
   domain for practical everyday usage.)
 
@@ -475,10 +476,10 @@ type counterpart, it must annotate an `int64`.
 logical type that is UTC normalized and has `MICROS` precision. Like the logical
 type counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local timestamp semantic,
+Although there is no exact corresponding ConvertedType for local timestamp semantic,
 in order to support forward compatibility with those libraries, which annotated
-their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotation,
-Parquet writer implementation *must* annotate local timestamps with legacy annotations too,
+their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotations,
+Parquet writer implementations *must* annotate local timestamps with legacy annotations too,
 as shown below.
 
 *Backward compatibility:*
@@ -491,7 +492,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -544,7 +545,8 @@ are found during reading, they must be ignored.
 
 ## Embedded Types
 
-Embedded types do not have type-specific orderings.
+Embedded types do not have type-specific orderings beyond the unsigned
+byte-wise comparison of their physical type (`BYTE_ARRAY`).
 
 ### JSON
 
@@ -606,7 +608,7 @@ optional group variant_shredded (VARIANT(1)) {
 ### GEOMETRY
 
 `GEOMETRY` is used for geospatial features in the Well-Known Binary (WKB) format
-with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
+with linear/planar edge interpolation. It must annotate a `BYTE_ARRAY`
 primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has only one type parameter:
@@ -621,14 +623,14 @@ are found during reading, they must be ignored.
 ### GEOGRAPHY
 
 `GEOGRAPHY` is used for geospatial features in the WKB format with an explicit
-(non-linear/non-planar) edges interpolation algorithm. It must annotate a
+(non-linear/non-planar) edge interpolation algorithm. It must annotate a
 `BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has two type parameters:
 - `crs`: An optional string value for CRS. It must be a geographic CRS, where
   longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
   If unset, the CRS defaults to `"OGC:CRS84"`.
-- `algorithm`: An optional enum value to describes the edge interpolation
+- `algorithm`: An optional enum value that describes the edge interpolation
   algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
   `KARNEY`. If unset, the algorithm defaults to `SPHERICAL`.
 
@@ -834,7 +836,7 @@ to values. `MAP` must annotate a 3-level structure:
   field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
   be `required`, `optional`, or omitted. It must always be the second field of
-  the repeated `key_value` group if present. In case of not present, it can be
+  the repeated `key_value` group if present. If not present, it can be
   represented as a map with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to
