@@ -674,7 +674,7 @@ A value becomes an exception if any of the following is true:
 | NaN                | `NaN`                      | Cannot convert to integer        |
 | Infinity           | `+Inf`, `-Inf`             | Cannot convert to integer        |
 | Negative zero      | `-0.0`                     | Would become `+0.0` after encoding |
-| Out of range       | value * 10^e > INT32\_MAX  | Exceeds target integer limits    |
+| Out of range       | scaled value outside int32 (FLOAT) or int64 (DOUBLE) | Exceeds target integer type range |
 | Round-trip failure  | `0.333...` with e=1, f=0  | `decode(encode(v)) != v`         |
 
 Exception values at positions in the vector are replaced with a placeholder
