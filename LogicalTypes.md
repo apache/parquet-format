@@ -219,8 +219,8 @@ scale stores the number of digits of that value that are to the right of the
 decimal point, and the precision stores the maximum number of digits supported
 in the unscaled value.
 
-If not specified, the scale is 0. Scale must be a non-negative integer less
-than or equal to the precision. Precision is required and must be a positive
+If not specified, the scale is 0. Scale must be zero or a positive integer less
+than or equal to the precision. Precision is required and must be a non-zero positive
 integer. A precision too large for the underlying type (see below) is an error.
 
 `DECIMAL` can be used to annotate the following types:
@@ -243,7 +243,7 @@ comparison.
 
 *Compatibility*
 
-To support compatibility with older readers, implementations of parquet-format must
+To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
 ### FLOAT16
@@ -545,8 +545,7 @@ are found during reading, they must be ignored.
 
 ## Embedded Types
 
-Embedded types do not have type-specific orderings beyond the unsigned
-byte-wise comparison of their physical type (`BYTE_ARRAY`).
+Embedded types do not have type-specific orderings unless otherwise specified.
 
 ### JSON
 
@@ -608,7 +607,7 @@ optional group variant_shredded (VARIANT(1)) {
 ### GEOMETRY
 
 `GEOMETRY` is used for geospatial features in the Well-Known Binary (WKB) format
-with linear/planar edge interpolation. It must annotate a `BYTE_ARRAY`
+with linear/planar `edges` interpolation. It must annotate a `BYTE_ARRAY`
 primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has only one type parameter:
@@ -623,7 +622,7 @@ are found during reading, they must be ignored.
 ### GEOGRAPHY
 
 `GEOGRAPHY` is used for geospatial features in the WKB format with an explicit
-(non-linear/non-planar) edge interpolation algorithm. It must annotate a
+(non-linear/non-planar) `edges` interpolation algorithm. It must annotate a
 `BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has two type parameters:

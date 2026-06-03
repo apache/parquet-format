@@ -70,7 +70,7 @@ For native types, this outputs the data as little endian. Floating
     point types are encoded in IEEE.
 
 For the byte array type, it encodes the length as a 4-byte little
-endian, followed by the bytes.
+endian integer, followed by the bytes.
 
 <a name="DICTIONARY"></a>
 ### Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
@@ -83,7 +83,7 @@ written first, before the data pages of the column chunk.
 Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) encoding.
 
 Data page format: the bit width used to encode the entry ids stored as 1 byte (max bit width = 32),
-followed by the values encoded using RLE/Bit-Packed described above (with the given bit width).
+followed by the values encoded using the RLE/Bit-Packing described above (with the given bit width).
 
 Using the `PLAIN_DICTIONARY` enum value is deprecated, use `RLE_DICTIONARY`
 in a data page and `PLAIN` in a dictionary page for new Parquet files.
@@ -322,6 +322,8 @@ The delta encoding algorithm described above stores a bit width per miniblock an
 ### Delta-length byte array: (DELTA_LENGTH_BYTE_ARRAY = 6)
 
 Supported Types: BYTE_ARRAY
+
+This encoding is always preferred over PLAIN for byte array columns.
 
 For this encoding, we will take all the byte array lengths and encode them using delta
 encoding (DELTA_BINARY_PACKED). The byte array data follows all of the length data just
