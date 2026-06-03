@@ -137,8 +137,9 @@ requirement is crucial to the security of GCM"*.
 
 The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
 key shall not be used for more than 2^32 total module encryptions, as per the NIST specification.
-In Parquet files encrypted with multiple keys (footer and column keys), the constraint on the
-number of invocations is applied to each key separately.
+Since each data page requires two module encryptions (header + data), this means in practice no
+more than 2^31 pages per key. In Parquet files encrypted with multiple keys (footer and column
+keys), the constraint on the number of invocations is applied to each key separately.
 
 When running in the context of a larger system, any particular Parquet writer implementation likely
 does not have sufficient context to enforce key invocation limits system-wide. Therefore,

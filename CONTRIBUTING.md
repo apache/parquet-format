@@ -95,7 +95,7 @@ demonstrate that the feature is mergeable to its implementation.
    provides more details on expectations for changes that break compatibility.
 
 2. New encodings should be fully specified in this repository and not
-   rely on an external dependency for implementation (i.e. `parquet-format` is
+   rely on external dependencies for implementation (i.e. `parquet-format` is
    the source of truth for the encoding). If it does require an
    external dependency, then the external dependency must have its
    own specification separate from implementation.

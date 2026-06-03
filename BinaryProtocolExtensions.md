@@ -26,7 +26,13 @@ The extension mechanism of the `binary` Thrift field-id `32767` has some desirab
 * The content of the extension is freeform and can be encoded in any format. This format is not restricted to Thrift.  
 * Extensions can be appended to existing Thrift serialized structs [without requiring Thrift libraries](#appending-extensions-to-thrift) for manipulation (or changes to the thrift IDL).
 
-Because only one field-id is reserved the extension bytes themselves require disambiguation; otherwise readers will not be able to decode extensions safely. This is left to implementers who MUST put enough unique state in their extension bytes for disambiguation. This can be relatively easily achieved by adding a [UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the start or end of the extension bytes. The extension does not specify a disambiguation mechanism to allow more flexibility to implementers.
+Because only one field-id is reserved the extension bytes themselves require
+disambiguation; otherwise readers will not be able to decode extensions safely.
+This is left to implementers who MUST put enough unique state in their extension
+bytes for disambiguation. This can be relatively easily achieved by adding a
+[UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the
+start or end of the extension bytes. The extension does not specify a
+disambiguation mechanism to allow more flexibility to implementers.
 
 Putting everything together in an example, if we would extend `FileMetaData` it would look like this on the wire.
 
