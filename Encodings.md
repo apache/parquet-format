@@ -421,7 +421,7 @@ enabling random access to individual values and parallel encoding/decoding.
 The detailed specification of the ALP encoding, including the page layout and
 the encoding and decoding procedures, is in [AlpEncoding.md](AlpEncoding.md).
 <a name="PFOR"></a>
-### Patched Frame of Reference: (PFOR = 11)
+### Patched Frame of Reference (PFOR = 11)
 
 Supported Types: INT32, INT64
 
