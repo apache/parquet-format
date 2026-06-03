@@ -431,7 +431,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geospatial features in the Well-Known Binary (WKB) format and edge interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and `edges` interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -588,10 +588,10 @@ enum Encoding {
   //  GROUP_VAR_INT = 1;
 
   /**
-   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
-   * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead.
+   * For a data page use RLE_DICTIONARY instead.
+   * For a Dictionary page use PLAIN instead.
    */
   PLAIN_DICTIONARY = 2;
 
@@ -600,7 +600,7 @@ enum Encoding {
    */
   RLE = 3;
 
-  /** Deprecated: Bit packed encoding.  This can only be used if the data has a known max
+  /** DEPRECATED: Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.
    * Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
    */
@@ -989,7 +989,7 @@ struct ColumnChunk {
     **/
   1: optional string file_path
 
-  /** Deprecated: Byte offset in file_path to the ColumnMetaData
+  /** DEPRECATED: Byte offset in file_path to the ColumnMetaData
    *
    * Past use of this field has been inconsistent, with some implementations
    * using it to point to the ColumnMetaData and some using it to point to
