@@ -607,6 +607,11 @@ The encoding uses two separate multiplications (not a single multiplication by
 `10^(e-f)`, and not division) to ensure that implementations produce identical
 floating-point results. All implementations MUST use the exact same floating-point
 arithmetic and power-of-10 constants to guarantee cross-language interoperability.
+The power-of-10 constants MUST be the correctly-rounded IEEE 754 values of the
+decimal literals `1e0`, `1e1`, ..., `1e18` and `1e-1`, `1e-2`, ..., `1e-18` as
+defined by the decimal-to-binary conversion in IEEE 754-2008 §5.12.2.
+Implementations MUST NOT compute these constants at runtime via `pow()` or
+equivalent functions, which are not guaranteed to be correctly rounded.
 
 ##### Fast Rounding
 
@@ -614,10 +619,19 @@ The `fast_round` function uses a "magic number" technique for branchless roundin
 
 `fast_round(value)` is defined as follows:
 
-| Type   | Magic Number                      | Formula                          |
-|--------|-----------------------------------|----------------------------------|
-| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` |
-| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` |
+| Type   | Magic Number                      | Formula (value &ge; 0)           | Formula (value &lt; 0)           |
+|--------|-----------------------------------|----------------------------------|----------------------------------|
+| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
+| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
+
+The sign branching is necessary because the technique relies on `value ± magic`
+landing in a binade where the unit in the last place (ULP) equals 1.0. For
+non-negative values, `value + magic` lands in [2^23, 2^24) for floats or
+[2^52, 2^53) for doubles. For negative values, `value - magic` lands in
+[-2^24, -2^23) or [-2^53, -2^52) respectively, where ULP is also 1.0. Without
+sign branching, negative values with magnitude beyond 2^22 (float) or 2^51
+(double) fall into a lower binade where ULP &lt; 1.0, producing incorrect
+rounding and a higher exception rate.
 
 ##### Parameter Selection
 
