@@ -365,7 +365,7 @@ Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
 ```
 
 <a name="PFOR"></a>
-### Patched Frame of Reference: (PFOR = 11)
+### Patched Frame of Reference (PFOR = 11)
 
 Supported Types: INT32, INT64
 
