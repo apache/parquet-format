@@ -635,7 +635,15 @@ rounding and a higher exception rate.
 
 ##### Parameter Selection
 
-The encoder selects the (exponent, factor) pair that minimizes exceptions.
+Any valid (exponent, factor) pair produces a correct encoding — the decoder is
+agnostic to the selection strategy, and the exception mechanism guarantees
+round-trip fidelity regardless of which pair is chosen. The choice only affects
+compression ratio.
+
+The encoder SHOULD select the (exponent, factor) pair that produces the smallest
+encoded output. A simple heuristic is to minimize exception count; a more precise
+approach accounts for both bit-width and exception overhead.
+
 Valid combinations satisfy 0 &le; factor &le; exponent:
 
 | Type   | Max Exponent | Total Combinations |
@@ -647,7 +655,7 @@ To avoid the cost of exhaustive search on every vector, implementations
 can use a sampling approach. One such approach, described in the paper, is to
 select up to 5 candidate (exponent, factor) combinations (the "encoding preset")
 at the start of each column chunk, and when encoding each vector,
-test each of the 5 candidates for the fewest exceptions.
+evaluate each candidate for the best compression.
 
 Suggested sampling parameters (from the paper):
 
