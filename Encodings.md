@@ -152,7 +152,7 @@ data:
 * Dictionary indices
 * Boolean values in data pages, as an alternative to PLAIN encoding
 
-Whether prepending the four-byte `length` to the `encoded-data` is summarized in the table below:
+Whether or not to prepend the four-byte `length` to the `encoded-data` is summarized in the table below:
 ```
 +--------------+------------------------+-----------------+
 | Page kind    | RLE-encoded data kind  | Prepend length? |
