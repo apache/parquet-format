@@ -294,7 +294,7 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
             # this is a shredded object
             object_fields = {
                 name: construct_variant(metadata, field.value, field.typed_value)
-                for (name, field) in typed_value.items()
+                for name, field in typed_value.items()
             }
 
             if value is not None:
