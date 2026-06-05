@@ -450,13 +450,13 @@ struct GeometryType {
  * Embedded Geography logical type annotation
  *
  * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
- * edge interpolation algorithm.
+ * `edges` interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
  * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
  * defaults to "OGC:CRS84".
  *
- * An optional algorithm can be set to correctly interpret edge interpolation
+ * An optional algorithm can be set to correctly interpret `edges` interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
