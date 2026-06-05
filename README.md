@@ -278,9 +278,7 @@ Changes to this core format definition are proposed and discussed in depth on th
 
 ## Code of Conduct
 
-We hold ourselves and the Parquet developer community to two codes of conduct:
-1. [The Apache Software Foundation Code of Conduct](https://www.apache.org/foundation/policies/conduct.html)
-2. [The Apache Software Foundation Code of Conduct for GitHub](https://github.com/apache/.github/blob/main/CODE_OF_CONDUCT.md)
+We hold ourselves and the Parquet developer community to [The Apache Software Foundation Code of Conduct](https://www.apache.org/foundation/policies/conduct.html).
 
 ## License
 Copyright 2013 Twitter, Cloudera and other contributors.
