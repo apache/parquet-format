@@ -26,11 +26,17 @@ The extension mechanism of the `binary` Thrift field-id `32767` has some desirab
 * The content of the extension is freeform and can be encoded in any format. This format is not restricted to Thrift.  
 * Extensions can be appended to existing Thrift serialized structs [without requiring Thrift libraries](#appending-extensions-to-thrift) for manipulation (or changes to the thrift IDL).
 
-Because only one field-id is reserved the extension bytes themselves require disambiguation; otherwise readers will not be able to decode extensions safely. This is left to implementers which MUST put enough unique state in their extension bytes for disambiguation. This can be relatively easily achieved by adding a [UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the start or end of the extension bytes. The extension does not specify a disambiguation mechanism to allow more flexibility to implementers.
+Because only one field-id is reserved the extension bytes themselves require
+disambiguation; otherwise readers will not be able to decode extensions safely.
+This is left to implementers who MUST put enough unique state in their extension
+bytes for disambiguation. This can be relatively easily achieved by adding a
+[UUID](https://en.wikipedia.org/wiki/Universally\_unique\_identifier) at the
+start or end of the extension bytes. The extension does not specify a
+disambiguation mechanism to allow more flexibility to implementers.
 
 Putting everything together in an example, if we would extend `FileMetaData` it would look like this on the wire.
 
-    N-1 bytes | Thrift compact protocol encoded FileMetadata (minus \0 thrift stop field)
+    N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
     4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
     1-5 bytes | ULEB128(M) encoded size of the extension
     M bytes   | extension bytes
@@ -50,14 +56,14 @@ To illustrate the applicability of the extension mechanism we provide examples o
 
 ### Footer
 
-A variant of `FileMetaData` encoded in Flatbuffers is introduced. This variant is more performant and can scale to very wide tables, something that current Thrift `FileMetaData` struggles with.
+A variant of `FileMetaData` encoded in FlatBuffers is introduced. This variant is more performant and can scale to very wide tables, something that current Thrift `FileMetaData` struggles with.
 
 In its private form the footer of a Parquet file will look like so:
 
-    N-1 bytes | Thrift compact protocol encoded FileMetadata (minus \0 thrift stop field)
+    N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
     4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
     1-5 bytes | ULEB128(K+28) encoded size of the extension
-    K bytes   | Flatbuffers representation (v0) of FileMetaData
+    K bytes   | FlatBuffers representation (v0) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
     4 bytes   | little-endian size(flatbuffer)
     4 bytes   | little-endian crc32(size(flatbuffer))
@@ -67,20 +73,20 @@ In its private form the footer of a Parquet file will look like so:
 
 some-UUID is some UUID picked for this extension and it is used throughout (possibly internal) experimentation. It is put at the end to allow detection of the extension when parsed in reverse. The little-endian sizes and crc32s are also to the end to facilitate efficient parsing the footer in reverse without requiring parsing the Thrift compact protocol that precedes it.
 
-At some point the experiments conclude and the extension shared publicly with the community. The extension is proposed for inclusion to the standard with a migration plan to replace the existing `FileMetaData`.
+At some point the experiments conclude and the extension is shared publicly with the community. The extension is proposed for inclusion to the standard with a migration plan to replace the existing `FileMetaData`.
 
-The community reviews the proposal and (potentially) proposes changes to the Flatbuffers IDL representation. In addition, because this extension is a *replacement* of an existing struct, it must:
+The community reviews the proposal and (potentially) proposes changes to the FlatBuffers IDL representation. In addition, because this extension is a *replacement* of an existing struct, it must:
 
 1. have some way of being extended in the future much like what it replaces. Because the extension mechanism only allows for a single extension, without this in place we cannot have footer extensions during the migration.  
 2. consider its intermediate form where both the **Thrift** `FileMetaData` and the **FlatBuffers** `FileMetaData` will be present.  
 3. consider its final form where the long form header for `32767: binary` may not be present.
 
-Once the design is ratified the new `FileMetaData` encoding is made final with the following migration plan. For the next N years writers will write both the Thrift and the flatbuffer `FileMetaData`. It will look much like its private form except the flatbuffer IDL may be different:
+Once the design is ratified the new `FileMetaData` encoding is made final with the following migration plan. For the next N years writers will write both the Thrift and the FlatBuffers `FileMetaData`. It will look much like its private form except the FlatBuffers IDL may be different:
 
-    N-1 bytes | Thrift compact protocol encoded FileMetadata (minus \0 thrift stop field)
+    N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
     4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
     1-5 bytes | ULEB128(K+28) encoded size of the extension
-    K bytes   | Flatbuffers representation (v1) of FileMetaData
+    K bytes   | FlatBuffers representation (v1) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
     4 bytes   | little-endian size(flatbuffer)
     4 bytes   | little-endian crc32(size(flatbuffer))
@@ -90,7 +96,7 @@ Once the design is ratified the new `FileMetaData` encoding is made final with t
 
 After the migration period, the end of the Parquet file may look like this:
 
-    K bytes   | Flatbuffers representation (v1) of FileMetaData
+    K bytes   | FlatBuffers representation (v1) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
     4 bytes   | little-endian size(flatbuffer)
     4 bytes   | little-endian crc32(size(flatbuffer))
