@@ -41,7 +41,7 @@ enum Type {
 }
 
 /**
- * DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+ * DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet.
  * ConvertedType is superseded by LogicalType.  This enum should not be extended.
  *
  * See LogicalTypes.md for conversion between ConvertedType and LogicalType.
@@ -309,6 +309,13 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+   /**
+    * Count of NaN values in the column; only present if physical type is FLOAT
+    * or DOUBLE, or logical type is FLOAT16.
+    * If this field is not present, readers MUST assume NaNs may be present
+    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
+    */
+   9: optional i64 nan_count;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -424,7 +431,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and `edges` interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -443,13 +450,13 @@ struct GeometryType {
  * Embedded Geography logical type annotation
  *
  * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
- * edges interpolation algorithm.
+ * `edges` interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
  * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
  * defaults to "OGC:CRS84".
  *
- * An optional algorithm can be set to correctly interpret edges interpolation
+ * An optional algorithm can be set to correctly interpret `edges` interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
@@ -497,7 +504,7 @@ union LogicalType {
 }
 
 /**
- * Represents a element inside a schema definition.
+ * Represents an element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
  * the nodes are listed in depth first traversal order.
@@ -576,15 +583,15 @@ enum Encoding {
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64.
-   * This encoding is deprecated. It was never used
+   * This encoding is deprecated. It was never used.
    */
   //  GROUP_VAR_INT = 1;
 
   /**
-   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
-   * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead
+   * For a data page use RLE_DICTIONARY instead.
+   * For a Dictionary page use PLAIN instead.
    */
   PLAIN_DICTIONARY = 2;
 
@@ -593,8 +600,9 @@ enum Encoding {
    */
   RLE = 3;
 
-  /** Bit packed encoding.  This can only be used if the data has a known max
+  /** DEPRECATED: Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.
+   * Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
    */
   BIT_PACKED = 4;
 
@@ -672,7 +680,7 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a OffsetIndex is present, a page must begin at a row
+   * If an OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
    * within a row (repetition_level > 0).
    **/
@@ -745,7 +753,7 @@ struct DataPageHeaderV2 {
 
   /**  Whether the values are compressed.
   Which means the section of the page between
-  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
   7: optional bool is_compressed = true;
@@ -809,10 +817,10 @@ struct PageHeader {
   /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
-  /** The 32-bit CRC checksum for the page, to be be calculated as follows:
+  /** The 32-bit CRC checksum for the page, to be calculated as follows:
    *
    * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
-   *   the same as in e.g. GZip).
+   *   the same as in e.g. GZIP).
    * - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
    *   etc.).
    * - The CRC is computed on the serialization binary representation of the page
@@ -990,7 +998,7 @@ struct ColumnChunk {
     **/
   1: optional string file_path
 
-  /** Deprecated: Byte offset in file_path to the ColumnMetaData
+  /** DEPRECATED: Byte offset in file_path to the ColumnMetaData
    *
    * Past use of this field has been inconsistent, with some implementations
    * using it to point to the ColumnMetaData and some using it to point to
@@ -1059,6 +1067,9 @@ struct RowGroup {
 /** Empty struct to signal the order defined by the physical or logical type */
 struct TypeDefinedOrder {}
 
+/** Empty struct to signal IEEE 754 total order for floating point types */
+struct IEEE754TotalOrder {}
+
 /**
  * Union to specify the order used for the min_value and max_value fields for a
  * column. This union takes the role of an enhanced enum that allows rich
@@ -1067,6 +1078,7 @@ struct TypeDefinedOrder {}
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
+ * * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -1120,23 +1132,78 @@ union ColumnOrder {
    *      64-bit signed integer (nanos)
    *    See https://github.com/apache/parquet-format/issues/502 for more details
    *
-   * (*) Because the sorting order is not specified properly for floating
-   *     point values (relations vs. total ordering) the following
+   * (*) Because TYPE_ORDER is ambiguous for floating point types due to
+   *     underspecified handling of NaN and -0/+0, it is recommended that writers
+   *     use IEEE_754_TOTAL_ORDER for these types.
+   *
+   *     If TYPE_ORDER is used for floating point types, then the following
    *     compatibility rules should be applied when reading statistics:
    *     - If the min is a NaN, it should be ignored.
    *     - If the max is a NaN, it should be ignored.
+   *     - If the nan_count field is set, a reader can compute
+   *       nan_count + null_count == num_values to deduce whether all non-null
+   *       values are NaN.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
+   *       If the nan_count field is set, it can be used to check whether
+   *       NaNs are present.
    *
-   *     When writing statistics the following rules should be followed:
-   *     - NaNs should not be written to min or max statistics fields.
+   *     When writing page or column chunk statistics for columns with
+   *     TYPE_ORDER order, the following rules must be followed:
+   *     - The nan_count field must be set for floating point types, even if
+   *       it is zero.
+   *     - If the nan_count field is set, min and max statistics fields, when
+   *       present, must not contain NaN values and must be computed from
+   *       non-NaN values only. This signals to readers that the min and max
+   *       statistics are reliable for non-NaN values.
+   *     - If all non-null values are NaN, min and max statistics must not be
+   *       written.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
    *       `-0.0` should be written into the min statistics field.
+   *
+   *     When writing column indexes for columns with TYPE_ORDER order, the
+   *     following rules must be followed:
+   *     - NaNs must not be written to min_values or max_values.
+   *     - If all non-null values of a page are NaN, a column index must not
+   *       be written for this column chunk because min_values and max_values
+   *       are required.
+   *     - If the computed max value is zero (whether negative or positive),
+   *       `+0.0` should be written into the corresponding max_values entry.
+   *     - If the computed min value is zero (whether negative or positive),
+   *       `-0.0` should be written into the corresponding min_values entry.
    */
   1: TypeDefinedOrder TYPE_ORDER;
+
+  /*
+   * The floating point type is ordered according to the totalOrder predicate,
+   * as defined in section 5.10 of IEEE-754 (2008 revision). Only columns of
+   * physical type FLOAT or DOUBLE, or logical type FLOAT16 may use this ordering.
+   *
+   * Intuitively, this orders floats mathematically, but defines -0 to be less
+   * than +0, -NaN to be less than anything else, and +NaN to be greater than
+   * anything else. It also defines an order between different bit representations
+   * of the same value.
+   *
+   * When writing statistics for columns with IEEE_754_TOTAL_ORDER order, then
+   * following rules must be followed:
+   * - Writing the nan_count field is mandatory when using this ordering.
+   * - Min and max statistics must contain the smallest and largest non-NaN
+   *   values respectively, or if all non-null values are NaN, the smallest and
+   *   largest NaN values as defined by IEEE 754 total order.
+   *
+   * When reading statistics for columns with this order, the following rules
+   * should be followed:
+   * - Readers should consult the nan_count field to determine whether NaNs
+   *   are present.
+   * - A reader can compute nan_count + null_count == num_values to deduce
+   *   whether all non-null values are NaN. In the page index, which does not
+   *   have a num_values field, the presence of a NaN value in min_values
+   *   or max_values indicates that all non-null values are NaN.
+   */
+  2: IEEE754TotalOrder IEEE_754_TOTAL_ORDER;
 }
 
 struct PageLocation {
@@ -1144,8 +1211,8 @@ struct PageLocation {
   1: required i64 offset
 
   /**
-   * Size of the page, including header. Sum of compressed_page_size and header
-   * length
+   * Size of the page, including header. Equal to the sum of the page's
+   * PageHeader.compressed_page_size and the size of the serialized PageHeader.
    */
   2: required i32 compressed_page_size
 
@@ -1173,7 +1240,7 @@ struct OffsetIndex {
   /**
    * Unencoded/uncompressed size for BYTE_ARRAY types.
    *
-   * See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+   * See documentation for unencoded_byte_array_data_bytes in SizeStatistics for
    * more details on this field.
    */
   2: optional list<i64> unencoded_byte_array_data_bytes
@@ -1203,11 +1270,23 @@ struct ColumnIndex {
    * Two lists containing lower and upper bounds for the values of each page
    * determined by the ColumnOrder of the column. These may be the actual
    * minimum and maximum values found on a page, but can also be (more compact)
-   * values that do not exist on a page. For example, instead of storing ""Blart
+   * values that do not exist on a page. For example, instead of storing "Blart
    * Versenwald III", a writer may set min_values[i]="B", max_values[i]="C".
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
+   *
+   * For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16,
+   * NaN values are not to be included in these bounds. If all non-null values
+   * of a page are NaN, then a writer must do the following:
+   * - If the order of this column is TYPE_ORDER, then a column index must
+   *   not be written for this column chunk. While this is unfortunate for
+   *   performance, it is necessary to avoid conflict with legacy files that
+   *   still included NaN in min_values and max_values even if the page had
+   *   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
+   * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
+   *   and max_values[i] of that page must be set to the smallest and largest
+   *   NaN values as defined by IEEE 754 total order.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1249,6 +1328,15 @@ struct ColumnIndex {
     * Same as repetition_level_histograms except for definitions levels.
     **/
    7: optional list<i64> definition_level_histograms;
+
+   /**
+    * A list containing the number of NaN values for each page. Only present
+    * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
+    * If this field is not present, readers MUST assume that there might be
+    * NaN values in any page.
+    */
+   8: optional list<i64> nan_counts
+
 }
 
 struct AesGcmV1 {
@@ -1321,7 +1409,7 @@ struct FileMetaData {
    * Sort order used for the min_value and max_value fields in the Statistics
    * objects and the min_values and max_values fields in the ColumnIndex
    * objects of each column in this file. Sort orders are listed in the order
-   * matching the columns in the schema. The indexes are not necessary the same
+   * matching the columns in the schema. The indexes are not necessarily the same
    * though, because only leaf nodes of the schema are represented in the list
    * of sort orders.
    *

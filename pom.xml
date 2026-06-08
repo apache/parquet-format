@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>35</version>
+    <version>38</version>
   </parent>
 
   <groupId>org.apache.parquet</groupId>
@@ -76,7 +76,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <shade.prefix>shaded.parquet</shade.prefix>
     <thrift.executable>thrift</thrift.executable>
-    <thrift.version>0.22.0</thrift.version>
+    <thrift.version>0.23.0</thrift.version>
     <thrift-maven-plugin.version>0.10.0</thrift-maven-plugin.version>
   </properties>
 
@@ -123,7 +123,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.0</version>
+        <version>3.6.2</version>
         <executions>
           <execution>
             <phase>package</phase>
