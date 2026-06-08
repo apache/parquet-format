@@ -469,6 +469,21 @@ struct GeographyType {
 }
 
 /**
+ * File logical type annotation
+ *
+ * Annotates a group that represents a reference to an external file.
+ * The group must contain the following fields identified by name:
+ *   - path (STRING, required): an opaque string path to the file (e.g. s3://bucket/file.jpg)
+ *   - size (INT64, optional): the length of the content in bytes; must be zero or positive
+ *   - offset (INT64, optional): byte offset for range reads; if provided, size must also be provided
+ *   - etag (STRING, optional): eTag from the storage system for staleness detection
+ *
+ * See LogicalTypes.md for details.
+ */
+struct FileType {
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -501,6 +516,7 @@ union LogicalType {
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
+  19: FileType FILE           // no compatible ConvertedType
 }
 
 /**
