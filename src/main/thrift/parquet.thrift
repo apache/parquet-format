@@ -1369,8 +1369,8 @@ struct FileMetaData {
     * features the file uses. For example, if a file contains features from parquet-format
     * version 2.4, then this field should be set to "2".
     *
-    * Prior to 2026, some readers support features added in version 2.0 and
-    * greater, but will reject files with the version set to 2.0. It was common
+    * Prior to 2026, some readers supported features added in version 2.0 and
+    * greater, but would reject files with the version set to 2. It was common
     * practice for writers to populate "1" for version even if they used version
     * 2.0.
     *
@@ -1380,20 +1380,19 @@ struct FileMetaData {
     */
   1: required i32 version
 
-  /**
-  * Minor Parquet Format Version
-  *
-  * This corresponds to the highest minor version of the parquet-format whose
-  * features the file uses. For example, if a file contains features from
-  * parquet-format version 2.4, then this field should be set to "4".
-  *
-  * Note that Parquet does not follow semantic versioning and new forward
-  * incompatible features, such as new encodings, can be added in a minor
-  * version. See the documentation[1] for more details on the versioning scheme
-  * and the features added in each version.
-  *
-  * [1]: http://parquet.apache.org/docs/file-format/versions
-  **/
+  /** Minor Parquet Format Version
+    *
+    * This corresponds to the highest minor version of the parquet-format whose
+    * features the file uses. For example, if a file contains features from
+    * parquet-format version 2.4, then this field should be set to "4".
+    *
+    * Note that Parquet does not follow semantic versioning and new
+    * forward-incompatible features, such as new encodings, can be added in
+    * minor versions. See the documentation[1] for more details on the versioning
+    * scheme and the features added in each version.
+    *
+    * [1]: http://parquet.apache.org/docs/file-format/versions
+    */
   10: optional i32 minor_version
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
