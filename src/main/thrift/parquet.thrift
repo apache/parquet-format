@@ -1061,6 +1061,9 @@ struct TypeDefinedOrder {}
 /** Empty struct to signal IEEE 754 total order for floating point types */
 struct IEEE754TotalOrder {}
 
+/** Empty struct to signal chronological ordering of physical type INT96 */
+struct Int96TimestampOrder {}
+
 /**
  * Union to specify the order used for the min_value and max_value fields for a
  * column. This union takes the role of an enhanced enum that allows rich
@@ -1070,6 +1073,8 @@ struct IEEE754TotalOrder {}
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
  * * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
+ *
+ * * Int96TimestampOrder - the INT96 column uses chronological timestamp order.
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -1108,20 +1113,16 @@ union ColumnOrder {
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined(+)
+   *   INT96 (only used for legacy timestamps) - undefined or signed comparison of the represented value(+)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
    * (+) While the INT96 type has been deprecated, at the time of writing it is
-   *    still used in many legacy systems. If a Parquet implementation chooses
-   *    to write statistics for INT96 columns, it is recommended to order them
-   *    according to the legacy rules:
-   *    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
-   *    - if equal last 4 bytes, compare the first 8 bytes as a little-endian
-   *      64-bit signed integer (nanos)
-   *    See https://github.com/apache/parquet-format/issues/502 for more details
+   *     still used in many legacy systems. It is recommended that writers use
+   *     INT96_TIMESTAMP_ORDER for this type. If TYPE_ORDER is used for an INT96
+   *     column, readers should ignore statistics for that column.
    *
    * (*) Because TYPE_ORDER is ambiguous for floating point types due to
    *     underspecified handling of NaN and -0/+0, it is recommended that writers
@@ -1195,6 +1196,18 @@ union ColumnOrder {
    *   or max_values indicates that all non-null values are NaN.
    */
   2: IEEE754TotalOrder IEEE_754_TOTAL_ORDER;
+
+  /*
+   * The INT96 timestamp type is ordered chronologically. Only columns of
+   * physical type INT96 may use this ordering.
+   *
+   * When writing statistics for columns with INT96_TIMESTAMP_ORDER, two values
+   * must be compared as follows:
+   * - Compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   * - If equal last 4 bytes, compare the first 8 bytes (nanos) as a
+   *   little-endinan 64-bit signed integer.
+   */
+  3: Int96TimestampOrder INT96_TIMESTAMP_ORDER;
 }
 
 struct PageLocation {
@@ -1278,6 +1291,13 @@ struct ColumnIndex {
    * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
    *   and max_values[i] of that page must be set to the smallest and largest
    *   NaN values as defined by IEEE 754 total order.
+   *
+   * For columns of physical type INT96, the writer must do the following:
+   * - If the order of this column is not INT96_TIMESTAMP_ORDER, then a column
+   *   index must not be written for this column chunk.
+   * - If the order of this column is INT96_TIMESTAMP_ORDER, the min_values[i]
+   *   and max_values[i] of that page must be set to the smallest and largest
+   *   values as defined by the INT96 chronological timestamp ordering.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values

@@ -160,7 +160,7 @@ Column Index, and Data Page). These statistics are according to a sort order,
 which is defined for each column in the file footer. Parquet supports common
 sort orders for logical and primitive types and also special orders for types
 with potentially ambiguous semantics (e.g., NaN ordering for floating point
-types). The details are documented in the
+types, INT96 timestamps). The details are documented in the
 [Thrift definition](src/main/thrift/parquet.thrift) in the `ColumnOrder` union.
 
 ## Nested Encoding
