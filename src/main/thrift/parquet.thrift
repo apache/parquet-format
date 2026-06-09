@@ -1364,44 +1364,47 @@ union EncryptionAlgorithm {
  */
 struct FileMetaData {
   /** Version of this file (DEPRECATED)
-    * This field has been historically used in an inconsistent way, with some writers
-    * writing "1" and some writing "2". This field is now deprecated and should not be used.
     *
-    * Use format_major_version and format_minor_version instead to indicate the
-    * features that must be supported to read this file.
+    * This field has historically been used inconsistently, with some writers
+    * writing "1" and some writing "2", so its value is not a reliable indicator
+    * of the features a file uses. It is superseded by format_major_version and
+    * format_minor_version, which should be used instead to indicate the features
+    * that must be supported to read this file.
+    *
+    * This field remains required for backwards compatibility. For maximum
+    * compatibility with existing readers, writers should populate "1".
     */
   1: required i32 version
 
   /** parquet-format Major Version
    *
-   * Which parquet-format release version defines the forward incompatible
-   * features required to read this file. Forward incompatible feature include
-   * those which the reader must support such as new encodings. Forward
-   * incompatible features do not include features which are purely optional to
-   * read such as new fields in the metadata.
+   * Indicates which parquet-format release version defines the
+   * forward-incompatible features required to read this file. Forward-incompatible
+   * features include those the reader must support, such as new encodings. They
+   * do not include features which are purely optional to read, such as new
+   * fields in the metadata.
    *
    * For example, a file using features introduced in parquet-format 2.8 such as
    * BYTE_STREAM_SPLIT encoding should set format_major_version to `2` and
    * format_minor_version to `8`.
    *
-   * Note: parquet-format does not follow semantic versioning, and
-   * the same format_major_version contain forward incompatible features. For
-   * example, parquet-format 2.4 introduced the ZSTD compression.
-   * See the documentation[1] for more details on the versioning
-   * scheme and the features added in each version.
+   * Note: parquet-format does not follow semantic versioning, and releases
+   * sharing the same format_major_version can introduce forward-incompatible
+   * features. For example, parquet-format 2.4 introduced ZSTD compression.
+   * See the documentation[1] for more details on the versioning scheme and the
+   * features added in each version.
    *
    * [1]: http://parquet.apache.org/docs/file-format/versions
    */
-  10: required i32 format_major_version
+  10: optional i32 format_major_version
 
   /** parquet-format Minor Version
    *
-   * The minor version of the parquet-format release which defines the forward
-   * incompatible features which must be supported to read this file. See the
-   * documentation for format_major_version for more details.
+   * The minor version of the parquet-format release which defines the
+   * forward-incompatible features that must be supported to read this file. See
+   * the documentation for format_major_version for more details.
    */
-  10: required i32 format_minor_version
-
+  11: optional i32 format_minor_version
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
    * The schema is represented as a tree with a single root.  The nodes of the tree
