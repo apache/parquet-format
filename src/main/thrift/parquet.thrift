@@ -1387,10 +1387,10 @@ struct FileMetaData {
    * Note: parquet-format does not follow semantic versioning, and
    * the same format_major_version contain forward incompatible features. For
    * example, parquet-format 2.4 introduced the ZSTD compression.
+   * See the documentation[1] for more details on the versioning
+   * scheme and the features added in each version.
    *
-   * Open questions:
-   * * Guidance for writing with maximum compatibility (set `version` to 2 and then use major/minor version?)
-   * * Should new versions of parquet-format require writers to set this field? 
+   * [1]: http://parquet.apache.org/docs/file-format/versions
    */
   10: required i32 format_major_version
 
