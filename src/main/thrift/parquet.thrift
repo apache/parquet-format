@@ -1363,15 +1363,45 @@ union EncryptionAlgorithm {
  * Description for file metadata
  */
 struct FileMetaData {
-  /** Version of this file
+  /** Version of this file (DEPRECATED)
+    * This field has been historically used in an inconsistent way, with some writers
+    * writing "1" and some writing "2". This field is now deprecated and should not be used.
     *
-    * As of December 2025, there is no agreed upon consensus of what constitutes
-    * version 2 of the file. For maximum compatibility with readers, writers should
-    * always populate "1" for version. For maximum compatibility with writers,
-    * readers should accept "1" and "2" interchangeably.  All other versions are
-    * reserved for potential future use-cases.
+    * Use format_major_version and format_minor_version instead to indicate the
+    * features that must be supported to read this file.
     */
   1: required i32 version
+
+  /** parquet-format Major Version
+   *
+   * Which parquet-format release version defines the forward incompatible
+   * features required to read this file. Forward incompatible feature include
+   * those which the reader must support such as new encodings. Forward
+   * incompatible features do not include features which are purely optional to
+   * read such as new fields in the metadata.
+   *
+   * For example, a file using features introduced in parquet-format 2.8 such as
+   * BYTE_STREAM_SPLIT encoding should set format_major_version to `2` and
+   * format_minor_version to `8`.
+   *
+   * Note: parquet-format does not follow semantic versioning, and
+   * the same format_major_version contain forward incompatible features. For
+   * example, parquet-format 2.4 introduced the ZSTD compression.
+   *
+   * Open questions:
+   * * Guidance for writing with maximum compatibility (set `version` to 2 and then use major/minor version?)
+   * * Should new versions of parquet-format require writers to set this field? 
+   */
+  10: required i32 format_major_version
+
+  /** parquet-format Minor Version
+   *
+   * The minor version of the parquet-format release which defines the forward
+   * incompatible features which must be supported to read this file. See the
+   * documentation for format_major_version for more details.
+   */
+  10: required i32 format_minor_version
+
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
    * The schema is represented as a tree with a single root.  The nodes of the tree
