@@ -1120,9 +1120,11 @@ union ColumnOrder {
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
    * (+) While the INT96 type has been deprecated, at the time of writing it is
-   *     still used in many legacy systems. It is recommended that writers use
-   *     INT96_TIMESTAMP_ORDER for this type. If TYPE_ORDER is used for an INT96
-   *     column, readers should ignore statistics for that column.
+   *     still used in many legacy systems. It is optional for writers to emit
+   *     statistics for INT96 columns. Writers that emit stats for such columns
+   *     should use the INT96_TIMESTAMP_ORDER for this type. If TYPE_ORDER is
+   *     used for an INT96 column, readers should ignore statistics for that
+   *     column.
    *
    * (*) Because TYPE_ORDER is ambiguous for floating point types due to
    *     underspecified handling of NaN and -0/+0, it is recommended that writers
