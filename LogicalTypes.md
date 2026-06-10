@@ -654,29 +654,33 @@ may also be used for projection:
 | `offset` | INT64  | No       |
 | `etag`   | STRING | No       |
 
-#### path
+#### Fields
+
+##### path
 
 An opaque path string to the referenced file (e.g., `s3://bucket/file.jpg`). No special
 encoding (e.g., URI encoding) is applied. This is the only required field.
 
-#### size
+##### size
 
 The length of the content in bytes. Must be zero or a positive integer if provided.
-A value of 0 indicates an empty file.
+A value of 0 indicates an empty file. If not provided, the length of the referenced
+content is unknown and the entirety of the content can be read.
 
-#### offset
+##### offset
 
-A byte offset for range reads. If not provided, readers must treat the value as 0.
-If provided and non-zero, readers must seek to this offset and read `size` bytes.
+A byte offset indicating the start of a content slice within the referenced file.
+If not provided, readers must treat the value as 0.
+If provided and non-zero, readers must seek to this offset and read `size` bytes to retrieve the referenced data.
 If `offset` is provided, `size` must also be provided.
 
-#### etag
+##### etag
 
 An eTag value provided by the storage system (e.g., from S3 or Azure Blob Storage).
 Can be used to detect whether the referenced file has been updated. If the reference
 points to a byte range within a file, the eTag applies to the entire file.
 
-Validation rules for readers and writers:
+#### Validation
 
 * The `path` field is required and must be present. Readers must reject a `FILE`-annotated
   group that does not contain `path`.
