@@ -87,7 +87,7 @@ The `version` is a 4-bit value that must always contain the value `1`.
 `sorted_strings` is a 1-bit value indicating whether dictionary strings are sorted and unique.
 `offset_size_minus_one` is a 2-bit value providing the number of bytes per dictionary size and offset field.
 The actual number of bytes, `offset_size`, is `offset_size_minus_one + 1`.
-Bit 5 (marked `R`) is reserved; it must be set to 0 by writers and ignored by readers.
+Bit 5 (marked `R`) is reserved; it must be ignored by readers.
 
 The entire metadata is encoded as the following diagram shows:
 ```
@@ -207,7 +207,7 @@ value_header    | R |   |       |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1` and `field_id_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
-Bit 5 (marked `R`) is reserved; it must be set to 0 by writers and ignored by readers.
+Bit 5 (marked `R`) is reserved; it must be ignored by readers.
 
 #### Value Header for Array (`basic_type`=3)
 
@@ -225,7 +225,7 @@ value_header    |    RRR    |   |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
-Bits 5-3 (marked `RRR`) are reserved; they must be set to 0 by writers and ignored by readers.
+Bits 5-3 (marked `RRR`) are reserved; they must be ignored by readers.
 
 ### Value Data
 
