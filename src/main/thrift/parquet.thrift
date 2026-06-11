@@ -1207,7 +1207,7 @@ union ColumnOrder {
    * must be compared as follows:
    * - Compare the last 4 bytes (days) as a little-endian 32-bit signed integer
    * - If equal last 4 bytes, compare the first 8 bytes (nanos) as a
-   *   little-endinan 64-bit signed integer.
+   *   little-endian 64-bit signed integer.
    */
   3: Int96TimestampOrder INT96_TIMESTAMP_ORDER;
 }
