@@ -100,8 +100,8 @@ Shredded values must use the following Parquet types:
 | timestamptz(9)              | INT64                             | TIMESTAMP(true, NANOS)   |
 | timestampntz(6)             | INT64                             | TIMESTAMP(false, MICROS) |
 | timestampntz(9)             | INT64                             | TIMESTAMP(false, NANOS)  |
-| binary                      | BINARY                            |                          |
-| string                      | BINARY                            | STRING                   |
+| binary                      | BYTE_ARRAY                        |                          |
+| string                      | BYTE_ARRAY                        | STRING                   |
 | uuid                        | FIXED_LEN_BYTE_ARRAY[len=16]      | UUID                     |
 | array                       | GROUP; see Arrays below           | LIST                     |
 | object                      | GROUP; see Objects below          |                          |
