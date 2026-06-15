@@ -77,7 +77,7 @@ The encoded metadata always starts with a header byte.
 ```
              7     6  5   4  3             0
             +-------+---+---+---------------+
-header      |       |   |   |    version    |
+header      |       | R |   |    version    |
             +-------+---+---+---------------+
                 ^         ^
                 |         +-- sorted_strings
@@ -87,6 +87,7 @@ The `version` is a 4-bit value that must always contain the value `1`.
 `sorted_strings` is a 1-bit value indicating whether dictionary strings are sorted and unique.
 `offset_size_minus_one` is a 2-bit value providing the number of bytes per dictionary size and offset field.
 The actual number of bytes, `offset_size`, is `offset_size_minus_one + 1`.
+Bit 5 (marked `R`) is reserved; it must be ignored by readers.
 
 The entire metadata is encoded as the following diagram shows:
 ```
@@ -129,7 +130,7 @@ The grammar for encoded metadata is as follows
 metadata: <header> <dictionary_size> <dictionary>
 header: 1 byte (<version> | <sorted_strings> << 4 | (<offset_size_minus_one> << 6))
 version: a 4-bit version ID. Currently, must always contain the value 1
-sorted_strings: a 1-bit value indicating whether metadata strings are sorted
+sorted_strings: a 1-bit value indicating whether dictionary strings are sorted and unique
 offset_size_minus_one: 2-bit value providing the number of bytes per dictionary size and offset field.
 dictionary_size: `offset_size` bytes. unsigned little-endian value indicating the number of strings in the dictionary
 dictionary: <offset>* <bytes>
@@ -141,7 +142,7 @@ Notes:
 - Offsets are relative to the start of the `bytes` array.
 - The length of the ith string can be computed as `offset[i+1] - offset[i]`.
 - The offset of the first string is always equal to 0 and is therefore redundant. It is included in the spec to simplify in-memory-processing.
-- `offset_size_minus_one` indicates the number of bytes per `dictionary_size` and `offset` entry. I.e. a value of 0 indicates 1-byte offsets, 1 indicates 2-byte offsets, 2 indicates 3 byte offsets and 3 indicates 4-byte offsets.
+- `offset_size_minus_one` indicates the number of bytes per `dictionary_size` and `offset` entry. I.e. a value of 0 indicates 1-byte offsets, 1 indicates 2-byte offsets, 2 indicates 3-byte offsets and 3 indicates 4-byte offsets.
 - If `sorted_strings` is set to 1, strings in the dictionary must be unique and sorted in lexicographic order. If the value is set to 0, readers may not make any assumptions about string order or uniqueness.
 
 
@@ -195,7 +196,7 @@ When `basic_type` is `2`, `value_header` is made up of `field_offset_size_minus_
 ```
                   5   4  3     2 1     0
                 +---+---+-------+-------+
-value_header    |   |   |       |       |
+value_header    | R |   |       |       |
                 +---+---+-------+-------+
                       ^     ^       ^
                       |     |       +-- field_offset_size_minus_one
@@ -206,6 +207,7 @@ value_header    |   |   |       |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1` and `field_id_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
+Bit 5 (marked `R`) is reserved; it must be ignored by readers.
 
 #### Value Header for Array (`basic_type`=3)
 
@@ -213,7 +215,7 @@ When `basic_type` is `3`, `value_header` is made up of `field_offset_size_minus_
 ```
                  5         3  2  1     0
                 +-----------+---+-------+
-value_header    |           |   |       |
+value_header    |    RRR    |   |       |
                 +-----------+---+-------+
                               ^     ^
                               |     +-- field_offset_size_minus_one
@@ -223,6 +225,7 @@ value_header    |           |   |       |
 The actual number of bytes is computed as `field_offset_size_minus_one + 1`.
 `is_large` is a 1-bit value that indicates how many bytes are used to encode the number of elements.
 If `is_large` is `0`, 1 byte is used, and if `is_large` is `1`, 4 bytes are used.
+Bits 5-3 (marked `RRR`) are reserved; they must be ignored by readers.
 
 ### Value Data
 
@@ -367,9 +370,9 @@ primitive_val: see table for binary representation
 short_string_val: UTF-8 encoded bytes
 object_val: <num_elements> <field_id>* <field_offset>* <fields>
 array_val: <num_elements> <field_offset>* <fields>
-num_elements: a 1 or 4 byte unsigned little-endian value (depending on is_large in <object_header>/<array_header>)
-field_id: a 1, 2, 3 or 4 byte unsigned little-endian value (depending on field_id_size_minus_one in <object_header>), indexing into the dictionary
-field_offset: a 1, 2, 3 or 4 byte unsigned little-endian value (depending on field_offset_size_minus_one in <object_header>/<array_header>), providing the offset in bytes within fields
+num_elements: a 1- or 4-byte unsigned little-endian value (depending on is_large in <object_header>/<array_header>)
+field_id: a 1-, 2-, 3-, or 4-byte unsigned little-endian value (depending on field_id_size_minus_one in <object_header>), indexing into the dictionary
+field_offset: a 1-, 2-, 3-, or 4-byte unsigned little-endian value (depending on field_offset_size_minus_one in <object_header>/<array_header>), providing the offset in bytes within fields
 fields: <value>*
 ```
 
@@ -380,15 +383,19 @@ The last entry is the offset that is one byte past the last field (i.e. the tota
 All offsets are relative to the first byte of the first field in the object/array.
 
 `field_id_size_minus_one` and `field_offset_size_minus_one` indicate the number of bytes per field ID/offset.
-For example, a value of 0 indicates 1-byte IDs, 1 indicates 2-byte IDs, 2 indicates 3 byte IDs and 3 indicates 4-byte IDs.
-The `is_large` flag for arrays and objects is used to indicate whether the number of elements is indicated using a one or four byte value.
+For example, a value of 0 indicates 1-byte IDs, 1 indicates 2-byte IDs, 2 indicates 3-byte IDs and 3 indicates 4-byte IDs.
+The `is_large` flag for arrays and objects is used to indicate whether the number of elements is indicated using a one- or four-byte value.
 When more than 255 elements are present, `is_large` must be set to true.
 It is valid for an implementation to use a larger value than necessary for any of these fields (e.g. `is_large` may be true for an object with less than 256 elements).
 
 The "short string" basic type may be used as an optimization to fold string length into the type byte for strings less than 64 bytes.
 It is semantically identical to the "string" primitive type.
 
-The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(val)) + 1`.
+The Decimal type contains a scale, but no precision. The implied precision of a decimal value is `floor(log_10(|val|)) + 1` (and `1` when `val` is `0`).
+
+Note: Decimal values in the Variant binary encoding use little-endian byte order for the
+unscaled value. This differs from Parquet's DECIMAL logical type which uses big-endian
+two's complement encoding for `BYTE_ARRAY` and `FIXED_LEN_BYTE_ARRAY` physical types.
 
 ## Encoding types
 *Variant basic types*
@@ -407,20 +414,20 @@ The Decimal type contains a scale, but no precision. The implied precision of a 
 | NullType             | null                        | `0`     | UNKNOWN                     | none                                                                                                                |
 | Boolean              | boolean (True)              | `1`     | BOOLEAN                     | none                                                                                                                |
 | Boolean              | boolean (False)             | `2`     | BOOLEAN                     | none                                                                                                                |
-| Exact Numeric        | int8                        | `3`     | INT(8, signed)              | 1 byte                                                                                                              |
-| Exact Numeric        | int16                       | `4`     | INT(16, signed)             | 2 byte little-endian                                                                                                |
-| Exact Numeric        | int32                       | `5`     | INT(32, signed)             | 4 byte little-endian                                                                                                |
-| Exact Numeric        | int64                       | `6`     | INT(64, signed)             | 8 byte little-endian                                                                                                |
+| Exact Numeric        | int8                        | `3`     | INT(8, true)                | 1-byte                                                                                                              |
+| Exact Numeric        | int16                       | `4`     | INT(16, true)               | 2-byte little-endian                                                                                                |
+| Exact Numeric        | int32                       | `5`     | INT(32, true)               | 4-byte little-endian                                                                                                |
+| Exact Numeric        | int64                       | `6`     | INT(64, true)               | 8-byte little-endian                                                                                                |
 | Double               | double                      | `7`     | DOUBLE                      | IEEE little-endian                                                                                                  |
-| Exact Numeric        | decimal4                    | `8`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
-| Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
-| Exact Numeric        | decimal16                   | `10`    | DECIMAL(precision, scale)   | 1 byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
-| Date                 | date                        | `11`    | DATE                        | 4 byte little-endian                                                                                                |
+| Exact Numeric        | decimal4                    | `8`     | DECIMAL(precision, scale)   | 1-byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Exact Numeric        | decimal8                    | `9`     | DECIMAL(precision, scale)   | 1-byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Exact Numeric        | decimal16                   | `10`    | DECIMAL(precision, scale)   | 1-byte scale in range [0, 38], followed by little-endian unscaled value (see decimal table)                         |
+| Date                 | date                        | `11`    | DATE                        | 4-byte little-endian                                                                                                |
 | Timestamp            | timestamp                   | `12`    | TIMESTAMP(isAdjustedToUTC=true, MICROS)     | 8-byte little-endian                                                                                |
 | TimestampNTZ         | timestamp without time zone | `13`    | TIMESTAMP(isAdjustedToUTC=false, MICROS)    | 8-byte little-endian                                                                                |
 | Float                | float                       | `14`    | FLOAT                       | IEEE little-endian                                                                                                  |
-| Binary               | binary                      | `15`    | BINARY                      | 4 byte little-endian size, followed by bytes                                                                        |
-| String               | string                      | `16`    | STRING                      | 4 byte little-endian size, followed by UTF-8 encoded bytes                                                          |
+| Binary               | binary                      | `15`    | BYTE_ARRAY                  | 4-byte little-endian size, followed by bytes                                                                        |
+| String               | string                      | `16`    | STRING                      | 4-byte little-endian size, followed by UTF-8 encoded bytes                                                          |
 | TimeNTZ              | time without time zone      | `17`    | TIME(isAdjustedToUTC=false, MICROS)          | 8-byte little-endian                                                                               |
 | Timestamp            | timestamp with time zone    | `18`    | TIMESTAMP(isAdjustedToUTC=true, NANOS)       | 8-byte little-endian                                                                               |
 | TimestampNTZ         | timestamp without time zone | `19`    | TIMESTAMP(isAdjustedToUTC=false, NANOS)      | 8-byte little-endian                                                                               |
