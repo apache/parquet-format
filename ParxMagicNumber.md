@@ -5,7 +5,7 @@ that accompany the footer.
 
 ## Motivation 
 
-Most parts of the parquet specification lend themselves naturally to comptability checks 
+Most parts of the parquet specification lend themselves naturally to compatibility checks
 when a new feature is added (e.g. encodings and compression values have an enum value added) 
 and fail appropriately.
 However, some semantic changes or footer changes are impossible to communicate appropriately 
