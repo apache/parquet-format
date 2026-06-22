@@ -880,8 +880,13 @@ struct ColumnMetaData {
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
-  3: required list<string> path_in_schema
+  /** Path in schema
+   *
+   *  Made optional in parquet-format 3.0. If not written
+   *  PARX magic number must be used (Bit 1 in in feature flag bitmap
+   *  must be set).
+   **/
+  3: optional list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
