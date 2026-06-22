@@ -111,7 +111,9 @@ The Parquet PMC aims to do releases of the format package only as needed when
 new features are introduced. If multiple new features are being proposed
 simultaneously some features might be consolidated into the same release.
 Guidance is provided below on when implementations should enable features introduced
-by new specification versions.
+by new specification versions. If there is contributor bandwidth forwards-compatible
+features may be backported to previous major versions of the specification and released
+as a new minor version.
 
 The Parquet Format versioning follows [SemVer](http://semver.org/) from release
 3.0 onwards. Every forward incompatible change added to the specification requires
