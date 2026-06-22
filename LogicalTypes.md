@@ -635,7 +635,76 @@ The type has two type parameters:
 
 The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
-are found during reading, they must be ignored. 
+are found during reading, they must be ignored.
+
+### FILE
+
+`FILE` annotates a group that represents a reference to an external file, along with
+the minimum metadata required to read it. It is intended for use cases such as
+storing file inventories, manifests, and unstructured data references (e.g., images
+or audio files stored in object storage).
+
+The annotated group must contain the following fields, identified by name. Field IDs
+may also be used for projection:
+
+| Field    | Type   | Required |
+|----------|--------|----------|
+| `path`   | STRING | Yes      |
+| `size`   | INT64  | No       |
+| `offset` | INT64  | No       |
+| `etag`   | STRING | No       |
+
+#### Fields
+
+##### path
+
+An opaque path string to the referenced file (e.g., `s3://bucket/file.jpg`). No special
+encoding (e.g., URI encoding) is applied. This is the only required field.
+
+##### size
+
+The length of the content in bytes. Must be zero or a positive integer if provided.
+A value of 0 indicates an empty file. If not provided, the length of the referenced
+content is unknown and the entirety of the content can be read.
+
+##### offset
+
+A byte offset indicating the start of a content slice within the referenced file.
+If not provided, readers must treat the value as 0.
+If provided and non-zero, readers must seek to this offset and read `size` bytes to retrieve the referenced data.
+If `offset` is provided, `size` must also be provided.
+
+##### etag
+
+An eTag value provided by the storage system (e.g., from S3 or Azure Blob Storage).
+Can be used to detect whether the referenced file has been updated. If the reference
+points to a byte range within a file, the eTag applies to the entire file.
+
+#### Validation
+
+* The `path` field is required and must be present. Readers must reject a `FILE`-annotated
+  group that does not contain `path`.
+* If `offset` is present and non-zero, `size` must also be provided.
+* Additional metadata about the file (e.g., content type, modification timestamp) should
+  be stored adjacent to this struct by engines or table formats, not inside it.
+
+Statistics may be collected for the individual fields of a `FILE`-annotated group
+according to the sort order of each field's logical type.
+
+This is an example `FILE`-annotated group in Parquet:
+
+```
+optional group my_file (FILE) {
+  required binary path (STRING);
+  optional int64 size;
+  optional int64 offset;
+  optional binary etag (STRING);
+}
+```
+
+*Compatibility*
+
+`FILE` has no corresponding `ConvertedType`.
 
 ## Nested Types
 
