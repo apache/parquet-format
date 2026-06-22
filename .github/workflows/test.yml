@@ -17,7 +17,17 @@
 
 name: Test
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/images/**'
+      - 'logo/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/images/**'
+      - 'logo/**'
 
 jobs:
   build:
