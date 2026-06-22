@@ -143,16 +143,16 @@ For the purposes of this discussion we classify features into the following buck
    unambiguously determine that they cannot properly read the file. There are
    two mechanisms for providing this functionality:
      1. Adding values to existing enums/unions (e.g. Sort Order,
-        encodings, compression) are all covered by this mechanism.
-     2. Reserving a new bit in the [PARX](ParxMagicNumber.md) footer feature bitmap for other
+        encodings, compression) is covered by this mechanism.
+     2. Reserving a new bit in the [PARX](ParxMagicNumber.md) footer feature bitmap covers other
         structural changes that an older reader would not be able to accept.
 
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
 they are introduced. It is expected that implementations will provide a configuration
-mechanism to users to enable features. It is recommended that implementations provide
+mechanism for users to enable features. It is recommended that implementations provide
 at least a way to enable all relevant features given a specification version
-(e.g. major and minor version). In addition, implementations might also choose to
+(e.g. major and minor version). In addition, implementations might choose to
 enable features at a finer-grained level, with feature flags initially defaulted to "off".
 
 Some amount of lead time is desirable to ensure a critical
@@ -171,9 +171,9 @@ recommendations for managing the default specification version used for writing:
    enablement until 1 year after the parquet-java implementation for that format
    version is released.
 
-3. Specifications with major version upgrades should not be turned on by default
+3. Major version upgrades should not be enabled by default
    until 2 years after the parquet-java implementation for the specification has been
-   released. It is recommended that changing the default value for a major version bump
+   released. It is recommended that changing the default format version for a major version bump
    be clearly advertised to consumers (e.g. via
    a major version release if using Semantic Versioning, or highlighted in
    release notes).
@@ -192,7 +192,7 @@ encourage earlier adoption of new features when an organization using Parquet
 can guarantee that all readers of the parquet files they produce can read a new
 feature.
 
-After changing defaults implementations are encouraged to keep a configuration
+After changing defaults, implementations are encouraged to keep a configuration
 mechanism to specify a prior format version or turn off specific features.
 A recommendation for full deprecation will be made in a future
 iteration of this document.

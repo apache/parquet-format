@@ -17,7 +17,7 @@ a new extensible mechanism for readers to detect these changes and fail accordin
 
 * Provide a mechanism to only introduce a single new magic number for parquet that can
   last at least a decade.
-* Provide integrity checks for the for the footer.
+* Provide integrity checks for the footer.
 * Provide the ability for readers to have a granular understanding of structural and semantic
   backward incompatible features that are required to read a particular file.
 
@@ -58,13 +58,16 @@ All multi-byte integer fields are **little-endian**.
 ## Feature Flags
 
 The `flags` field is a 32-bit bitfield. A reader **must** reject any file whose `flags` field
-contains bits not either not recognized or not supported, because unknown flags may imply structural changes
+contains bits that are not recognized or not supported, because unknown flags may imply structural changes
 to the metadata or semantic changes to the file layout that the reader cannot properly interpret.
+
+The PARX format is independent of the `version` field in `FileMetaData`; a file may use the PARX
+magic number regardless of which specification version its metadata declares.
 
 | Bit Index| Name                    | Description                                                                                                 |
 |----------|-------------------------|-------------------------------------------------------------------------------------------------------------|
 | 0        | `ENCRYPTED_FOOTER`      | The `FileMetaData` block is encrypted (equivalent to the `PARE` format).                                    |
-| 1        | `OMIT_PATH_IN_SCHEMA`   | Column `path_in_schema` fields are omitted from ColumnChunk metadata (this was a previously required field).|  
+| 1        | `PATH_IN_SCHEMA_OMITTED`   | Column `path_in_schema` fields are omitted from ColumnChunk metadata (this was a previously required field).|
 
 
 The zero index is least signficant bit in the field.
@@ -73,12 +76,14 @@ All other bits are reserved and must be zero.
 
 ## Integrity Check
 
-The `crc32` field holds a CRC-32 (ISO 3309 / ITU-T V.42 polynomial, the same used for page level CRC values) 
+The `crc32` field holds a CRC-32 (ISO 3309 / ITU-T V.42 polynomial, the same used for page level CRC values)
 computed over the following byte sequence, in order:
 
 1. The raw `FileMetaData`/`Footer` bytes (i.e. the `metadata_len` bytes immediately before the 16-byte footer tail)
 2. The first 8 bytes of the footer tail (metadata_len and flags bitmap)
 
-A reader should verify the checksum **after** validating the feature flags (in the rare case that feature flag indicates
-a change in the fixed size tail of the file). 
+When `ENCRYPTED_FOOTER` (bit 0) is set, the CRC is computed over the footer bytes **as they appear in the
+file** (i.e. the encrypted bytes). The CRC itself is always stored unencrypted in the footer tail.
+A reader should verify the checksum **before** decrypting the footer, and **after** validating the feature
+flags (in the rare case that a feature flag indicates a change in the fixed size tail of the file).
 

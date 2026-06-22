@@ -883,8 +883,8 @@ struct ColumnMetaData {
   /** Path in schema
    *
    *  Made optional in parquet-format 3.0. If not written
-   *  PARX magic number must be used (Bit 1 in in feature flag bitmap
-   *  must be set).
+   *  PARX magic number must be used (PATH_IN_SCHEMA_OMITTED, bit 1 in the
+   *  feature flag bitmap, must be set).
    **/
   3: optional list<string> path_in_schema
 
