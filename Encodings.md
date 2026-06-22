@@ -38,13 +38,13 @@ For details on current implementation status, see the [Implementation Status](ht
 | [Delta-length byte array](#DELTALENGTH)          | DELTA_LENGTH_BYTE_ARRAY = 6                               | BYTE_ARRAY                                        |
 | [Delta Strings](#DELTASTRING)                    | DELTA_BYTE_ARRAY = 7                                      | BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY                  |
 | [Byte Stream Split](#BYTESTREAMSPLIT)            | BYTE_STREAM_SPLIT = 9                                     | INT32, INT64, FLOAT, DOUBLE, FIXED_LEN_BYTE_ARRAY |
+| [ALP](#ALP)                                      | ALP = 10                                                  | FLOAT, DOUBLE                                     |
 
 ### Deprecated Encodings
 
 | Encoding type                         | Encoding enum  |
 | ------------------------------------- | -------------- |
 | [Bit-packed (Deprecated)](#BITPACKED) | BIT_PACKED = 4 |
-
 
 <a name="PLAIN"></a>
 ### Plain: (PLAIN = 0)
@@ -392,3 +392,409 @@ After applying the transformation, the data has the following representation:
 ```
 Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
 ```
+
+<a name="ALP"></a>
+### Adaptive Lossless floating-Point: (ALP = 10)
+
+Supported Types: FLOAT, DOUBLE
+
+This encoding is adapted from the paper
+["ALP: Adaptive Lossless floating-Point Compression"](https://dl.acm.org/doi/10.1145/3626717)
+by Afroozeh and Boncz (SIGMOD 2024).
+
+ALP works by converting floating-point values to integers using decimal scaling
+(controlled by an *exponent* `e` and *factor* `f`), then applying Frame of
+Reference (FOR) encoding and bit-packing. Values that cannot be losslessly
+converted are stored separately as *exceptions*. The encoding achieves high
+compression for decimal-like floating-point data (e.g., monetary values, sensor
+readings) while remaining fully lossless. Each value is encoded independently,
+enabling random access to individual values and parallel encode/decode.
+
+#### Overview
+
+ALP encoding consists of a page-level header followed by an offset array and one
+or more encoded vectors (batches of values). Each vector contains up to
+`vector_size` elements (default 1024).
+
+```
++-------------+-----------------------------+--------------------------------------+
+|   Header    |        Offset Array         |            Vector Data               |
+|  (7 bytes)  |   (num_vectors * 4 bytes)   |            (variable)                |
++-------------+------+------+-----+---------+----------+----------+-----+----------+
+| Page Header | off0 | off1 | ... | off N-1 | Vector 0 | Vector 1 | ... | Vec N-1  |
+|  (7 bytes)  | (4B) | (4B) |     |  (4B)   |(variable)|(variable)|     |(variable)|
++-------------+------+------+-----+---------+----------+----------+-----+----------+
+```
+
+The compression pipeline for each vector is:
+
+```
+                    Input: float/double array
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  1. CHOOSE PARAMETERS                                    |
+    |     Select (exponent, factor) pair for this vector       |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  2. DECIMAL ENCODING                                     |
+    |     encoded[i] = fast_round(value[i] * 10^e * 10^(-f))  |
+    |     Detect exceptions where decode(encode(v)) != v       |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  3. FRAME OF REFERENCE (FOR)                             |
+    |     min_val = min(encoded[])                             |
+    |     delta[i] = encoded[i] - min_val                      |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  4. BIT PACKING                                          |
+    |     bit_width = ceil(log2(max_delta + 1))                |
+    |     Pack each delta into bit_width bits                  |
+    +----------------------------------------------------------+
+                              |
+                              v
+                   Output: Serialized vector bytes
+```
+
+#### Page Layout
+
+##### Header (7 bytes)
+
+All multi-byte values are stored in little-endian order.
+
+```
+ Byte:    0              1               2              3    4    5    6
+       +----------------+---------------+--------------+----+----+----+----+
+       | compression    | integer       | log_vector   |     num_elements  |
+       | _mode          | _encoding     | _size        |     (int32 LE)    |
+       +----------------+---------------+--------------+----+----+----+----+
+```
+
+| Offset | Field | Size | Type | Description |
+|--------|-------|------|------|-------------|
+| 0 | compression_mode | 1 byte | uint8 | Compression mode (0 = ALP). Reserved for future variants (e.g., ALP-RD). |
+| 1 | integer_encoding | 1 byte | uint8 | Integer encoding (must be 0 = FOR + bit-packing) |
+| 2 | log_vector_size | 1 byte | uint8 | log2(vector\_size). Must be in the inclusive range \[3, 15\]. Recommended default: 10 (vector size 1024) |
+| 3 | num_elements | 4 bytes | int32 | Total number of floating-point values in the page |
+
+The number of vectors is `ceil(num_elements / vector_size)`. The last vector may
+contain fewer than `vector_size` elements.
+
+**Note:** The number of elements per vector is NOT stored in the header — it is
+derived: `vector_size` for all vectors except the last, which may be smaller.
+
+##### Offset Array
+
+Immediately following the header is an array of `num_vectors` little-endian uint32
+values. Each offset gives the byte position of the corresponding vector's data,
+measured from the start of the offset array itself.
+
+The first offset always equals `num_vectors * 4` (pointing just past the offset array).
+Each subsequent offset equals the previous offset plus the stored size of the
+previous vector. No padding is inserted between vectors.
+
+##### Vector Format
+
+Each vector is self-describing and contains the encoding parameters, FOR metadata,
+bit-packed encoded values, and exception data.
+
+```
++-------------------+-----------------+-------------------+---------------------+-------------------+
+|      AlpInfo      |     ForInfo     |   PackedValues    | ExceptionPositions  | ExceptionValues   |
+|     (4 bytes)     | (5B or 9B)      |    (variable)     |     (variable)      |    (variable)     |
++-------------------+-----------------+-------------------+---------------------+-------------------+
+```
+
+Vector header sizes:
+| Type   | AlpInfo | ForInfo | Total Header |
+|--------|---------|---------|--------------|
+| FLOAT  | 4 bytes | 5 bytes | 9 bytes      |
+| DOUBLE | 4 bytes | 9 bytes | 13 bytes     |
+
+Data section sizes:
+| Section             | Size Formula                | Description                  |
+|---------------------|-----------------------------|------------------------------|
+| PackedValues        | ceil(num\_elements\_in\_vector * bit\_width / 8) | Bit-packed delta values      |
+| ExceptionPositions  | num\_exceptions * 2 bytes   | uint16 indices of exceptions |
+| ExceptionValues     | num\_exceptions * sizeof(encoded type) (float=4 and double=8) | Original float/double values |
+
+###### AlpInfo (4 bytes, both types)
+
+```
+ Byte:    0           1          2       3
+       +----------+----------+---------+---------+
+       | exponent |  factor  |  num_exceptions   |
+       |  (uint8) | (uint8)  |   (uint16 LE)     |
+       +----------+----------+---------+---------+
+```
+
+| Offset | Field | Size | Type | Description |
+|--------|-------|------|------|-------------|
+| 0 | exponent | 1 byte | uint8 | Power-of-10 exponent *e*. Range: \[0, 10\] for FLOAT, \[0, 18\] for DOUBLE. |
+| 1 | factor | 1 byte | uint8 | Power-of-10 factor *f*. Range: \[0, *e*\]. |
+| 2 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
+
+###### ForInfo for FLOAT (5 bytes)
+
+```
+ Byte:    0    1    2    3       4
+       +----+----+----+----+-----------+
+       | frame_of_reference | bit_width |
+       |    (int32 LE)      |  (uint8)  |
+       +----+----+----+----+-----------+
+```
+
+| Offset | Field | Size | Type | Description |
+|--------|-------|------|------|-------------|
+| 0 | frame_of_reference | 4 bytes | int32 | Minimum encoded integer in the vector |
+| 4 | bit_width | 1 byte | uint8 | Bits per packed value. Range: \[0, 32\]. |
+
+###### ForInfo for DOUBLE (9 bytes)
+
+```
+ Byte:    0    1    2    3    4    5    6    7       8
+       +----+----+----+----+----+----+----+----+-----------+
+       |          frame_of_reference           | bit_width |
+       |              (int64 LE)               |  (uint8)  |
+       +----+----+----+----+----+----+----+----+-----------+
+```
+
+| Offset | Field | Size | Type | Description |
+|--------|-------|------|------|-------------|
+| 0 | frame_of_reference | 8 bytes | int64 | Minimum encoded long in the vector |
+| 8 | bit_width | 1 byte | uint8 | Bits per packed value. Range: \[0, 64\]. |
+
+###### PackedValues
+
+The FOR-encoded deltas, bit-packed into `ceil(num_elements_in_vector * bit_width / 8)` bytes.
+Values are bit-packed using the same LSB-first packing order as the
+[RLE/Bit-Packing Hybrid](#RLE) encoding.
+
+If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
+integers are equal to `frame_of_reference`).
+
+###### ExceptionPositions
+
+An array of `num_exceptions` little-endian uint16 values, each giving
+the 0-based index within the vector of an exception value.
+
+###### ExceptionValues
+
+An array of `num_exceptions` values in the original floating-point type
+(4 bytes little-endian IEEE 754 for FLOAT, 8 bytes for DOUBLE), stored in
+the same order as the corresponding positions.
+
+#### Encoding
+
+##### Encoding Formula
+
+```
++-------------------------------------------------------------------+
+|                                                                   |
+|   encoded = fast_round( value  *  10^e  *  10^(-f) )             |
+|                                                                   |
+|   decoded = encoded  *  10^f  *  10^(-e)                          |
+|                                                                   |
++-------------------------------------------------------------------+
+```
+
+The encoding uses two separate multiplications (not a single multiplication by
+`10^(e-f)`, and not division) to ensure that implementations produce identical
+floating-point results. All implementations MUST use the exact same floating-point
+arithmetic and power-of-10 constants to guarantee cross-language interoperability.
+The power-of-10 constants MUST be the correctly-rounded IEEE 754 values of the
+decimal literals `1e0`, `1e1`, ..., `1e18` and `1e-1`, `1e-2`, ..., `1e-18` as
+defined by the decimal-to-binary conversion in IEEE 754-2008 §5.12.2.
+Implementations MUST NOT compute these constants at runtime via `pow()` or
+equivalent functions, which are not guaranteed to be correctly rounded.
+
+##### Fast Rounding
+
+The `fast_round` function uses a "magic number" technique for branchless rounding.
+
+`fast_round(value)` is defined as follows:
+
+| Type   | Magic Number                      | Formula (value &ge; 0)           | Formula (value &lt; 0)           |
+|--------|-----------------------------------|----------------------------------|----------------------------------|
+| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
+| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
+
+The sign branching is necessary because the technique relies on `value ± magic`
+landing in a binade where the unit in the last place (ULP) equals 1.0. For
+non-negative values, `value + magic` lands in [2^23, 2^24) for floats or
+[2^52, 2^53) for doubles. For negative values, `value - magic` lands in
+[-2^24, -2^23) or [-2^53, -2^52) respectively, where ULP is also 1.0. Without
+sign branching, negative values with magnitude beyond 2^22 (float) or 2^51
+(double) fall into a lower binade where ULP &lt; 1.0, producing incorrect
+rounding and a higher exception rate.
+
+##### Parameter Selection
+
+Any valid (exponent, factor) pair produces a correct encoding — the decoder is
+agnostic to the selection strategy, and the exception mechanism guarantees
+round-trip fidelity regardless of which pair is chosen. The choice only affects
+compression ratio.
+
+The encoder SHOULD select the (exponent, factor) pair that produces the smallest
+encoded output. A simple heuristic is to minimize exception count; a more precise
+approach accounts for both bit-width and exception overhead.
+
+Valid combinations satisfy 0 &le; factor &le; exponent:
+
+| Type   | Max Exponent | Total Combinations |
+|--------|--------------|--------------------|
+| FLOAT  | 10           | 66                 |
+| DOUBLE | 18           | 190                |
+
+To avoid the cost of exhaustive search on every vector, implementations
+can use a sampling approach. One such approach, described in the paper, is to
+select up to 5 candidate (exponent, factor) combinations (the "encoding preset")
+at the start of each column chunk, and when encoding each vector,
+evaluate each candidate for the best compression.
+
+Suggested sampling parameters (from the paper):
+
+| Parameter            | Value | Description                         |
+|----------------------|-------|-------------------------------------|
+| Sample Size          | 256   | Values sampled per vector           |
+| Max Combinations     | 5     | Best (e,f) pairs kept in preset     |
+| Sample Vectors       | 8     | Vectors sampled per row group       |
+
+##### Exception Detection
+
+A value becomes an exception if any of the following is true:
+
+| Condition          | Example                    | Reason                           |
+|--------------------|----------------------------|----------------------------------|
+| NaN                | `NaN`                      | Cannot convert to integer        |
+| Infinity           | `+Inf`, `-Inf`             | Cannot convert to integer        |
+| Negative zero      | `-0.0`                     | Would become `+0.0` after encoding |
+| Out of range       | scaled value outside int32 (FLOAT) or int64 (DOUBLE) | Exceeds target integer type range |
+| Round-trip failure  | `0.333...` with e=1, f=0  | `decode(encode(v)) != v`         |
+
+Exception values at positions in the vector are replaced with a placeholder
+(the encoded integer of the first non-exception value, or 0 if all values
+are exceptions) before FOR encoding. This keeps the FOR range tight.
+
+##### Example: Frame of Reference and Bit-Packing
+
+Given the following data after decimal encoding and exception substitution:
+
+```
++---------------------------------------------------------------------+
+|  Encoded:   [ 123,  456,  789,   12 ]                               |
+|                                                                     |
+|  min_val = 12  (stored as frame_of_reference)                       |
+|                                                                     |
+|  Deltas:    [ 111,  444,  777,    0 ]   <-- all non-negative        |
++---------------------------------------------------------------------+
+```
+
+| Step                   | Formula                               | Example                     |
+|------------------------|---------------------------------------|-----------------------------|
+| 1. Find min            | min\_val = min(encoded\[\])           | 12                          |
+| 2. Compute deltas      | delta\[i\] = encoded\[i\] - min\_val | \[111, 444, 777, 0\]       |
+| 3. Calculate bit width | bit\_width = ceil(log2(max\_delta+1)) | ceil(log2(778)) = 10       |
+| 4. Pack values         | Each value uses bit\_width bits       | 4 * 10 = 40 bits = 5 bytes |
+
+Special case: If all values are identical, bit\_width = 0 and no packed data is stored.
+
+#### Decoding
+
+```
+                    Input: Serialized vector bytes
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  1. BIT UNPACKING                                        |
+    |     Unpack num_elements values at bit_width bits each    |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  2. REVERSE FOR                                          |
+    |     encoded[i] = delta[i] + frame_of_reference           |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  3. DECIMAL DECODING                                     |
+    |     value[i] = encoded[i] * 10^factor * 10^(-exponent)   |
+    +----------------------------------------------------------+
+                              |
+                              v
+    +----------------------------------------------------------+
+    |  4. PATCH EXCEPTIONS                                     |
+    |     value[pos[j]] = exception_values[j]                  |
+    +----------------------------------------------------------+
+                              |
+                              v
+                  Output: Original float/double array
+```
+
+For each vector:
+
+1. Read AlpInfo and ForInfo from the vector header.
+2. Unpack `bit_width`-bit integers from PackedValues.
+3. Add `frame_of_reference` to each unpacked integer.
+4. Decode: multiply each integer by `10^factor` then by `10^(-exponent)`.
+5. Patch exceptions: for each (position, value) in the exception arrays,
+   overwrite the decoded output at that position with the stored value.
+
+#### Worked Example: Exceptions and Non-Zero Factor
+
+**Input:** `double values[4] = { 1500.0, NaN, 2500.0, 333.3 }`
+
+Best encoding found: (exponent=4, factor=3). This means:
+`encoded = fast_round(value * 10^4 * 10^(-3)) = fast_round(value * 10)`
+
+**Step 1: Decimal Encoding**
+
+| Index | Value   | value * 10^4 * 10^(-3) | Rounded | Decoded: rounded * 10^3 * 10^(-4) | Exception? |
+|-------|---------|------------------------|---------|------------------------------------|------------|
+| 0     | 1500.0  | 15000.0                | 15000   | 1500.0                             | No         |
+| 1     | NaN     | -                      | -       | -                                  | Yes (NaN)  |
+| 2     | 2500.0  | 25000.0                | 25000   | 2500.0                             | No         |
+| 3     | 333.3   | 3333.0                 | 3333    | 333.3                              | No         |
+
+**Step 2: Handle Exceptions**
+
+Exception positions: \[1\]
+Exception values: \[NaN\]
+Placeholder: 15000 (first non-exception encoded value)
+Encoded with placeholders: \[15000, 15000, 25000, 3333\]
+
+**Step 3: Frame of Reference**
+
+| Encoded            | min = 3333 | Delta |
+|--------------------|------------|-------|
+| 15000              | -          | 11667 |
+| 15000 (placeholder)| -          | 11667 |
+| 25000              | -          | 21667 |
+| 3333               | -          | 0     |
+
+**Step 4: Bit Packing**
+
+max\_delta = 21667, bit\_width = ceil(log2(21668)) = 15 bits,
+packed\_size = ceil(4 * 15 / 8) = 8 bytes
+
+**Serialized Vector:**
+
+| Section             | Content                                          | Size     |
+|---------------------|--------------------------------------------------|----------|
+| AlpInfo             | e=4, f=3, num\_exceptions=1                      | 4 bytes  |
+| ForInfo             | frame\_of\_reference=3333, bit\_width=15          | 9 bytes  |
+| PackedValues        | \[11667, 11667, 21667, 0\] at 15 bits each       | 8 bytes  |
+| ExceptionPositions  | \[1\]                                             | 2 bytes  |
+| ExceptionValues     | \[NaN\]                                           | 8 bytes  |
+| **Total**           |                                                   | **31 bytes** |
+
+Compared to PLAIN encoding (4 * 8 = 32 bytes). With 1024 values, the 13-byte
+vector header becomes negligible and compression ratios of 2-8x are typical.
+
