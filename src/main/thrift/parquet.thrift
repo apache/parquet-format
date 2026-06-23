@@ -28,13 +28,6 @@ namespace java org.apache.parquet.format
  * with the encodings to control the on disk storage format.
  * For example INT16 is not included as a type since a good encoding of INT32
  * would handle this.
- *
- * The INT96 type is used only for timestamps and is laid out as follows:
- * - The lower 4 bytes are little-endian signed 32-bit integer containing the Julian day: the
- *   number of days since the Julian calendar epoch, where Julian day 2440588 corresponds to
- *   1 January 1970 (the Unix epoch).
- * - The upper 8 bytes are little-endian signed 64-bit integer containing the number of nanoseconds
- *   elapsed since the second of the day.
  */
 enum Type {
   BOOLEAN = 0;
@@ -1120,7 +1113,7 @@ union ColumnOrder {
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined or signed comparison of the represented value(+)
+   *   INT96 (only used for legacy timestamps) - depends on sort order (+)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
@@ -1129,9 +1122,13 @@ union ColumnOrder {
    * (+) While the INT96 type has been deprecated, at the time of writing it is
    *     still used in many legacy systems. It is optional for writers to emit
    *     statistics for INT96 columns. Writers that emit stats for such columns
-   *     should use the INT96_TIMESTAMP_ORDER for this type. If TYPE_ORDER is
-   *     used for an INT96 column, readers should ignore statistics for that
-   *     column.
+   *     should use the INT96_TIMESTAMP_ORDER for this type and order the values
+   *     according to the legacy rules:
+   *     - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   *     - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+   *       64-bit signed integer (nanos)
+   *     If TYPE_ORDER is used for an INT96 column, readers should ignore statistics
+   *     for that column
    *
    * (*) Because TYPE_ORDER is ambiguous for floating point types due to
    *     underspecified handling of NaN and -0/+0, it is recommended that writers
