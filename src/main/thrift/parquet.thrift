@@ -1127,8 +1127,9 @@ union ColumnOrder {
    *     - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
    *     - if equal last 4 bytes, compare the first 8 bytes as a little-endian
    *       64-bit signed integer (nanos)
-   *     If TYPE_ORDER is used for an INT96 column, readers should ignore statistics
-   *     for that column
+   *     If TYPE_ORDER is used for an INT96 column, readers should ignore all statistics
+   *     (`min`/`max` fields in `Statistics` and `min_values`/`max_values` fields in
+   *     `ColumnIndex`) for that column.
    *
    * (*) Because TYPE_ORDER is ambiguous for floating point types due to
    *     underspecified handling of NaN and -0/+0, it is recommended that writers
