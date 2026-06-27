@@ -41,6 +41,8 @@ All field names of a Variant, whether shredded or not, must be present in the me
 Variant values are stored in Parquet fields named `value`.
 Each `value` field may have an associated shredded field named `typed_value` that stores the value when it matches a specific type.
 When `typed_value` is present, readers **must** reconstruct shredded values according to this specification.
+Each shredding field must contain `value` and/or `typed_value`.
+When `value` is omitted, all values must be represented by `typed_value`.
 
 For example, a Variant field, `measurement` may be shredded as long values by adding `typed_value` with type `int64`:
 ```
@@ -62,7 +64,7 @@ The series of measurements `34, null, "n/a", 100` would be stored as:
 | "n/a"   | `01 00` v1/empty | `13 6E 2F 61` (`n/a`) | null          |
 | 100     | `01 00` v1/empty | null                  | `100`         |
 
-Both `value` and `typed_value` are optional fields used together to encode a single value.
+When both `value` and `typed_value` are in the schema, they are optional fields used together to encode a single value.
 Values in the two fields must be interpreted according to the following table:
 
 | `value`  | `typed_value` | Meaning                                                     |
@@ -167,6 +169,7 @@ Each shredded field in the `typed_value` group is represented as a required grou
 The `value` field stores the value as Variant-encoded `binary` when the `typed_value` cannot represent the field.
 This layout enables readers to skip data based on the field statistics for `value` and `typed_value`.
 The `typed_value` field may be omitted when not shredding fields as a specific type.
+The `value` field may be omitted when all values of that field can be represented by `typed_value`.
 
 The `value` column of a partially shredded object must never contain fields represented by the Parquet columns in `typed_value` (shredded fields).
 Readers may always assume that data is written correctly and that shredded fields in `typed_value` are not present in `value`.
@@ -271,9 +274,9 @@ optional group event (VARIANT(1)) {
 
 # Data Skipping
 
-Statistics for `typed_value` columns can be used for file, row group, or page skipping when `value` is always null (missing).
+Statistics for `typed_value` columns can be used for file, row group, or page skipping when the `value` field is omitted from the schema or when `value` is always null (missing).
 
-When the corresponding `value` column is all nulls, all values must be the shredded `typed_value` field's type.
+When the corresponding `value` column is omitted or all nulls, all values must be the shredded `typed_value` field's type.
 Because the type is known, comparisons with values of that type are valid.
 `IS NULL`/`IS NOT NULL` and `IS NAN`/`IS NOT NAN` filter results are also valid.
 
