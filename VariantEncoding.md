@@ -47,8 +47,8 @@ A Variant value in Parquet is represented by a group with 2 fields, named `value
 * The Variant group must be annotated with the `VARIANT` logical type.
 * Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY` in the Parquet thrift definition).
 * The `metadata` field is `required` and must be a valid Variant metadata, as defined below.
-* The `value` field must be annotated as `required` for unshredded Variant values, or `optional` if parts of the value are [shredded](VariantShredding.md) as typed Parquet columns.
-* When present, the `value` field must be a valid Variant value, as defined below. 
+* The `value` field must be annotated as `required` for unshredded Variant values. If the Variant value is [shredded](VariantShredding.md) as typed Parquet columns, then the `value` field may be annotated as `optional` or omitted entirely if ALL values can be represented in the typed column.
+* When present, the `value` field must be a valid Variant value, as defined below.
 
 This is the expected unshredded representation in Parquet:
 
