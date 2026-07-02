@@ -471,12 +471,24 @@ struct GeographyType {
 /**
  * File logical type annotation
  *
- * Annotates a group that represents a reference to an external file.
- * The group must contain the following fields identified by name:
- *   - path (STRING, required): an opaque string path to the file (e.g. s3://bucket/file.jpg)
- *   - size (INT64, optional): the length of the content in bytes; must be zero or positive
- *   - offset (INT64, optional): byte offset for range reads; if provided, size must also be provided
- *   - etag (STRING, optional): eTag from the storage system for staleness detection
+ * Annotates a group that represents a reference to a file, or to a range of
+ * bytes that may be stored inline, elsewhere in this file, or in an external
+ * file. All fields are optional and are identified by name:
+ *   - path (STRING): an opaque location string (e.g. s3://bucket/file.jpg);
+ *     if absent, the value refers to this file (self-reference)
+ *   - offset (INT64): start of the byte range; if absent, treated as 0
+ *   - size (INT64): byte length of the referenced data; if absent, the range runs to
+ *     the end of the referenced data
+ *   - content_type (STRING): media type (MIME) of the resolved bytes
+ *   - checksum (STRING): an algorithm-tagged integrity token for the resolved
+ *     bytes, of the form "<algorithm>:base64(<digest>)" (generalizes etag)
+ *   - inline (BYTE_ARRAY): the referenced bytes stored inline in the value
+ *
+ * A value resolves to bytes determined by inline / path / offset / size; if
+ * inline is set it supplies the bytes and any locator fields are provenance
+ * only. A value with none of inline, path, offset, or size set does not
+ * resolve to any referenced data and is invalid (use column nullability for nulls).
+ * content_type and checksum are metadata describing whichever bytes resolve.
  *
  * See LogicalTypes.md for details.
  */

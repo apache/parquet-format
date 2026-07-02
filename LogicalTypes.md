@@ -639,53 +639,108 @@ are found during reading, they must be ignored.
 
 ### FILE
 
-`FILE` annotates a group that represents a reference to an external file, along with
-the minimum metadata required to read it. It is intended for use cases such as
-storing file inventories, manifests, and unstructured data references (e.g., images
-or audio files stored in object storage).
+`FILE` annotates a group that represents a reference to a range of bytes, which may
+be stored inline in the value, elsewhere within this file, or in an external file. It
+is intended for use cases such as storing file inventories, manifests, and unstructured
+data references (e.g., images or audio files stored in object storage).
 
-The annotated group must contain the following fields, identified by name. Field IDs
-may also be used for projection:
+The annotated group may contain the following fields, identified by name. Field IDs
+may also be used for projection. All fields are optional:
 
-| Field    | Type   | Required |
-|----------|--------|----------|
-| `path`   | STRING | Yes      |
-| `size`   | INT64  | No       |
-| `offset` | INT64  | No       |
-| `etag`   | STRING | No       |
+| Field          | Type       | Required |
+|----------------|------------|----------|
+| `path`         | STRING     | No       |
+| `offset`       | INT64      | No       |
+| `size`         | INT64      | No       |
+| `content_type` | STRING     | No       |
+| `checksum`     | STRING     | No       |
+| `inline`       | BYTE_ARRAY | No       |
+
+A value resolves to bytes determined by `inline` / `path` / `offset` / `size`;
+`content_type` and `checksum` are metadata describing whatever is resolved.
 
 #### Fields
 
 ##### path
 
-An opaque path string to the referenced file (e.g., `s3://bucket/file.jpg`). No special
-encoding (e.g., URI encoding) is applied. This is the only required field.
-
-##### size
-
-The length of the content in bytes. Must be zero or a positive integer if provided.
-A value of 0 indicates an empty file. If not provided, the length of the referenced
-content is unknown and the entirety of the content can be read.
+An opaque path string to an external file (e.g., `s3://bucket/file.jpg`). No special
+encoding (e.g., URI encoding) is applied. If `path` is absent, the value refers to
+this file (a self-reference).
 
 ##### offset
 
-A byte offset indicating the start of a content slice within the referenced file.
+A byte offset indicating the start of the byte range within the referenced data.
 If not provided, readers must treat the value as 0.
-If provided and non-zero, readers must seek to this offset and read `size` bytes to retrieve the referenced data.
-If `offset` is provided, `size` must also be provided.
+If provided and non-zero, readers must seek to this offset to retrieve the referenced data.
 
-##### etag
+##### size
 
-An eTag value provided by the storage system (e.g., from S3 or Azure Blob Storage).
-Can be used to detect whether the referenced file has been updated. If the reference
-points to a byte range within a file, the eTag applies to the entire file.
+The byte length of the referenced data. Must be zero or a positive integer if provided.
+A value of 0 indicates empty referenced data. If not provided, the range runs to the end
+of the referenced data.
+
+##### content_type
+
+The media type (MIME type) of the resolved bytes (e.g., `image/png`).
+
+##### checksum
+
+A self-describing integrity token for the resolved bytes, of the form
+`<algorithm>:base64(<digest bytes>)`. It generalizes the storage-system eTag. The
+recognized algorithms are:
+
+| Algorithm | Notes                                                          |
+|-----------|----------------------------------------------------------------|
+| `ETAG`    | the object-store eTag — equality-only, not recomputable        |
+| `MD5`     | the usual S3/HTTP eTag and Content-MD5                         |
+| `CRC32`   | Parquet's page-checksum algorithm (gzip/zlib)                 |
+| `CRC32C`  | common in object stores, hardware-accelerated                  |
+| `SHA-256` | e.g. S3 additional checksums                                  |
+
+`checksum` applies to the resolved bytes, except for `ETAG`, which is the
+object-store eTag for the whole file referenced by `path`.
+
+##### inline
+
+The referenced bytes stored inline in the value. If `inline` is set, it supplies the
+bytes and any locator fields (`path`, `offset`, `size`) that are present are provenance
+only.
+
+#### Resolution
+
+A value resolves to bytes based on which of `inline`, `path`, `offset`, and `size` are
+set:
+
+| `inline` | `path` | `offset` | `size` | Resolves to                                  |
+|----------|--------|----------|--------|----------------------------------------------|
+| set      | –      | –        | –      | the inline bytes                             |
+| –        | set    | –        | –      | whole external file at `path`                |
+| –        | set    | set      | –      | external `path`, `[offset, EOF)`             |
+| –        | set    | –        | set    | external `path`, `[0, size)`                 |
+| –        | set    | set      | set    | external `path`, `[offset, offset + size)`   |
+| –        | –      | set      | –      | this file, `[offset, EOF)` (self-reference)  |
+| –        | –      | –        | set    | this file, `[0, size)` (self-reference)      |
+| –        | –      | set      | set    | this file, `[offset, offset + size)` (self-reference) |
+| –        | –      | –        | –      | nothing — invalid                            |
+
+A self-reference typically points within the same Parquet file using `offset` and
+`size`; the bytes are written between column chunks and are not otherwise referenced by
+the footer. A self-reference is the absence of `path`, never an absolute path back to
+the current file, so a file containing self-references is renamed or relocated as a
+single unit.
+
+The referenced bytes are compressed with the same `CompressionCodec` as the one
+specified for the `inline` column.
 
 #### Validation
 
-* The `path` field is required and must be present. Readers must reject a `FILE`-annotated
-  group that does not contain `path`.
-* If `offset` is present and non-zero, `size` must also be provided.
-* Additional metadata about the file (e.g., content type, modification timestamp) should
+* A value must resolve to some referenced data. If none of `inline`, `path`, `offset`, or
+  `size` is set, the value does not resolve and is invalid; use column nullability to
+  represent a null value.
+* If `inline` is set, it supplies the bytes; producers may instead treat `inline` and the
+  locator fields as mutually exclusive.
+* Field names within a `FILE`-annotated group must not be renamed.
+* Additional metadata about the file (e.g., modification timestamp) should
   be stored adjacent to this struct by engines or table formats, not inside it.
 
 Statistics may be collected for the individual fields of a `FILE`-annotated group
@@ -695,10 +750,12 @@ This is an example `FILE`-annotated group in Parquet:
 
 ```
 optional group my_file (FILE) {
-  required binary path (STRING);
-  optional int64 size;
+  optional binary path (STRING);
   optional int64 offset;
-  optional binary etag (STRING);
+  optional int64 size;
+  optional binary content_type (STRING);
+  optional binary checksum (STRING);
+  optional binary inline;
 }
 ```
 
