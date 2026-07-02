@@ -664,8 +664,8 @@ A value resolves to bytes determined by `inline` / `path` / `offset` / `size`;
 ##### path
 
 An opaque path string to an external file (e.g., `s3://bucket/file.jpg`). No special
-encoding (e.g., URI encoding) is applied. If `path` is absent, the value refers to
-this file (a self-reference).
+encoding (e.g., URI encoding) is applied on top of the user provided data. If `path` is absent,
+the value refers to this file (a self-reference).
 
 ##### offset
 

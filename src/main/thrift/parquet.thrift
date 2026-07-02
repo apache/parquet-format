@@ -481,7 +481,7 @@ struct GeographyType {
  *     the end of the referenced data
  *   - content_type (STRING): media type (MIME) of the resolved bytes
  *   - checksum (STRING): an algorithm-tagged integrity token for the resolved
- *     bytes, of the form "<algorithm>:base64(<digest>)" (generalizes etag)
+ *     bytes, of the form "<algorithm>:base64(<digest>)"
  *   - inline (BYTE_ARRAY): the referenced bytes stored inline in the value
  *
  * A value resolves to bytes determined by inline / path / offset / size; if
