@@ -640,44 +640,50 @@ are found during reading, they must be ignored.
 ### FILE
 
 `FILE` annotates a group that represents a reference to a range of bytes, which may
-be stored inline in the value, elsewhere within this file, or in an external file. It
+be stored inline in the value, elsewhere within the current file, or in an external file. It
 is intended for use cases such as storing file inventories, manifests, and unstructured
 data references (e.g., images or audio files stored in object storage).
 
 The annotated group may contain the following fields, identified by name. Field IDs
-may also be used for projection. All fields are optional:
+may also be used for projection. All fields have a field repetition type of `OPTIONAL`
+and may be omitted:
 
-| Field          | Type       | Required |
-|----------------|------------|----------|
-| `path`         | STRING     | No       |
-| `offset`       | INT64      | No       |
-| `size`         | INT64      | No       |
-| `content_type` | STRING     | No       |
-| `checksum`     | STRING     | No       |
-| `inline`       | BYTE_ARRAY | No       |
+| Field          | Type       |
+|----------------|------------|
+| `path`         | STRING     |
+| `offset`       | INT64      |
+| `size`         | INT64      |
+| `content_type` | STRING     |
+| `checksum`     | STRING     |
+| `inline`       | BYTE_ARRAY |
 
 A value resolves to bytes determined by `inline` / `path` / `offset` / `size`;
 `content_type` and `checksum` are metadata describing whatever is resolved.
 
 #### Fields
 
+For the descriptions below, a field is *set* when it is present in the `FILE` group
+and its value is non-null (and, for string fields, non-empty). A field is *not set*
+when it is absent from the group, or is present but null or empty.
+
 ##### path
 
 An opaque path string to an external file (e.g., `s3://bucket/file.jpg`). No special
-encoding (e.g., URI encoding) is applied on top of the user provided data. If `path` is absent,
-the value refers to this file (a self-reference).
+encoding (e.g., URI encoding) is applied on top of the user-provided data. If `path` is
+not set, the value refers to the current file (a self-reference).
 
 ##### offset
 
 A byte offset indicating the start of the byte range within the referenced data.
-If not provided, readers must treat the value as 0.
-If provided and non-zero, readers must seek to this offset to retrieve the referenced data.
+If not set, readers must treat the value as 0.
+If set and non-zero, readers must seek to this offset to retrieve the referenced data.
 
 ##### size
 
-The byte length of the referenced data. Must be zero or a positive integer if provided.
-A value of 0 indicates empty referenced data. If not provided, the range runs to the end
-of the referenced data.
+The byte length of the referenced data. Must be zero or a positive integer if set; a
+value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set
+or `path` is not set. It may be omitted only for a whole-file external reference (`path`
+set, `offset` not set), in which case the range runs to the end of the referenced file.
 
 ##### content_type
 
@@ -703,7 +709,7 @@ object-store eTag for the whole file referenced by `path`.
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
-bytes and any locator fields (`path`, `offset`, `size`) that are present are provenance
+bytes and any locator fields (`path`, `offset`, `size`) that are set are provenance
 only.
 
 #### Resolution
