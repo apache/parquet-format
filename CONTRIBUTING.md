@@ -115,13 +115,13 @@ by new specification versions. If there is contributor bandwidth forwards-compat
 features may be backported to previous major versions of the specification and released
 as a new minor version.
 
-The Parquet Format versioning follows [SemVer](http://semver.org/) from release
-3.0 onwards. Every forward incompatible change added to the specification requires
+Every forward incompatible change added to the specification requires
 a major version bump (e.g. new encodings, new compression algorithms, new page layouts,
 structural changes to the footer, etc). Forward compatible changes (e.g. new
-logical types and sort orders) will be released as minor version changes.
+logical types and sort orders) are as released as minor version changes.
 
-Versions 2.x.x did not follow SemVer.
+Versions 2.x.x did not follow this versioning, both forward incompatible changes and
+forward compatible changes where released with minor version bumps.
 
 
 ### Compatibility and Feature Enablement
