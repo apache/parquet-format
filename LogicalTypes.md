@@ -644,9 +644,9 @@ be stored inline in the value, elsewhere within the current file, or in an exter
 is intended for use cases such as storing file inventories, manifests, and unstructured
 data references (e.g., images or audio files stored in object storage).
 
-The annotated group may contain the following fields, identified by name. Field IDs
-may also be used for projection. Every field is optional both in the schema and in the
-data: a writer may omit any field from the group definition, and any field that is
+The annotated group may contain the following fields, identified by name case sensitively.
+Field IDs may also be used for projection. Every field is optional both in the schema and
+in the data: a writer may omit any field from the group definition, and any field that is
 present has a field repetition type of `OPTIONAL`. A group need only define the fields
 it uses (for example, an inline-only group may define just `inline`, and an external
 reference may define just `path`).
@@ -680,13 +680,16 @@ not set, the value refers to the current file (a self-reference).
 A byte offset indicating the start of the byte range within the referenced data.
 If not set, readers must treat the value as 0.
 If set and non-zero, readers must seek to this offset to retrieve the referenced data.
+`offset` must be set for a self-reference (`path` not set); it is optional for an
+external reference (`path` set).
 
 ##### size
 
 The byte length of the referenced data. Must be zero or a positive integer if set; a
-value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set
-or `path` is not set. It may be omitted only for a whole-file external reference (`path`
-set, `offset` not set), in which case the range runs to the end of the referenced file.
+value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
+It may be omitted only for a whole-file external reference (`path` set, `offset` not set),
+in which case the range runs to the end of the referenced file. Because a self-reference
+always sets `offset`, it always sets `size` as well.
 
 ##### content_type
 
@@ -695,16 +698,16 @@ The media type (MIME type) of the resolved bytes (e.g., `image/png`).
 ##### checksum
 
 A self-describing integrity token for the resolved bytes, of the form
-`<algorithm>:base64(<digest bytes>)`. It generalizes the storage-system eTag. The
-recognized algorithms are:
+`<algorithm>:base64(<digest bytes>)`. Readers should ignore unknown 
+algorithms. The recognized algorithms are:
 
-| Algorithm | Notes                                                          |
-|-----------|----------------------------------------------------------------|
-| `ETAG`    | the object-store eTag — equality-only, not recomputable        |
-| `MD5`     | the usual S3/HTTP eTag and Content-MD5                         |
-| `CRC32`   | Parquet's page-checksum algorithm (gzip/zlib)                 |
-| `CRC32C`  | common in object stores, hardware-accelerated                  |
-| `SHA-256` | e.g. S3 additional checksums                                  |
+| Algorithm | Notes                                                           |
+|-----------|-----------------------------------------------------------------|
+| `ETAG`    | the object-store eTag — equality-only, not recomputable         |
+| `MD5`     | the usual S3/HTTP eTag and Content-MD5                          |
+| `CRC32`   | Parquet's page-checksum algorithm (gzip/zlib)                   |
+| `CRC32C`  | common in object stores, hardware-accelerated                   |
+| `SHA-256` | e.g. S3 additional checksums                                    |
 
 `checksum` applies to the resolved bytes, except for `ETAG`, which is the
 object-store eTag for the whole file referenced by `path`.
@@ -724,18 +727,21 @@ set:
 |----------|--------|----------|--------|-------------------------------------------------------|
 | set      | –      | –        | –      | the inline bytes                                      |
 | –        | set    | –        | –      | whole external file at `path`                         |
+| –        | set    | set      | -      | external `path`, `[offset, EOF)`                      |
 | –        | set    | –        | set    | external `path`, `[0, size)`                          |
 | –        | set    | set      | set    | external `path`, `[offset, offset + size)`            |
-| –        | –      | –        | set    | current file, `[0, size)` (self-reference)            |
-| –        | –      | set      | set    | current file, `[offset, offset + size)` (self-reference) |
+| –        | -      | set      | -      | invalid                                               |
+| –        | -      | -        | set    | invalid                                               |
+| –        | –      | set      | set    | this file, `[offset, offset + size)` (self-reference) |
 | –        | –      | –        | –      | nothing — invalid                                     |
 
-`size` must be set whenever `offset` is set or `path` is not set, so a self-reference
-and any offset-based read always carry an explicit `size`. It may be omitted only for a
-whole-file external reference, where the range runs to the end of the referenced file.
+`size` must be set whenever `offset` is set, so any offset-based read always carries an
+explicit `size`. A self-reference (`path` not set) must set `offset`, and therefore also
+`size`. `size` may be omitted only for a whole-file external reference, where the range
+runs to the end of the referenced file.
 
-A self-reference typically points within the same Parquet file using `offset` and
-`size`; the bytes are written between column chunks and are not otherwise referenced by
+A self-reference points within the same Parquet file using `offset` and `size` (both
+required); the bytes are written between column chunks and are not otherwise referenced by
 the footer. A self-reference is when `path` is not set, never an absolute path back to
 the current file, so a file containing self-references is renamed or relocated as a
 single unit.
@@ -745,11 +751,13 @@ as the one specified for the `inline` column.
 
 #### Validation
 
-* A value must resolve to some referenced data. If none of `inline`, `path`, `offset`, or
-  `size` is set, the value does not resolve and is invalid; use column nullability to
-  represent a null value.
-* `size` must be set whenever `offset` is set or `path` is not set. A value that sets
-  `offset` without `size`, or is a self-reference (no `path`) without `size`, is invalid.
+* A value must resolve to some referenced data. It resolves only if `inline`, `path`, or
+  `offset` is set; if none of them are set, the value does not resolve and is invalid, even
+  if `size` is set. Use column nullability to represent a null value.
+* A self-reference (`path` not set) must set `offset`. A value with neither `path` nor
+  `offset` set (and not `inline`) does not resolve and is invalid.
+* `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
+  is invalid. Because a self-reference must set `offset`, it must also set `size`.
 * If `inline` is set, it supplies the bytes; producers may instead treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
@@ -783,7 +791,7 @@ optional group inline_file (FILE) {
 ```
 
 A group whose values are always whole external files may define just `path` and optionally
-`content_type` and `checksum` for validation.:
+`content_type` and `checksum` for validation:
 
 ```
 optional group external_file (FILE) {
