@@ -644,12 +644,12 @@ be stored inline in the value, elsewhere within the current file, or in an exter
 is intended for use cases such as storing file inventories, manifests, and unstructured
 data references (e.g., images or audio files stored in object storage).
 
-The annotated group may contain the following fields, identified by name case sensitively.
-Field IDs may also be used for projection. Every field is optional both in the schema and
-in the data: a writer may omit any field from the group definition, and any field that is
-present has a field repetition type of `OPTIONAL`. A group need only define the fields
-it uses (for example, an inline-only group may define just `inline`, and an external
-reference may define just `path`).
+The annotated group may contain the following fields, identified by name case sensitively,
+not by field order. Field IDs, if they exist, may also be used for projection. Every field
+is optional both in the schema and in the data: a writer may omit any field from the group
+definition, and any field that is present has a field repetition type of `OPTIONAL`.
+A group need only define the fields it uses (for example, an inline-only group may define
+just `inline`, and an external reference may define just `path`).
 
 | Field          | Type       |
 |----------------|------------|
