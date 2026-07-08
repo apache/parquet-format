@@ -645,8 +645,11 @@ is intended for use cases such as storing file inventories, manifests, and unstr
 data references (e.g., images or audio files stored in object storage).
 
 The annotated group may contain the following fields, identified by name. Field IDs
-may also be used for projection. All fields have a field repetition type of `OPTIONAL`
-and may be omitted:
+may also be used for projection. Every field is optional both in the schema and in the
+data: a writer may omit any field from the group definition, and any field that is
+present has a field repetition type of `OPTIONAL`. A group need only define the fields
+it uses (for example, an inline-only group may define just `inline`, and an external
+reference may define just `path`).
 
 | Field          | Type       |
 |----------------|------------|
@@ -733,7 +736,7 @@ whole-file external reference, where the range runs to the end of the referenced
 
 A self-reference typically points within the same Parquet file using `offset` and
 `size`; the bytes are written between column chunks and are not otherwise referenced by
-the footer. A self-reference is the absence of `path`, never an absolute path back to
+the footer. A self-reference is when `path` is not set, never an absolute path back to
 the current file, so a file containing self-references is renamed or relocated as a
 single unit.
 
@@ -750,13 +753,13 @@ as the one specified for the `inline` column.
 * If `inline` is set, it supplies the bytes; producers may instead treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
-* Additional metadata about the file (e.g., modification timestamp) should
+* Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
 
 Statistics may be collected for the individual fields of a `FILE`-annotated group
 according to the sort order of each field's logical type.
 
-This is an example `FILE`-annotated group in Parquet:
+This is an example of a `FILE`-annotated group that defines all fields:
 
 ```
 optional group my_file (FILE) {
@@ -769,9 +772,25 @@ optional group my_file (FILE) {
 }
 ```
 
-*Compatibility*
+Because every field is optional, a group need only define the fields it uses. A group
+whose values are always stored inline may define just `inline`:
 
-`FILE` has no corresponding `ConvertedType`.
+```
+optional group inline_file (FILE) {
+  optional binary inline;
+  optional binary content_type (STRING);
+}
+```
+
+A group whose values are always whole external files may define just `path`:
+
+```
+optional group external_file (FILE) {
+  optional binary path (STRING);
+  optional binary content_type (STRING);
+}
+```
+
 
 ## Nested Types
 
