@@ -782,12 +782,14 @@ optional group inline_file (FILE) {
 }
 ```
 
-A group whose values are always whole external files may define just `path`:
+A group whose values are always whole external files may define just `path` and optionally
+`content_type` and `checksum` for validation.:
 
 ```
 optional group external_file (FILE) {
   optional binary path (STRING);
   optional binary content_type (STRING);
+  optional binary checksum (STRING);
 }
 ```
 
