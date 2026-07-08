@@ -477,8 +477,10 @@ struct GeographyType {
  *   - path (STRING): an opaque location string (e.g. s3://bucket/file.jpg);
  *     if absent, the value refers to this file (self-reference)
  *   - offset (INT64): start of the byte range; if absent, treated as 0
- *   - size (INT64): byte length of the referenced data; if absent, the range runs to
- *     the end of the referenced data
+ *   - size (INT64): byte length of the referenced data; required when `offset` is set
+ *     or `path` is absent. May be omitted only for a whole-file external reference
+ *     (`path` set, `offset` absent), in which case the range runs to the end of the
+ *     referenced file
  *   - content_type (STRING): media type (MIME) of the resolved bytes
  *   - checksum (STRING): an algorithm-tagged integrity token for the resolved
  *     bytes, of the form "<algorithm>:base64(<digest>)"

@@ -717,17 +717,19 @@ only.
 A value resolves to bytes based on which of `inline`, `path`, `offset`, and `size` are
 set:
 
-| `inline` | `path` | `offset` | `size` | Resolves to                                  |
-|----------|--------|----------|--------|----------------------------------------------|
-| set      | –      | –        | –      | the inline bytes                             |
-| –        | set    | –        | –      | whole external file at `path`                |
-| –        | set    | set      | –      | external `path`, `[offset, EOF)`             |
-| –        | set    | –        | set    | external `path`, `[0, size)`                 |
-| –        | set    | set      | set    | external `path`, `[offset, offset + size)`   |
-| –        | –      | set      | –      | this file, `[offset, EOF)` (self-reference)  |
-| –        | –      | –        | set    | this file, `[0, size)` (self-reference)      |
-| –        | –      | set      | set    | this file, `[offset, offset + size)` (self-reference) |
-| –        | –      | –        | –      | nothing — invalid                            |
+| `inline` | `path` | `offset` | `size` | Resolves to                                           |
+|----------|--------|----------|--------|-------------------------------------------------------|
+| set      | –      | –        | –      | the inline bytes                                      |
+| –        | set    | –        | –      | whole external file at `path`                         |
+| –        | set    | –        | set    | external `path`, `[0, size)`                          |
+| –        | set    | set      | set    | external `path`, `[offset, offset + size)`            |
+| –        | –      | –        | set    | current file, `[0, size)` (self-reference)            |
+| –        | –      | set      | set    | current file, `[offset, offset + size)` (self-reference) |
+| –        | –      | –        | –      | nothing — invalid                                     |
+
+`size` must be set whenever `offset` is set or `path` is not set, so a self-reference
+and any offset-based read always carry an explicit `size`. It may be omitted only for a
+whole-file external reference, where the range runs to the end of the referenced file.
 
 A self-reference typically points within the same Parquet file using `offset` and
 `size`; the bytes are written between column chunks and are not otherwise referenced by
@@ -735,19 +737,21 @@ the footer. A self-reference is the absence of `path`, never an absolute path ba
 the current file, so a file containing self-references is renamed or relocated as a
 single unit.
 
-The referenced bytes are compressed with the same `CompressionCodec` as the one
-specified for the `inline` column.
+The bytes referenced by a self-reference are compressed with the same `CompressionCodec`
+as the one specified for the `inline` column.
 
 #### Validation
 
 * A value must resolve to some referenced data. If none of `inline`, `path`, `offset`, or
   `size` is set, the value does not resolve and is invalid; use column nullability to
   represent a null value.
+* `size` must be set whenever `offset` is set or `path` is not set. A value that sets
+  `offset` without `size`, or is a self-reference (no `path`) without `size`, is invalid.
 * If `inline` is set, it supplies the bytes; producers may instead treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) should
-  be stored adjacent to this struct by engines or table formats, not inside it.
+  be stored adjacent to this group by engines or table formats, not inside it.
 
 Statistics may be collected for the individual fields of a `FILE`-annotated group
 according to the sort order of each field's logical type.
