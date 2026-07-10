@@ -671,9 +671,10 @@ when it is absent from the group, or is present but null or empty.
 
 ##### path
 
-An opaque path string to an external file (e.g., `s3://bucket/file.jpg`). No special
-encoding (e.g., URI encoding) is applied on top of the user-provided data. If `path` is
-not set, the value refers to the current file (a self-reference).
+A URI-reference as defined by RFC 3986, encoded as a Parquet STRING (e.g., `s3://bucket/file.jpg`).
+The URI may be absolute or relative. No additional encoding (e.g., URI encoding) is applied on top
+of the user-provided data. If `path` is not set, the value refers to the current file
+(a self-reference).
 
 ##### offset
 
@@ -681,7 +682,7 @@ A byte offset indicating the start of the byte range within the referenced data.
 If not set, readers must treat the value as 0.
 If set and non-zero, readers must seek to this offset to retrieve the referenced data.
 `offset` must be set for a self-reference (`path` not set); it is optional for an
-external reference (`path` set).
+external reference (`path` set). `offset` must not be < 0.
 
 ##### size
 
@@ -727,7 +728,7 @@ set:
 |----------|--------|----------|--------|-------------------------------------------------------|
 | set      | –      | –        | –      | the inline bytes                                      |
 | –        | set    | –        | –      | whole external file at `path`                         |
-| –        | set    | set      | -      | external `path`, `[offset, EOF)`                      |
+| –        | set    | set      | -      | invalid                                               |
 | –        | set    | –        | set    | external `path`, `[0, size)`                          |
 | –        | set    | set      | set    | external `path`, `[offset, offset + size)`            |
 | –        | -      | set      | -      | invalid                                               |
