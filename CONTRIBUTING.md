@@ -148,7 +148,7 @@ For the purposes of this discussion we classify features into the following buck
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
 they are introduced. It is expected that implementations will provide a configuration
-mechanism for users to enable features. It is recommended that implementations provide
+mechanism for users to enable features when writing parquet file. It is recommended that implementations provide
 at least a way to enable all relevant features given a specification version
 (e.g. major and minor version). In addition, implementations might choose to
 enable features at a finer-grained level with feature flags.
