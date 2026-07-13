@@ -156,7 +156,7 @@ enable features at a finer-grained level with feature flags.
 Some amount of lead time is desirable to ensure a critical
 mass of Parquet implementations support a given specification version
 across the ecosystem.  Therefore, the Parquet PMC gives the following
-recommendations for managing the default specification version used for writing:
+recommendations for managing features:
 
 1. Backward compatibility is the concern of implementations but given the
    ubiquity of Parquet and the length of time it has been used, libraries should
