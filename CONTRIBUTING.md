@@ -91,7 +91,7 @@ demonstrate that the feature is mergeable to its implementation.
 
 1. To the greatest extent possible changes should have an option for forward
    compatibility (old readers can still read files). The [compatibility and
-   feature enablement](#compatibility-and-feature-enablement) section below 
+   feature enablement](#compatibility-and-feature-enablement) section below
    provides more details on expectations for changes that break compatibility.
 
 2. New encodings should be fully specified in this repository and not
@@ -110,10 +110,19 @@ demonstrate that the feature is mergeable to its implementation.
 The Parquet PMC aims to do releases of the format package only as needed when
 new features are introduced. If multiple new features are being proposed
 simultaneously some features might be consolidated into the same release.
-Guidance is provided below on when implementations should enable features added
-to the specification.  Due to confusion in the past over Parquet versioning it
-is not expected that there will be a 3.x release of the specification in the
-foreseeable future.
+Guidance is provided below on when implementations should enable features introduced
+by new specification versions. If there is contributor bandwidth forwards-compatible
+features may be backported to previous major versions of the specification and released
+as a new minor version.
+
+Every forward incompatible change added to the specification requires
+a major version bump (e.g. new encodings, new compression algorithms, new page layouts,
+structural changes to the footer, etc). Forward compatible changes (e.g. new
+logical types and sort orders) are as released as minor version changes.
+
+Versions 2.x.x did not follow this versioning, both forward incompatible changes and
+forward compatible changes were released with minor version bumps.
+
 
 ### Compatibility and Feature Enablement
 
@@ -138,38 +147,40 @@ For the purposes of this discussion we classify features into the following buck
 
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
-they are introduced. It is assumed that writing new parts of the format, and
-especially forward incompatible features, will be configured with a feature flag
-defaulted to "off", and at some future point the feature is turned on by default
-(reading of the new feature will typically be enabled without configuration or
-defaulted to on). Some amount of lead time is desirable to ensure a critical
-mass of Parquet implementations support a feature to avoid compatibility issues
+they are introduced. It is expected that implementations will provide a configuration
+mechanism for users to enable features. It is recommended that implementations provide
+at least a way to enable all relevant features given a specification version
+(e.g. major and minor version). In addition, implementations might choose to
+enable features at a finer-grained level, with feature flags initially defaulted to "off".
+
+Some amount of lead time is desirable to ensure a critical
+mass of Parquet implementations support a given specification version
 across the ecosystem.  Therefore, the Parquet PMC gives the following
-recommendations for managing features:
+recommendations for managing the default specification version used for writing:
 
 1. Backward compatibility is the concern of implementations but given the
    ubiquity of Parquet and the length of time it has been used, libraries should
    support reading older versions of the format to the greatest extent possible.
 
-2. Forward compatible features/changes may be enabled and used by default in
+2. Minor format versions may be enabled and used by default in
    implementations once the parquet-format containing those changes has been
-   formally released.  For features that may pose a significant performance
-   regression to older format readers, libaries should consider delaying default
-   enablement until 1 year after the release of the parquet-java implementation
-   that contains the feature implementation.
+   formally released.  For releases that may pose a significant performance
+   regression to older format readers, libraries should consider delaying default
+   enablement until 1 year after the parquet-java implementation for that format
+   version is released.
 
-3. Forward incompatible features/changes should not be turned on by default
-   until 2 years after the parquet-java implementation containing the feature is
-   released. It is recommended that changing the default value for a forward
-   incompatible feature flag should be clearly advertised to consumers (e.g. via
-   a major version release if using Semantic Versioning, or highlighed in
+3. Major version upgrades should not be enabled by default
+   until 2 years after the parquet-java implementation for the specification has been
+   released. It is recommended that changing the default format version for a major version bump
+   be clearly advertised to consumers (e.g. via
+   a major version release if using Semantic Versioning, or highlighted in
    release notes).
 
 For forward compatible changes which have a high chance of performance
 regression for older readers and forward incompatible changes, implementations
 should clearly document the compatibility issues. Additionally, while it is up
 to maintainers of individual open-source implementations to make the best decision to serve
-their ecosystem, they are encouraged to start enabling features by default along
+their ecosystem, they are encouraged to start enabling specific format versions by default along
 the same timelines as `parquet-java`. Parquet-java will wait to enable features
 by default until the most conservative timelines outlined above have been
 exceeded. This timeline is an attempt to balance ensuring
@@ -179,14 +190,13 @@ encourage earlier adoption of new features when an organization using Parquet
 can guarantee that all readers of the parquet files they produce can read a new
 feature.
 
-After turning a feature on by default implementations
-are encouraged to keep a configuration to turn off the feature.
+After changing defaults, implementations are encouraged to keep a configuration
+mechanism to specify a prior format version or turn off specific features.
 A recommendation for full deprecation will be made in a future
 iteration of this document.
 
-For features released prior to October 2024, target dates for each of these
-categories will be updated as part of the `parquet-java 2.0` release process
-based on a collected feature compatibility matrix.
+As of June 2026, the current recommended default specification release
+version to use is 2.10.0.
 
 For each release of `parquet-java` or `parquet-format` that influences this
 guidance it is expected exact dates will be added to parquet-format to provide
@@ -198,5 +208,4 @@ implementation date/release version information when updating the feature
 matrix.
 
 End users of software are generally encouraged to consult the feature matrix
-and vendor documentation before enabling features that are not yet widely
-adopted.
+and vendor documentation before enabling a specific format version.
