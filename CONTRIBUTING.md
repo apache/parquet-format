@@ -162,7 +162,7 @@ recommendations for managing features:
    ubiquity of Parquet and the length of time it has been used, libraries should
    support reading older versions of the format to the greatest extent possible.
 
-2. New release versions should NOT be enabled by default before 6 months has
+2. New release versions should NOT be enabled for writers by default (i.e. end-users must opt-in to new versions) before 6 months has
    elapsed after the release. New release versions should be enabled by default within 
    18 months after the format release.
 
