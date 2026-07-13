@@ -151,7 +151,7 @@ they are introduced. It is expected that implementations will provide a configur
 mechanism for users to enable features. It is recommended that implementations provide
 at least a way to enable all relevant features given a specification version
 (e.g. major and minor version). In addition, implementations might choose to
-enable features at a finer-grained level, with feature flags initially defaulted to "off".
+enable features at a finer-grained level with feature flags.
 
 Some amount of lead time is desirable to ensure a critical
 mass of Parquet implementations support a given specification version
@@ -162,47 +162,24 @@ recommendations for managing the default specification version used for writing:
    ubiquity of Parquet and the length of time it has been used, libraries should
    support reading older versions of the format to the greatest extent possible.
 
-2. Minor format versions may be enabled and used by default in
-   implementations once the parquet-format containing those changes has been
-   formally released.  For releases that may pose a significant performance
-   regression to older format readers, libraries should consider delaying default
-   enablement until 1 year after the parquet-java implementation for that format
-   version is released.
+2. New release versions should NOT be enabled by default before 6 months has
+   elapsed after the release. New release versions should be enabled by default within 
+   18 months after the format release.
 
-3. Major version upgrades should not be enabled by default
-   until 2 years after the parquet-java implementation for the specification has been
-   released. It is recommended that changing the default format version for a major version bump
-   be clearly advertised to consumers (e.g. via
-   a major version release if using Semantic Versioning, or highlighted in
-   release notes).
-
-For forward compatible changes which have a high chance of performance
-regression for older readers and forward incompatible changes, implementations
-should clearly document the compatibility issues. Additionally, while it is up
-to maintainers of individual open-source implementations to make the best decision to serve
+While it is up to maintainers of parquet implementations to make the best decision to serve
 their ecosystem, they are encouraged to start enabling specific format versions by default along
-the same timelines as `parquet-java`. Parquet-java will wait to enable features
-by default until the most conservative timelines outlined above have been
-exceeded. This timeline is an attempt to balance ensuring
-new features make their way into the ecosystem and avoiding
-breaking compatiblity for readers that are slower to adopt new standards. We
-encourage earlier adoption of new features when an organization using Parquet
+the same timelines as `parquet-java`. We
+encourage earlier adoption of new features when an organization or project using Parquet
 can guarantee that all readers of the parquet files they produce can read a new
-feature.
+feature (e.g. an organization has complete control over all readers and writers
+OR a project has there own versioning scheme).
 
 After changing defaults, implementations are encouraged to keep a configuration
 mechanism to specify a prior format version or turn off specific features.
 A recommendation for full deprecation will be made in a future
 iteration of this document.
 
-As of June 2026, the current recommended default specification release
-version to use is 2.10.0.
-
-For each release of `parquet-java` or `parquet-format` that influences this
-guidance it is expected exact dates will be added to parquet-format to provide
-clarity to implementors (e.g. When `parquet-java` 2.X.X is released, any new
-format features it uses will be updated with concrete dates). As part of
-`parquet-format` releases the compatibility matrix will be updated to contain
+As part of `parquet-format` releases the compatibility matrix will be updated to contain
 the release date in the format. Implementations are also encouraged to provide
 implementation date/release version information when updating the feature
 matrix.
