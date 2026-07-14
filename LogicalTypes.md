@@ -810,6 +810,105 @@ optional group my_list (LIST) {
 }
 ```
 
+### Vectors
+
+`VECTOR` is used to annotate fixed-size lists (vectors) where each non-repeated
+parent occurrence has exactly the same number of element positions. `VECTOR` is
+encoded with a 3-level structure similar to `LIST`, but the middle level uses
+`FieldRepetitionType.VECTOR` and carries a positive `SchemaElement.vector_length`
+instead of using repetition levels to encode variable length.
+
+`VECTOR` must always annotate a 3-level structure:
+
+```
+<required|optional> group <name> (VECTOR) {
+  vector group list [<vector_length>] {
+    <required|optional> <element-type> element;
+  }
+}
+```
+
+The `[<vector_length>]` notation indicates the value of
+`SchemaElement.vector_length` on the middle group whose `repetition_type` is
+`VECTOR`.
+
+* The outer-most level must be a group annotated with `LogicalType.VECTOR` that
+  contains a single field named `list`. The repetition of this level must be
+  either `optional` or `required` and determines whether the vector value is
+  nullable. It must not be `repeated`.
+* The middle level, named `list`, must be a group with `repetition_type = VECTOR`,
+  exactly one field named `element`, and a positive
+  `SchemaElement.vector_length`. It must not have a logical type or converted
+  type. This level contributes no definition or repetition level.
+* The `element` field encodes the vector element type and repetition. Element
+  repetition must be `required` or `optional`. Repeated fields are not allowed
+  inside the vector element subtree; use a `LIST` outside the `VECTOR` field to
+  encode repeated vectors.
+
+A `VECTOR` level conceptually expands each parent occurrence into
+`vector_length` consecutive element slots. Each logical vector value contributes
+exactly `vector_length` element slots to every primitive leaf in the element
+subtree, even when the vector value or an element slot is null. Null slots are
+represented by definition levels and do not have physical value bytes.
+
+For each primitive leaf in the vector element subtree, `num_values` counts
+vector element slots / level entries. For this layout, `num_values` is the
+number of parent occurrences multiplied by `vector_length`. When vector values
+or element slots are nullable, the number of physical values may be smaller than
+`num_values`.
+
+For example, a required vector with required elements:
+
+```
+required group emb (VECTOR) {
+  vector group list [3] {
+    required float element;
+  }
+}
+```
+
+has maximum definition level 0 and maximum repetition level 0. Given the logical
+values `[1.0, 2.0, 3.0]` and `[4.0, 5.0, 6.0]`, the leaf column writes:
+
+| Stream | Values |
+|---|---|
+| Definition levels | omitted because maximum definition level is 0 |
+| Repetition levels | omitted because maximum repetition level is 0 |
+| Physical values | `[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]` |
+| `num_values` | `6`, the number of vector element slots and physical values |
+
+For example, a nullable vector with nullable elements:
+
+```
+optional group emb (VECTOR) {
+  vector group list [3] {
+    optional float element;
+  }
+}
+```
+
+has maximum definition level 2 and maximum repetition level 0:
+
+* definition level 0: null vector value; this is written once for each of the 3
+  element slots of the null vector;
+* definition level 1: present vector value with a null element slot;
+* definition level 2: present vector value with a present element slot.
+
+Given the logical values `[1.0, 2.0, 3.0]`, `null`, and `[4.0, null, 6.0]`, the
+leaf column writes:
+
+| Stream | Values |
+|---|---|
+| Definition levels | `[2, 2, 2, 0, 0, 0, 2, 1, 2]` |
+| Repetition levels | omitted because maximum repetition level is 0 |
+| Physical values | `[1.0, 2.0, 3.0, 4.0, 6.0]` |
+| `num_values` | `9`, the number of vector element slots / level entries |
+
+Statistics are computed over the primitive element values, not over vector
+values. A null vector contributes `vector_length` nulls to each primitive leaf's
+null count. Writers should not split the slots of one vector value across data
+pages for any primitive leaf in the vector element subtree.
+
 ### Maps
 
 `MAP` is used to annotate types that should be interpreted as a map from keys

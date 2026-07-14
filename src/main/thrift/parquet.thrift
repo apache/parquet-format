@@ -189,6 +189,9 @@ enum FieldRepetitionType {
 
   /** The field is repeated and can contain 0 or more values */
   REPEATED = 2;
+
+  /** The field is a fixed-size vector group. See LogicalTypes.md. */
+  VECTOR = 3;
 }
 
 /**
@@ -323,6 +326,7 @@ struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct UUIDType {}    // allowed for FIXED[16], must be encoded as raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
 struct ListType {}    // see LogicalTypes.md
+struct VectorType {}  // see LogicalTypes.md
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
 struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
@@ -501,6 +505,7 @@ union LogicalType {
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
+  19: VectorType VECTOR       // no compatible ConvertedType
 }
 
 /**
@@ -563,6 +568,13 @@ struct SchemaElement {
    * for some logical types to ensure forward-compatibility in format v1.
    */
   10: optional LogicalType logicalType
+
+  /**
+   * For VECTOR repetition, the fixed number of element slots per parent
+   * occurrence. This must be set, and positive, when repetition_type is VECTOR
+   * and must not be set otherwise.
+   */
+  11: optional i32 vector_length;
 }
 
 /**
