@@ -666,8 +666,10 @@ A value resolves to bytes determined by `inline` / `path` / `offset` / `size`;
 #### Fields
 
 For the descriptions below, a field is *set* when it is present in the `FILE` group
-and its value is non-null (and, for string fields, non-empty). A field is *not set*
+and its value is non-null (and, for string fields, non-empty[1]). A field is *not set*
 when it is absent from the group, or is present but null or empty.
+
+[1] Implementations are not expected to treat empty strings as null
 
 ##### path
 
@@ -694,21 +696,30 @@ always sets `offset`, it always sets `size` as well.
 
 ##### content_type
 
-The media type (MIME type) of the resolved bytes (e.g., `image/png`).
+The media type (MIME type), as defined by RFC 2046, of the resolved bytes (e.g., `image/png`).
+When not set, the type can be assumed as `application/octet-stream`.
 
 ##### checksum
 
 A self-describing integrity token for the resolved bytes, of the form
-`<algorithm>:base64(<digest bytes>)`. Readers should ignore unknown 
-algorithms. The recognized algorithms are:
+`<algorithm>:<digest>`, where `<digest>` is encoded according to the `Encoding`
+column below. Readers should ignore unknown algorithms. The recognized algorithms
+are:
 
-| Algorithm | Notes                                                           |
-|-----------|-----------------------------------------------------------------|
-| `ETAG`    | the object-store eTag — equality-only, not recomputable         |
-| `MD5`     | the usual S3/HTTP eTag and Content-MD5                          |
-| `CRC32`   | Parquet's page-checksum algorithm (gzip/zlib)                   |
-| `CRC32C`  | common in object stores, hardware-accelerated                   |
-| `SHA-256` | e.g. S3 additional checksums                                    |
+| Algorithm | Encoding      | Notes                                                    |
+|-----------|---------------|----------------------------------------------------------|
+| `ETAG`    | opaque        | the object-store eTag, not recomputable                  |
+| `MD5`     | lowercase hex | as defined in RFC 6151 represented as 32 hex characters  |
+| `CRC32`   | lowercase hex | as defined in RFC 3385, represented as 8 hex characters  |
+| `CRC32C`  | lowercase hex | as defined in RFC 9260, represented as 8 hex characters  |
+| `SHA-256` | lowercase hex | as defined in RFC 6234, represented as 64 hex characters |
+
+`<digest>` encodings are:
+
+* `lowercase hex`: the digest bytes rendered as lowercase hexadecimal, two
+  characters per byte and no separators (e.g. `MD5:d41d8cd98f00b204e9800998ecf8427e`).
+* `opaque`: the token supplied verbatim by the object store, used only for
+  equality comparison and not otherwise interpreted.
 
 `checksum` applies to the resolved bytes, except for `ETAG`, which is the
 object-store eTag for the whole file referenced by `path`.
@@ -742,31 +753,29 @@ explicit `size`. A self-reference (`path` not set) must set `offset`, and theref
 runs to the end of the referenced file.
 
 A self-reference points within the same Parquet file using `offset` and `size` (both
-required); the bytes are written between column chunks and are not otherwise referenced by
-the footer. A self-reference is when `path` is not set, never an absolute path back to
-the current file, so a file containing self-references is renamed or relocated as a
-single unit.
+required). A self-reference is when `path` is not set. A file containing self-references
+can be renamed or relocated as a single unit.
 
-The bytes referenced by a self-reference are compressed with the same `CompressionCodec`
-as the one specified for the `inline` column.
+The bytes referenced by a self-reference use the `CompressionCodec`
+defined by the `inline` column chunk's `ColumnMetadata`.
 
 #### Validation
 
 * A value must resolve to some referenced data. It resolves only if `inline`, `path`, or
   `offset` is set; if none of them are set, the value does not resolve and is invalid, even
-  if `size` is set. Use column nullability to represent a null value.
+  if `size` is set.
 * A self-reference (`path` not set) must set `offset`. A value with neither `path` nor
   `offset` set (and not `inline`) does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid. Because a self-reference must set `offset`, it must also set `size`.
-* If `inline` is set, it supplies the bytes; producers may instead treat `inline` and the
+* If `inline` is set, it supplies the bytes readers; producers may treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
 
 Statistics may be collected for the individual fields of a `FILE`-annotated group
-according to the sort order of each field's logical type.
+according to the sort order defined in each field's logical type.
 
 This is an example of a `FILE`-annotated group that defines all fields:
 
@@ -782,7 +791,8 @@ optional group my_file (FILE) {
 ```
 
 Because every field is optional, a group need only define the fields it uses. A group
-whose values are always stored inline may define just `inline`:
+whose values are always stored inline may define just `inline` and optionally `content_type`
+as additional metadata:
 
 ```
 optional group inline_file (FILE) {
