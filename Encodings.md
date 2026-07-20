@@ -425,7 +425,10 @@ or more encoded vectors (batches of values). Each vector contains up to
 +-------------+------+------+-----+---------+----------+----------+-----+----------+
 ```
 
-The compression pipeline for each vector is:
+The compression pipeline below describes *one* way to produce a conforming
+vector. It is informative, not normative: an encoder may use any strategy as long
+as it emits the byte layout defined in [Page Layout](#page-layout). Only that
+byte layout and the [Decoding](#decoding) procedure are normative.
 
 ```
                     Input: float/double array
@@ -446,7 +449,7 @@ The compression pipeline for each vector is:
                               v
     +----------------------------------------------------------+
     |  3. FRAME OF REFERENCE (FOR)                             |
-    |     min_val = min(encoded[])                             |
+    |     min_val = min(encoded[:])                            |
     |     delta[i] = encoded[i] - min_val                      |
     +----------------------------------------------------------+
                               |
@@ -460,6 +463,10 @@ The compression pipeline for each vector is:
                               v
                    Output: Serialized vector bytes
 ```
+
+The `fast_round` used in step 2 is defined precisely in
+[Fast Rounding](#fast-rounding) below, including the exact magic-number values
+and the sign branching required for negative values.
 
 #### Page Layout
 
@@ -497,6 +504,10 @@ measured from the start of the offset array itself.
 The first offset always equals `num_vectors * 4` (pointing just past the offset array).
 Each subsequent offset equals the previous offset plus the stored size of the
 previous vector. No padding is inserted between vectors.
+
+A vector's absolute byte position within the page is
+`page_data_start + 7 + offset`, where `page_data_start` is the first byte after
+the page's Thrift header and `7` is the size of the ALP header.
 
 ##### Vector Format
 
@@ -573,7 +584,9 @@ Data section sizes:
 
 The FOR-encoded deltas, bit-packed into `ceil(num_elements_in_vector * bit_width / 8)` bytes.
 Values are bit-packed using the same LSB-first packing order as the
-[RLE/Bit-Packing Hybrid](#RLE) encoding.
+[RLE/Bit-Packing Hybrid](#RLE) encoding. When the total number of packed bits is
+not a multiple of 8, the final byte is padded with zero bits in its most
+significant positions.
 
 If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
 integers are equal to `frame_of_reference`).
@@ -625,7 +638,8 @@ The `fast_round` function uses a "magic number" technique for branchless roundin
 | DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
 
 The sign branching is necessary because the technique relies on `value ± magic`
-landing in a binade where the unit in the last place (ULP) equals 1.0. For
+landing in a [binade](https://en.wikipedia.org/wiki/Binade) where the unit in the
+last place (ULP) equals 1.0. For
 non-negative values, `value + magic` lands in [2^23, 2^24) for floats or
 [2^52, 2^53) for doubles. For negative values, `value - magic` lands in
 [-2^24, -2^23) or [-2^53, -2^52) respectively, where ULP is also 1.0. Without
@@ -697,7 +711,7 @@ Given the following data after decimal encoding and exception substitution:
 
 | Step                   | Formula                               | Example                     |
 |------------------------|---------------------------------------|-----------------------------|
-| 1. Find min            | min\_val = min(encoded\[\])           | 12                          |
+| 1. Find min            | min\_val = min(encoded\[:\])          | 12                          |
 | 2. Compute deltas      | delta\[i\] = encoded\[i\] - min\_val | \[111, 444, 777, 0\]       |
 | 3. Calculate bit width | bit\_width = ceil(log2(max\_delta+1)) | ceil(log2(778)) = 10       |
 | 4. Pack values         | Each value uses bit\_width bits       | 4 * 10 = 40 bits = 5 bytes |
@@ -748,7 +762,7 @@ For each vector:
 
 #### Worked Example: Exceptions and Non-Zero Factor
 
-**Input:** `double values[4] = { 1500.0, NaN, 2500.0, 333.3 }`
+**Input:** `double values[4] = { 1500.0, NaN, 2500.0, 333.5 }`
 
 Best encoding found: (exponent=4, factor=3). This means:
 `encoded = fast_round(value * 10^4 * 10^(-3)) = fast_round(value * 10)`
@@ -760,27 +774,27 @@ Best encoding found: (exponent=4, factor=3). This means:
 | 0     | 1500.0  | 15000.0                | 15000   | 1500.0                             | No         |
 | 1     | NaN     | -                      | -       | -                                  | Yes (NaN)  |
 | 2     | 2500.0  | 25000.0                | 25000   | 2500.0                             | No         |
-| 3     | 333.3   | 3333.0                 | 3333    | 333.3                              | No         |
+| 3     | 333.5   | 3335.0                 | 3335    | 333.5                              | No         |
 
 **Step 2: Handle Exceptions**
 
 Exception positions: \[1\]
 Exception values: \[NaN\]
 Placeholder: 15000 (first non-exception encoded value)
-Encoded with placeholders: \[15000, 15000, 25000, 3333\]
+Encoded with placeholders: \[15000, 15000, 25000, 3335\]
 
 **Step 3: Frame of Reference**
 
-| Encoded            | min = 3333 | Delta |
+| Encoded            | min = 3335 | Delta |
 |--------------------|------------|-------|
-| 15000              | -          | 11667 |
-| 15000 (placeholder)| -          | 11667 |
-| 25000              | -          | 21667 |
-| 3333               | -          | 0     |
+| 15000              | -          | 11665 |
+| 15000 (placeholder)| -          | 11665 |
+| 25000              | -          | 21665 |
+| 3335               | -          | 0     |
 
 **Step 4: Bit Packing**
 
-max\_delta = 21667, bit\_width = ceil(log2(21668)) = 15 bits,
+max\_delta = 21665, bit\_width = ceil(log2(21666)) = 15 bits,
 packed\_size = ceil(4 * 15 / 8) = 8 bytes
 
 **Serialized Vector:**
@@ -788,8 +802,8 @@ packed\_size = ceil(4 * 15 / 8) = 8 bytes
 | Section             | Content                                          | Size     |
 |---------------------|--------------------------------------------------|----------|
 | AlpInfo             | e=4, f=3, num\_exceptions=1                      | 4 bytes  |
-| ForInfo             | frame\_of\_reference=3333, bit\_width=15          | 9 bytes  |
-| PackedValues        | \[11667, 11667, 21667, 0\] at 15 bits each       | 8 bytes  |
+| ForInfo             | frame\_of\_reference=3335, bit\_width=15          | 9 bytes  |
+| PackedValues        | \[11665, 11665, 21665, 0\] at 15 bits each       | 8 bytes  |
 | ExceptionPositions  | \[1\]                                             | 2 bytes  |
 | ExceptionValues     | \[NaN\]                                           | 8 bytes  |
 | **Total**           |                                                   | **31 bytes** |
