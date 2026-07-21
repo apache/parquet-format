@@ -365,7 +365,7 @@ union TimeUnit {
 /**
  * Timestamp logical type annotation
  *
- * Allowed for physical types: INT64
+ * Allowed for physical types: INT64 and FIXED_LEN_BYTE_ARRAY with `type_length` = 12.
  */
 struct TimestampType {
   1: required bool isAdjustedToUTC
