@@ -709,9 +709,9 @@ are:
 | Algorithm | Encoding      | Notes                                                    |
 |-----------|---------------|----------------------------------------------------------|
 | `ETAG`    | opaque        | the object-store eTag, not recomputable                  |
-| `MD5`     | lowercase hex | as defined in RFC 6151 represented as 32 hex characters  |
-| `CRC32`   | lowercase hex | as defined in RFC 3385, represented as 8 hex characters  |
-| `CRC32C`  | lowercase hex | as defined in RFC 9260, represented as 8 hex characters  |
+| `MD5`     | lowercase hex | as defined in RFC 1321 represented as 32 hex characters  |
+| `CRC32`   | lowercase hex | as defined in RFC 2083, represented as 8 hex characters  |
+| `CRC32C`  | lowercase hex | as defined in RFC 3385, represented as 8 hex characters  |
 | `SHA-256` | lowercase hex | as defined in RFC 6234, represented as 64 hex characters |
 
 `<digest>` encodings are:
@@ -737,15 +737,15 @@ set:
 
 | `inline` | `path` | `offset` | `size` | Resolves to                                           |
 |----------|--------|----------|--------|-------------------------------------------------------|
-| set      | –      | –        | –      | the inline bytes                                      |
-| –        | set    | –        | –      | whole external file at `path`                         |
-| –        | set    | set      | -      | invalid                                               |
-| –        | set    | –        | set    | external `path`, `[0, size)`                          |
-| –        | set    | set      | set    | external `path`, `[offset, offset + size)`            |
-| –        | -      | set      | -      | invalid                                               |
-| –        | -      | -        | set    | invalid                                               |
-| –        | –      | set      | set    | this file, `[offset, offset + size)` (self-reference) |
-| –        | –      | –        | –      | nothing — invalid                                     |
+| set      | -      | -        | -      | the inline bytes                                      |
+| -        | set    | -        | -      | whole external file at `path`                         |
+| -        | set    | set      | -      | invalid                                               |
+| -        | set    | -        | set    | external `path`, `[0, size)`                          |
+| -        | set    | set      | set    | external `path`, `[offset, offset + size)`            |
+| -        | -      | set      | -      | invalid                                               |
+| -        | -      | -        | set    | invalid                                               |
+| -        | -      | set      | set    | this file, `[offset, offset + size)` (self-reference) |
+| -        | -      | -        | -      | nothing - invalid                                     |
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. A self-reference (`path` not set) must set `offset`, and therefore also
@@ -756,9 +756,6 @@ A self-reference points within the same Parquet file using `offset` and `size` (
 required). A self-reference is when `path` is not set. A file containing self-references
 can be renamed or relocated as a single unit.
 
-The bytes referenced by a self-reference use the `CompressionCodec`
-defined by the `inline` column chunk's `ColumnMetadata`.
-
 #### Validation
 
 * A value must resolve to some referenced data. It resolves only if `inline`, `path`, or
@@ -768,7 +765,7 @@ defined by the `inline` column chunk's `ColumnMetadata`.
   `offset` set (and not `inline`) does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid. Because a self-reference must set `offset`, it must also set `size`.
-* If `inline` is set, it supplies the bytes readers; producers may treat `inline` and the
+* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
