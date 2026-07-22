@@ -770,6 +770,8 @@ can be renamed or relocated as a single unit.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
+* If a reader comes across an invalid file reference, the reader may return a `null` file reference
+  for that row.
 
 Statistics may be collected for the individual fields of a `FILE`-annotated group
 according to the sort order defined in each field's logical type.
