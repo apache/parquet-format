@@ -628,20 +628,22 @@ equivalent functions, which are not guaranteed to be correctly rounded.
 
 ##### Fast Rounding
 
-The `fast_round` function uses a "magic number" technique for branchless rounding.
+The `fast_round` function uses a "magic number" technique for fast rounding that
+avoids a division or a call to a library rounding function. It branches on the
+sign of `value`.
 
 `fast_round(value)` is defined as follows:
 
 | Type   | Magic Number                      | Formula (value &ge; 0)           | Formula (value &lt; 0)           |
 |--------|-----------------------------------|----------------------------------|----------------------------------|
-| FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
-| DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
+| FLOAT  | 2^23 = 8,388,608                 | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
+| DOUBLE | 2^52 = 4,503,599,627,370,496     | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
 
 The `value ± magic` additions and subtractions are floating-point operations,
 not integer arithmetic; only the final cast converts to an integer. The
 magic-number constants are given as integers because they are exact integers
-(each is a sum of two powers of two, so it is representable exactly), but they
-are operands of floating-point arithmetic.
+(each is a power of two, representable exactly), but they are operands of
+floating-point arithmetic.
 
 Implementations MUST perform this arithmetic in the precision matching the value
 type: FLOAT `fast_round` in IEEE 754 single precision (binary32), and DOUBLE
@@ -650,18 +652,20 @@ to work at all, not merely for cross-language reproducibility. The method
 depends on `value ± magic` landing in a binade where the ULP equals 1.0; that
 holds only when the operation is carried out in the value's own precision. If a
 FLOAT computation is instead evaluated in double precision (for example, through
-an implicit promotion), `12,582,912` lands in a double binade whose ULP is far
+an implicit promotion), `8,388,608` lands in a double binade whose ULP is far
 below 1.0, no rounding occurs, and the result is wrong.
 
 The sign branching is necessary because the technique relies on `value ± magic`
 landing in a [binade](https://en.wikipedia.org/wiki/Binade) where the unit in the
-last place (ULP) equals 1.0. For
-non-negative values, `value + magic` lands in [2^23, 2^24) for floats or
-[2^52, 2^53) for doubles. For negative values, `value - magic` lands in
-[-2^24, -2^23) or [-2^53, -2^52) respectively, where ULP is also 1.0. Without
-sign branching, negative values with magnitude beyond 2^22 (float) or 2^51
-(double) fall into a lower binade where ULP &lt; 1.0, producing incorrect
-rounding and a higher exception rate.
+last place (ULP) equals 1.0. For non-negative values, `value + magic` lands in
+[2^23, 2^24) for floats or [2^52, 2^53) for doubles. For negative values,
+`value - magic` lands in (-2^24, -2^23] or (-2^53, -2^52] respectively, where the
+ULP is also 1.0. Without the branch — that is, applying the non-negative formula
+to a negative value — `value + magic` falls below 2^23 (float) or 2^52 (double)
+into a lower binade where the ULP is 0.5 or smaller, producing incorrect
+rounding. The branch therefore gives a symmetric valid domain of (-2^23, 2^23)
+for floats and (-2^52, 2^52) for doubles; scaled values outside this domain
+round incorrectly and are caught by the round-trip check, becoming exceptions.
 
 ##### Parameter Selection
 
