@@ -637,6 +637,22 @@ The `fast_round` function uses a "magic number" technique for branchless roundin
 | FLOAT  | 2^22 + 2^23 = 12,582,912         | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
 | DOUBLE | 2^51 + 2^52 = 6,755,399,441,055,744 | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
 
+The `value ± magic` additions and subtractions are floating-point operations,
+not integer arithmetic; only the final cast converts to an integer. The
+magic-number constants are given as integers because they are exact integers
+(each is a sum of two powers of two, so it is representable exactly), but they
+are operands of floating-point arithmetic.
+
+Implementations MUST perform this arithmetic in the precision matching the value
+type: FLOAT `fast_round` in IEEE 754 single precision (binary32), and DOUBLE
+`fast_round` in double precision (binary64). This is required for the technique
+to work at all, not merely for cross-language reproducibility. The method
+depends on `value ± magic` landing in a binade where the ULP equals 1.0; that
+holds only when the operation is carried out in the value's own precision. If a
+FLOAT computation is instead evaluated in double precision (for example, through
+an implicit promotion), `12,582,912` lands in a double binade whose ULP is far
+below 1.0, no rounding occurs, and the result is wrong.
+
 The sign branching is necessary because the technique relies on `value ± magic`
 landing in a [binade](https://en.wikipedia.org/wiki/Binade) where the unit in the
 last place (ULP) equals 1.0. For
