@@ -469,6 +469,18 @@ struct GeographyType {
 }
 
 /**
+ * File logical type annotation
+ *
+ * Annotates a group that represents a reference to a file, or to a range of
+ * bytes that may be stored inline, elsewhere in this file, or in an external
+ * file.
+ *
+ * See LogicalTypes.md for details.
+ */
+struct FileType {
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -501,6 +513,7 @@ union LogicalType {
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
+  19: FileType FILE           // no compatible ConvertedType
 }
 
 /**
@@ -1108,6 +1121,7 @@ union ColumnOrder {
    *   VARIANT - undefined
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
+   *   FILE - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true

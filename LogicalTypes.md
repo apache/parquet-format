@@ -635,7 +635,187 @@ The type has two type parameters:
 
 The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
-are found during reading, they must be ignored. 
+are found during reading, they must be ignored.
+
+### FILE
+
+`FILE` annotates a group that represents a reference to a range of bytes, which may
+be stored inline in the value, elsewhere within the current file, or in an external file. It
+is intended for use cases such as storing file inventories, manifests, and unstructured
+data references (e.g., images or audio files stored in object storage).
+
+The annotated group may contain the following fields, identified by name case sensitively,
+not by field order. Field IDs, if they exist, may also be used for projection. Every field
+is optional both in the schema and in the data: a writer may omit any field from the group
+definition, and any field that is present has a field repetition type of `OPTIONAL`.
+A group need only define the fields it uses (for example, an inline-only group may define
+just `inline`, and an external reference may define just `uri`).
+
+| Field          | Type       |
+|----------------|------------|
+| `uri`          | STRING     |
+| `offset`       | INT64      |
+| `size`         | INT64      |
+| `content_type` | STRING     |
+| `checksum`     | STRING     |
+| `inline`       | BYTE_ARRAY |
+
+A value resolves to bytes determined by `inline` / `uri` / `offset` / `size`;
+`content_type` and `checksum` are metadata describing whatever is resolved.
+
+#### Fields
+
+For the descriptions below, a field is *set* when it is present in the `FILE` group
+and its value is non-null (and, for string fields, non-empty[1]). A field is *not set*
+when it is absent from the group, or is present but null or empty.
+
+[1] Implementations are not expected to treat empty strings as null
+
+##### uri
+
+A URI-reference as defined by RFC 3986, encoded as a Parquet STRING (e.g., `s3://bucket/file.jpg`).
+The URI may be absolute or relative. No additional encoding (e.g., URI encoding) is applied on top
+of the user-provided data. If `uri` is not set, the value refers to the current file
+(a self-reference).
+
+##### offset
+
+A byte offset indicating the start of the byte range within the referenced data.
+If not set, readers must treat the value as 0.
+If set and non-zero, readers must seek to this offset to retrieve the referenced data.
+`offset` must be set for a self-reference (`uri` not set); it is optional for an
+external reference (`uri` set). `offset` must not be < 0.
+
+##### size
+
+The byte length of the referenced data. Must be zero or a positive integer if set; a
+value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
+It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
+in which case the range runs to the end of the referenced file. Because a self-reference
+always sets `offset`, it always sets `size` as well.
+
+##### content_type
+
+The media type (MIME type), as defined by RFC 2046, of the resolved bytes (e.g., `image/png`).
+When not set, the type can be assumed as `application/octet-stream`.
+
+##### checksum
+
+A self-describing integrity token for the resolved bytes, of the form
+`<algorithm>:<digest>`, where `<digest>` is encoded according to the `Encoding`
+column below. Readers should ignore unknown algorithms. The recognized algorithms
+are:
+
+| Algorithm | Encoding      | Notes                                                    |
+|-----------|---------------|----------------------------------------------------------|
+| `ETAG`    | opaque        | the object-store eTag, not recomputable                  |
+| `MD5`     | lowercase hex | as defined in RFC 1321 represented as 32 hex characters  |
+| `CRC32`   | lowercase hex | as defined in RFC 2083, represented as 8 hex characters  |
+| `CRC32C`  | lowercase hex | as defined in RFC 3385, represented as 8 hex characters  |
+| `SHA-256` | lowercase hex | as defined in RFC 6234, represented as 64 hex characters |
+
+`<digest>` encodings are:
+
+* `lowercase hex`: the digest bytes rendered as lowercase hexadecimal, two
+  characters per byte and no separators (e.g. `MD5:d41d8cd98f00b204e9800998ecf8427e`).
+* `opaque`: the token supplied verbatim by the object store, used only for
+  equality comparison and not otherwise interpreted.
+
+`checksum` applies to the resolved bytes, except for `ETAG`, which is the
+object-store eTag for the whole file referenced by `uri`.
+
+##### inline
+
+The referenced bytes stored inline in the value. If `inline` is set, it supplies the
+bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance
+only.
+
+#### Resolution
+
+A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
+set:
+
+| `inline` | `uri` | `offset` | `size` | Resolves to                                           |
+|----------|-------|----------|--------|-------------------------------------------------------|
+| set      | -     | -        | -      | the inline bytes                                      |
+| -        | set   | -        | -      | whole external file at `uri`                          |
+| -        | set   | set      | -      | invalid                                               |
+| -        | set   | -        | set    | external `uri`, `[0, size)`                           |
+| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`             |
+| -        | -     | set      | -      | invalid                                               |
+| -        | -     | -        | set    | invalid                                               |
+| -        | -     | set      | set    | this file, `[offset, offset + size)` (self-reference) |
+| -        | -     | -        | -      | nothing - invalid                                     |
+
+`size` must be set whenever `offset` is set, so any offset-based read always carries an
+explicit `size`. A self-reference (`uri` not set) must set `offset`, and therefore also
+`size`. `size` may be omitted only for a whole-file external reference, where the range
+runs to the end of the referenced file.
+
+A self-reference points within the same Parquet file using `offset` and `size` (both
+required). A self-reference is when `uri` is not set. A file containing self-references
+can be renamed or relocated as a single unit.
+
+Parquet files containing self-references must not use Parquet modular encryption.
+Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
+be encrypted or authenticated independently. Encryption of external files referenced
+by `uri` is outside the scope of the Parquet format.
+
+#### Validation
+
+* A value must resolve to some referenced data. It resolves only if `inline`, `uri`, or
+  `offset` is set; if none of them are set, the value does not resolve and is invalid, even
+  if `size` is set.
+* A self-reference (`uri` not set) must set `offset`. A value with neither `uri` nor
+  `offset` set (and not `inline`) does not resolve and is invalid.
+* `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
+  is invalid. Because a self-reference must set `offset`, it must also set `size`.
+* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
+  locator fields as mutually exclusive.
+* Field names within a `FILE`-annotated group must not be renamed.
+* Additional metadata about the file (e.g., modification timestamp) must
+  be stored adjacent to this group by engines or table formats, not inside it.
+* If a reader comes across an invalid file reference, the reader may return a `null` file reference
+  for that row.
+
+Statistics may be collected for the individual fields of a `FILE`-annotated group
+according to the sort order defined in each field's logical type.
+
+This is an example of a `FILE`-annotated group that defines all fields:
+
+```
+optional group my_file (FILE) {
+  optional binary uri (STRING);
+  optional int64 offset;
+  optional int64 size;
+  optional binary content_type (STRING);
+  optional binary checksum (STRING);
+  optional binary inline;
+}
+```
+
+Because every field is optional, a group need only define the fields it uses. A group
+whose values are always stored inline may define just `inline` and optionally `content_type`
+as additional metadata:
+
+```
+optional group inline_file (FILE) {
+  optional binary inline;
+  optional binary content_type (STRING);
+}
+```
+
+A group whose values are always whole external files may define just `uri` and optionally
+`content_type` and `checksum` for validation:
+
+```
+optional group external_file (FILE) {
+  optional binary uri (STRING);
+  optional binary content_type (STRING);
+  optional binary checksum (STRING);
+}
+```
+
 
 ## Nested Types
 
