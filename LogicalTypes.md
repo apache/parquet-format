@@ -756,6 +756,11 @@ A self-reference points within the same Parquet file using `offset` and `size` (
 required). A self-reference is when `uri` is not set. A file containing self-references
 can be renamed or relocated as a single unit.
 
+Parquet files containing self-references must not use Parquet modular encryption.
+Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
+be encrypted or authenticated independently. Encryption of external files referenced
+by `uri` is outside the scope of the Parquet format.
+
 #### Validation
 
 * A value must resolve to some referenced data. It resolves only if `inline`, `uri`, or

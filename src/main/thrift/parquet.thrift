@@ -1116,6 +1116,7 @@ union ColumnOrder {
    *   VARIANT - undefined
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
+   *   FILE - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
