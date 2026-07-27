@@ -399,7 +399,7 @@ Supported Types: FLOAT, DOUBLE
 
 This encoding is adapted from the paper
 ["ALP: Adaptive Lossless floating-Point Compression"](https://dl.acm.org/doi/10.1145/3626717)
-by Afroozeh and Boncz (SIGMOD 2024).
+by Afroozeh, Kuffo, and Boncz (SIGMOD 2024).
 
 ALP works by converting floating-point values to integers using decimal scaling
 (controlled by an *exponent* `e` and *factor* `f`), then applying Frame of
@@ -407,12 +407,12 @@ Reference (FOR) encoding and bit-packing. Values that cannot be losslessly
 converted are stored separately as *exceptions*. The encoding achieves high
 compression for decimal-like floating-point data (e.g., monetary values, sensor
 readings) while remaining fully lossless. Each value is encoded independently,
-enabling random access to individual values and parallel encode/decode.
+enabling random access to individual values and parallel encoding/decoding.
 
 #### Overview
 
-ALP encoding consists of a page-level header followed by an offset array and one
-or more encoded vectors (batches of values). Each vector contains up to
+For each data page, ALP encoding consists of a header followed by an offset array
+and one or more encoded vectors (batches of values). Each vector contains up to
 `vector_size` elements (default 1024).
 
 ```
@@ -475,7 +475,7 @@ and the sign branching required for negative values.
 All multi-byte values are stored in little-endian order.
 
 ```
- Byte:    0              1               2              3    4    5    6
+ Byte:         0                1              2         3    4    5    6
        +----------------+---------------+--------------+----+----+----+----+
        | compression    | integer       | log_vector   |     num_elements  |
        | _mode          | _encoding     | _size        |     (int32 LE)    |
@@ -487,7 +487,7 @@ All multi-byte values are stored in little-endian order.
 | 0 | compression_mode | 1 byte | uint8 | Compression mode (0 = ALP). Reserved for future variants (e.g., ALP-RD). |
 | 1 | integer_encoding | 1 byte | uint8 | Integer encoding (must be 0 = FOR + bit-packing) |
 | 2 | log_vector_size | 1 byte | uint8 | log2(vector\_size). Must be in the inclusive range \[3, 15\]. Recommended default: 10 (vector size 1024) |
-| 3 | num_elements | 4 bytes | int32 | Total number of floating-point values in the page |
+| 3 | num_elements | 4 bytes | int32 | Total number of non-null floating-point values in the page |
 
 The number of vectors is `ceil(num_elements / vector_size)`. The last vector may
 contain fewer than `vector_size` elements.
@@ -505,14 +505,21 @@ The first offset always equals `num_vectors * 4` (pointing just past the offset 
 Each subsequent offset equals the previous offset plus the stored size of the
 previous vector. No padding is inserted between vectors.
 
-A vector's absolute byte position within the page is
-`page_data_start + 7 + offset`, where `page_data_start` is the first byte after
-the page's Thrift header and `7` is the size of the ALP header.
+Offsets are relative to the start of the offset array. A vector's absolute byte
+position is `alp_data_start + 7 + offset`, where `alp_data_start` is the first
+byte of the ALP header within the *decoded* page data — that is, after the page
+has been decompressed and after any repetition/definition levels — and `7` is the
+size of the ALP header. (When the page is uncompressed and carries no repetition
+or definition levels, `alp_data_start` coincides with the first byte after the
+page's Thrift header.)
 
 ##### Vector Format
 
 Each vector is self-describing and contains the encoding parameters, FOR metadata,
-bit-packed encoded values, and exception data.
+bit-packed encoded values, and exception data. The layout described here applies
+when `compression_mode` = 0 (ALP) and `integer_encoding` = 0 (FOR + bit-packing);
+future modes may define different vector contents and need not include `AlpInfo`
+or `ForInfo`.
 
 ```
 +-------------------+-----------------+-------------------+---------------------+-------------------+
@@ -520,6 +527,10 @@ bit-packed encoded values, and exception data.
 |     (4 bytes)     | (5B or 9B)      |    (variable)     |     (variable)      |    (variable)     |
 +-------------------+-----------------+-------------------+---------------------+-------------------+
 ```
+
+The first two components (`AlpInfo` and `ForInfo`) form the *vector header*; the
+remaining three (`PackedValues`, `ExceptionPositions`, `ExceptionValues`) form the
+*data section*.
 
 Vector header sizes:
 | Type   | AlpInfo | ForInfo | Total Header |
@@ -533,6 +544,9 @@ Data section sizes:
 | PackedValues        | ceil(num\_elements\_in\_vector * bit\_width / 8) | Bit-packed delta values      |
 | ExceptionPositions  | num\_exceptions * 2 bytes   | uint16 indices of exceptions |
 | ExceptionValues     | num\_exceptions * sizeof(encoded type) (float=4 and double=8) | Original float/double values |
+
+Here `bit_width` and `num_exceptions` are read from the vector header (`ForInfo`
+and `AlpInfo` respectively), described below.
 
 ###### AlpInfo (4 bytes, both types)
 
@@ -588,6 +602,10 @@ Values are bit-packed using the same LSB-first packing order as the
 not a multiple of 8, the final byte is padded with zero bits in its most
 significant positions.
 
+Because `frame_of_reference` is the minimum encoded integer in the vector, every
+delta is non-negative. Deltas are packed and interpreted as unsigned integers; no
+sign extension is applied when unpacking.
+
 If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
 integers are equal to `frame_of_reference`).
 
@@ -600,7 +618,9 @@ the 0-based index within the vector of an exception value.
 
 An array of `num_exceptions` values in the original floating-point type
 (4 bytes little-endian IEEE 754 for FLOAT, 8 bytes for DOUBLE), stored in
-the same order as the corresponding positions.
+the same order as the corresponding positions. Each value is stored as its exact
+IEEE 754 bit pattern; implementations MUST NOT canonicalize NaN or otherwise alter
+the bits, so that decoding reproduces the original value bit-for-bit.
 
 #### Encoding
 
