@@ -436,7 +436,7 @@ byte layout and the [Decoding](#decoding) procedure are normative.
                               v
     +----------------------------------------------------------+
     |  1. CHOOSE PARAMETERS                                    |
-    |     Select (exponent, factor) pair for this vector       |
+    |     Select (exponent, factor) pair for this array        |
     +----------------------------------------------------------+
                               |
                               v
@@ -522,6 +522,7 @@ future modes may define different vector contents and need not include `AlpInfo`
 or `ForInfo`.
 
 ```
+<----------- Vector Header -----------><----------------------- Data Section ----------------------->
 +-------------------+-----------------+-------------------+---------------------+-------------------+
 |      AlpInfo      |     ForInfo     |   PackedValues    | ExceptionPositions  | ExceptionValues   |
 |     (4 bytes)     | (5B or 9B)      |    (variable)     |     (variable)      |    (variable)     |
@@ -602,9 +603,12 @@ Values are bit-packed using the same LSB-first packing order as the
 not a multiple of 8, the final byte is padded with zero bits in its most
 significant positions.
 
-Because `frame_of_reference` is the minimum encoded integer in the vector, every
-delta is non-negative. Deltas are packed and interpreted as unsigned integers; no
-sign extension is applied when unpacking.
+Each delta is `encoded[i] - frame_of_reference`, computed in unsigned (wrapping)
+arithmetic and stored as an unsigned integer. Computing it as unsigned avoids
+signed-integer overflow when the vector's range (`max - min`) exceeds the signed
+maximum of the encoded type, and it means no sign extension is applied when
+unpacking. Because `frame_of_reference` is the minimum encoded integer in the
+vector, every delta is non-negative.
 
 If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
 integers are equal to `frame_of_reference`).
