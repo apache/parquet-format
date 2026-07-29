@@ -661,38 +661,25 @@ ratio and exception count, never correctness or what a reader decodes. The
 ##### Fast Rounding (informative)
 
 `fast_round` recovers the integer intended by `value * 10^e * 10^(-f)` — which
-carries floating-point rounding noise — by rounding it to the nearest integer,
-without a division or a call to a library rounding function. It is **not**
-normative: as noted above, an encoder MAY use any rounding method, since values
-that do not round-trip under the normative decode are stored as exceptions.
+carries floating-point rounding noise — by rounding it to the nearest integer
+(ties to even), without a division or a call to a library rounding function. It is
+**not** normative: an encoder MAY use any rounding method, since values that do not
+round-trip under the normative decode are stored as exceptions.
 
-The technique relies on a "magic number" — a power of two whose
-[binade](https://en.wikipedia.org/wiki/Binade) has a unit in the last place (ULP)
-of exactly 1.0 — so that adding then subtracting it discards the fractional bits
-and leaves a nearest (ties-to-even) integer. Implementations vary: some apply it
-directly in a single branch-free form; others add a sign test so that both positive
-and negative values land in a binade with ULP 1.0:
+The technique adds then subtracts a "magic number" (a power of two large enough to
+discard the fractional bits), leaving the nearest integer. Implementations vary:
+some apply it in a single branch-free form, others add a sign test.
 
 | Type   | Magic Number                      | Formula (value &ge; 0)           | Formula (value &lt; 0)           |
 |--------|-----------------------------------|----------------------------------|----------------------------------|
 | FLOAT  | 2^23 = 8,388,608                 | `(int32_t)((value + magic) - magic)` | `(int32_t)((value - magic) + magic)` |
 | DOUBLE | 2^52 = 4,503,599,627,370,496     | `(int64_t)((value + magic) - magic)` | `(int64_t)((value - magic) + magic)` |
 
-The `value ± magic` operations are floating-point, not integer, arithmetic; only
-the final cast converts to an integer. The arithmetic should be evaluated in the
-value's own precision (FLOAT in binary32, DOUBLE in binary64), because it relies on
-`value ± magic` landing in a binade where the ULP equals 1.0, which holds only in
-the matching precision — evaluating a FLOAT computation in double precision, for
-example, places `8,388,608` in a binade whose ULP is far below 1.0 and no rounding
-occurs.
-
-Each form has a limited valid domain — roughly (-2^23, 2^23) for floats and
-(-2^52, 2^52) for doubles with the sign-test form, and a different range for the
-branch-free form — and the two disagree on some inputs (for instance, the
-branch-free form is exact for some large-magnitude values where the sign-test form
-is off by one, and vice versa). Because any value a given variant rounds incorrectly
-is stored as an exception, the choice never affects correctness — only compression
-ratio — which is why it is left to the encoder rather than mandated.
+The `value ± magic` operations must be evaluated in the value's own precision
+(FLOAT in binary32, DOUBLE in binary64); only the final cast converts to an integer.
+The two forms round some large-magnitude inputs differently, but since any value
+that fails to round-trip is stored as an exception, the choice affects only
+compression ratio, never correctness.
 
 ##### Parameter Selection
 
