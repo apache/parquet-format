@@ -688,11 +688,11 @@ external reference (`uri` set). `offset` must not be < 0.
 
 ##### size
 
-The byte length of the referenced data. Must be zero or a positive integer if set; a
-value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
-It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
-in which case the range runs to the end of the referenced file. Because a self-reference
-always sets `offset`, it always sets `size` as well.
+The byte length of the stored representation. Must be zero or a positive integer if set.
+A value of 0 indicates an empty stored representation. `size` must be set whenever
+`offset` is set. It may be omitted only for a whole-file external reference (`uri` set,
+`offset` not set), in which case the range runs to the end of the referenced file.
+Because a self-reference always sets `offset`, it always sets `size` as well.
 
 ##### content_type
 
@@ -756,9 +756,30 @@ A self-reference points within the same Parquet file using `offset` and `size` (
 required). A self-reference is when `uri` is not set. A file containing self-references
 can be renamed or relocated as a single unit.
 
-The bytes referenced by a self-reference are compressed with the `CompressionCodec`
-of the inline column chunk's `ColumnMetaData`. This does not apply to external
-references.
+A schema that permits self-references must include the `inline` field and encode it
+using Data Page V2.
+
+Each self-reference corresponds positionally to a value in the `inline` column. Its
+compression state is inherited from the Data Page V2 containing that position:
+
+* If `is_compressed` is true, the referenced byte range is compressed independently
+  using the `CompressionCodec` of the `inline` column chunk.
+* If `is_compressed` is false, the referenced byte range contains the resolved bytes
+  without compression.
+
+All self-references corresponding to positions in the same data page share the page's
+compression decision. A writer that requires a different decision must begin a new
+Data Page V2.
+
+Each compressed byte range is an independent compression block. Compression state is
+not shared with the data page or with other referenced ranges.
+
+For a self-reference, `offset` and `size` identify the stored representation. When
+compressed, `size` is the compressed byte length. The complete range is supplied to
+the codec, and its decompressed output is the resolved value.
+
+`content_type` and `checksum` describe the resolved bytes after decompression. These
+compression rules do not apply to external references.
 
 Parquet files containing self-references must not use Parquet modular encryption.
 Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
