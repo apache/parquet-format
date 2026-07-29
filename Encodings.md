@@ -464,9 +464,8 @@ byte layout and the [Decoding](#decoding) procedure are normative.
                    Output: Serialized vector bytes
 ```
 
-The `fast_round` used in step 2 is defined precisely in
-[Fast Rounding](#fast-rounding) below, including the exact magic-number values
-and the sign branching required for negative values.
+The `fast_round` used in step 2 is one recommended rounding technique, described in
+[Fast Rounding](#fast-rounding) below; it is informative, not normative.
 
 #### Page Layout
 
@@ -544,7 +543,7 @@ Data section sizes:
 |---------------------|-----------------------------|------------------------------|
 | PackedValues        | ceil(num\_elements\_in\_vector * bit\_width / 8) | Bit-packed delta values      |
 | ExceptionPositions  | num\_exceptions * 2 bytes   | uint16 indices of exceptions |
-| ExceptionValues     | num\_exceptions * sizeof(encoded type) (float=4 and double=8) | Original float/double values |
+| ExceptionValues     | num\_exceptions * sizeof(encoded type) (float=4 and double=8) | Original values, stored as their exact IEEE-754 bits (NaN not canonicalized) |
 
 Here `bit_width` and `num_exceptions` are read from the vector header (`ForInfo`
 and `AlpInfo` respectively), described below.
