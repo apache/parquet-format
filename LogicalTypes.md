@@ -756,19 +756,15 @@ A self-reference points within the same Parquet file using `offset` and `size` (
 required). A self-reference is when `uri` is not set. A file containing self-references
 can be renamed or relocated as a single unit.
 
-A schema that permits self-references must include the `inline` field and encode it
-using Data Page V2.
+A schema that permits self-references must include the `inline` field.
 
 Each self-reference inherits the compression and encryption settings of the `inline`
-column at the same position. The corresponding position is the position representing
-the same `FILE` value in the `inline` column's repetition and definition level stream.
+column chunk in the same row group. The corresponding position is the position
+representing the same `FILE` value in the `inline` column's repetition and definition
+level stream.
 
-The compression state is inherited from the Data Page V2 containing that position:
-
-* If `is_compressed` is true, the referenced byte range is compressed independently
-  using the `CompressionCodec` of the `inline` column chunk.
-* If `is_compressed` is false, the referenced byte range contains the resolved bytes
-  without compression.
+Each referenced byte range is compressed independently using the `CompressionCodec`
+of the `inline` column chunk. `UNCOMPRESSED` leaves the referenced bytes uncompressed.
 
 Each compressed byte range is an independent compression block. Compression state is
 not shared with the data page or with other referenced ranges.
@@ -791,7 +787,8 @@ a self-reference, a reader:
 
 1. reads the stored representation identified by `offset` and `size`;
 2. decrypts it when the corresponding `inline` column chunk is encrypted;
-3. decompresses it when `is_compressed` is true for the corresponding Data Page V2;
+3. decompresses it using the `CompressionCodec` of the corresponding `inline` column
+   chunk, unless the codec is `UNCOMPRESSED`;
 4. returns the resulting bytes.
 
 `content_type` and `checksum` describe the resolved bytes after these transformations.

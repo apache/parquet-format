@@ -257,8 +257,8 @@ Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenat
 2.	[All modules] module type (1 byte)
 3.	[All modules except footer] row group ordinal (2-byte short, little-endian)
 4.	[All modules except footer] column ordinal (2-byte short, little-endian)
-5.	[Data page, data page header, and self-reference only] page ordinal (2-byte short, little-endian)
-6.	[Self-reference only] value ordinal within the data page (4-byte integer, little-endian)
+5.	[Data page and data page header only] page ordinal (2-byte short, little-endian)
+6.	[Self-reference only] self-reference ordinal within the column chunk (8-byte integer, little-endian)
 
 The following module types are defined:  
 
@@ -275,24 +275,24 @@ The following module types are defined:
    * Self-Reference (10)
 
 
-|                       | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal | Value ordinal |
-|-----------------------|------------------|-------------|-------------------|----------------|--------------|---------------|
-| Footer                |       yes        |   yes (0)   |        no         |      no        |     no       |      no       |
-| ColumnMetaData        |       yes        |   yes (1)   |        yes        |      yes       |     no       |      no       |
-| Data Page             |       yes        |   yes (2)   |        yes        |      yes       |     yes      |      no       |
-| Dictionary Page       |       yes        |   yes (3)   |        yes        |      yes       |     no       |      no       |
-| Data Page Header      |       yes        |   yes (4)   |        yes        |      yes       |     yes      |      no       |
-| Dictionary Page Header|       yes        |   yes (5)   |        yes        |      yes       |     no       |      no       |
-| ColumnIndex           |       yes        |   yes (6)   |        yes        |      yes       |     no       |      no       |
-| OffsetIndex           |       yes        |   yes (7)   |        yes        |      yes       |     no       |      no       |
-| BloomFilter Header    |       yes        |   yes (8)   |        yes        |      yes       |     no       |      no       |
-| BloomFilter Bitset    |       yes        |   yes (9)   |        yes        |      yes       |     no       |      no       |
-| Self-Reference        |       yes        |   yes (10)  |        yes        |      yes       |     yes      |      yes      |
+|                       | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal | Self-reference ordinal |
+|-----------------------|------------------|-------------|-------------------|----------------|--------------|------------------------|
+| Footer                |       yes        |   yes (0)   |        no         |      no        |     no       |          no            |
+| ColumnMetaData        |       yes        |   yes (1)   |        yes        |      yes       |     no       |          no            |
+| Data Page             |       yes        |   yes (2)   |        yes        |      yes       |     yes      |          no            |
+| Dictionary Page       |       yes        |   yes (3)   |        yes        |      yes       |     no       |          no            |
+| Data Page Header      |       yes        |   yes (4)   |        yes        |      yes       |     yes      |          no            |
+| Dictionary Page Header|       yes        |   yes (5)   |        yes        |      yes       |     no       |          no            |
+| ColumnIndex           |       yes        |   yes (6)   |        yes        |      yes       |     no       |          no            |
+| OffsetIndex           |       yes        |   yes (7)   |        yes        |      yes       |     no       |          no            |
+| BloomFilter Header    |       yes        |   yes (8)   |        yes        |      yes       |     no       |          no            |
+| BloomFilter Bitset    |       yes        |   yes (9)   |        yes        |      yes       |     no       |          no            |
+| Self-Reference        |       yes        |   yes (10)  |        yes        |      yes       |     no       |          yes           |
 
-For a self-reference, the column ordinal and page ordinal are those of the corresponding
-position in the `inline` column. The value ordinal is the zero-based position within that
-page, counting every position represented by its repetition and definition levels,
-including null positions.
+For a self-reference, the column ordinal is that of the `inline` column. The
+self-reference ordinal is the zero-based position representing the same `FILE` value
+in that column chunk's repetition and definition level stream, including null
+positions. It is derived by the reader and is not stored separately.
 
 
 
