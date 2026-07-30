@@ -770,10 +770,6 @@ The compression state is inherited from the Data Page V2 containing that positio
 * If `is_compressed` is false, the referenced byte range contains the resolved bytes
   without compression.
 
-All self-references corresponding to positions in the same data page share the page's
-compression decision. A writer that requires a different decision must begin a new
-Data Page V2.
-
 Each compressed byte range is an independent compression block. Compression state is
 not shared with the data page or with other referenced ranges.
 
