@@ -735,17 +735,17 @@ only.
 A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
 set:
 
-| `inline` | `uri` | `offset` | `size` | Resolves to                                           |
-|----------|-------|----------|--------|-------------------------------------------------------|
-| set      | -     | -        | -      | the inline bytes                                      |
-| -        | set   | -        | -      | whole external file at `uri`                          |
-| -        | set   | set      | -      | invalid                                               |
-| -        | set   | -        | set    | external `uri`, `[0, size)`                           |
-| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`             |
-| -        | -     | set      | -      | invalid                                               |
-| -        | -     | -        | set    | invalid                                               |
+| `inline` | `uri` | `offset` | `size` | Resolves to                                                           |
+|----------|-------|----------|--------|-----------------------------------------------------------------------|
+| set      | -     | -        | -      | the inline bytes                                                      |
+| -        | set   | -        | -      | whole external file at `uri`                                          |
+| -        | set   | set      | -      | invalid                                                               |
+| -        | set   | -        | set    | external `uri`, `[0, size)`                                           |
+| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`                             |
+| -        | -     | set      | -      | invalid                                                               |
+| -        | -     | -        | set    | invalid                                                               |
 | -        | -     | set      | set    | stored bytes in this file, `[offset, offset + size)` (self-reference) |
-| -        | -     | -        | -      | nothing - invalid                                     |
+| -        | -     | -        | -      | nothing - invalid                                                     |
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. A self-reference (`uri` not set) must set `offset`, and therefore also
