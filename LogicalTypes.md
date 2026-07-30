@@ -744,7 +744,7 @@ set:
 | -        | set   | set      | set    | external `uri`, `[offset, offset + size)`             |
 | -        | -     | set      | -      | invalid                                               |
 | -        | -     | -        | set    | invalid                                               |
-| -        | -     | set      | set    | this file, `[offset, offset + size)` (self-reference) |
+| -        | -     | set      | set    | stored bytes in this file, `[offset, offset + size)` (self-reference) |
 | -        | -     | -        | -      | nothing - invalid                                     |
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
@@ -759,8 +759,11 @@ can be renamed or relocated as a single unit.
 A schema that permits self-references must include the `inline` field and encode it
 using Data Page V2.
 
-Each self-reference corresponds positionally to a value in the `inline` column. Its
-compression state is inherited from the Data Page V2 containing that position:
+Each self-reference inherits the compression and encryption settings of the `inline`
+column at the same position. The corresponding position is the position representing
+the same `FILE` value in the `inline` column's repetition and definition level stream.
+
+The compression state is inherited from the Data Page V2 containing that position:
 
 * If `is_compressed` is true, the referenced byte range is compressed independently
   using the `CompressionCodec` of the `inline` column chunk.
@@ -774,17 +777,30 @@ Data Page V2.
 Each compressed byte range is an independent compression block. Compression state is
 not shared with the data page or with other referenced ranges.
 
-For a self-reference, `offset` and `size` identify the stored representation. When
-compressed, `size` is the compressed byte length. The complete range is supplied to
-the codec, and its decompressed output is the resolved value.
+For an unencrypted self-reference, `offset` and `size` identify either the independent
+compressed block or the uncompressed bytes. For a compressed block, the complete range
+is supplied to the codec, and its decompressed output is the resolved value.
 
-`content_type` and `checksum` describe the resolved bytes after decompression. These
-compression rules do not apply to external references.
+The encryption state and key are inherited from the `inline` column chunk. If the
+column chunk is encrypted, each self-reference is encrypted independently using the
+same column key and file encryption algorithm. Compression is applied before
+encryption. If the column chunk is not encrypted, its self-references are not
+encrypted. See [Parquet Modular Encryption](Encryption.md) for the encryption layout
+and AAD construction.
 
-Parquet files containing self-references must not use Parquet modular encryption.
-Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
-be encrypted or authenticated independently. Encryption of external files referenced
-by `uri` is outside the scope of the Parquet format.
+A self-reference identifies a stored representation, not necessarily the resolved
+bytes. Consumers must use a Parquet reader to resolve a self-reference; copying
+`[offset, offset + size)` directly may return compressed or encrypted data. To resolve
+a self-reference, a reader:
+
+1. reads the stored representation identified by `offset` and `size`;
+2. decrypts it when the corresponding `inline` column chunk is encrypted;
+3. decompresses it when `is_compressed` is true for the corresponding Data Page V2;
+4. returns the resulting bytes.
+
+`content_type` and `checksum` describe the resolved bytes after these transformations.
+These compression and encryption rules do not apply to external references. Encryption
+of external files referenced by `uri` is outside the scope of the Parquet format.
 
 #### Validation
 
