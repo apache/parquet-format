@@ -258,7 +258,7 @@ Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenat
 3.	[All modules except footer] row group ordinal (2-byte short, little-endian)
 4.	[All modules except footer] column ordinal (2-byte short, little-endian)
 5.	[Data page and data page header only] page ordinal (2-byte short, little-endian)
-6.	[Self-reference only] self-reference ordinal within the column chunk (8-byte integer, little-endian)
+6.	[Self-reference only] offset of the self-reference within the file (8-byte integer, little-endian)
 
 The following module types are defined:  
 
@@ -275,7 +275,7 @@ The following module types are defined:
    * Self-Reference (10)
 
 
-|                       | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal | Self-reference ordinal |
+|                       | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal | Self-reference offset  |
 |-----------------------|------------------|-------------|-------------------|----------------|--------------|------------------------|
 | Footer                |       yes        |   yes (0)   |        no         |      no        |     no       |          no            |
 | ColumnMetaData        |       yes        |   yes (1)   |        yes        |      yes       |     no       |          no            |
@@ -289,10 +289,15 @@ The following module types are defined:
 | BloomFilter Bitset    |       yes        |   yes (9)   |        yes        |      yes       |     no       |          no            |
 | Self-Reference        |       yes        |   yes (10)  |        yes        |      yes       |     no       |          yes           |
 
-For a self-reference, the column ordinal is that of the `inline` column. The
-self-reference ordinal is the zero-based position representing the same `FILE` value
-in that column chunk's repetition and definition level stream, including null
-positions. It is derived by the reader and is not stored separately.
+For a self-reference, the column ordinal is that of the `inline` column and the
+self-reference offset is the value of its `offset` field. Because `offset` locates the
+stored representation within the file, it is available to a reader without counting
+preceding values. A reader may therefore resolve a self-reference without decoding the
+pages it skips.
+
+The AAD of a self-reference binds its stored representation to a single column chunk. A
+writer must not share one encrypted byte range between column chunks; each column chunk
+that references the same bytes stores its own representation.
 
 
 
@@ -318,7 +323,10 @@ described in the Algorithms section. The length of the encryption buffer
 
 For a self-reference, `offset` points to the beginning of the 4-byte length and `size`
 is the size of the complete encrypted module, including the length, nonce, ciphertext,
-and GCM tag when present.
+and GCM tag when present. The encryption buffer of a self-reference must therefore fit
+the 4-byte length field, which limits it to 2 GiB as for any other module. A value whose
+encryption buffer would exceed this limit must be stored as an external reference (`uri`)
+instead of a self-reference.
 
 
 ### 5.2 Crypto structures

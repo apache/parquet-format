@@ -759,9 +759,9 @@ can be renamed or relocated as a single unit.
 A schema that permits self-references must include the `inline` field.
 
 Each self-reference inherits the compression and encryption settings of the `inline`
-column chunk in the same row group. The corresponding position is the position
-representing the same `FILE` value in the `inline` column's repetition and definition
-level stream.
+column chunk of the same row group. These settings are properties of the column chunk,
+so all self-references of a column chunk share them regardless of the page a value is
+stored in.
 
 Each referenced byte range is compressed independently using the `CompressionCodec`
 of the `inline` column chunk. `UNCOMPRESSED` leaves the referenced bytes uncompressed.
@@ -773,12 +773,20 @@ For an unencrypted self-reference, `offset` and `size` identify either the indep
 compressed block or the uncompressed bytes. For a compressed block, the complete range
 is supplied to the codec, and its decompressed output is the resolved value.
 
+The decompressed size of a self-reference is not stored. Readers must rely on the
+framing of the codec where it provides one, or decompress into a dynamically sized
+buffer. A future revision of this specification may add an explicit decompressed size.
+
 The encryption state and key are inherited from the `inline` column chunk. If the
 column chunk is encrypted, each self-reference is encrypted independently using the
 same column key and file encryption algorithm. Compression is applied before
 encryption. If the column chunk is not encrypted, its self-references are not
-encrypted. See [Parquet Modular Encryption](Encryption.md) for the encryption layout
-and AAD construction.
+encrypted. An encrypted self-reference is limited to 2 GiB by the length field of the
+encrypted module; a value too large to store this way must use an external reference
+(`uri`). An encrypted stored representation is bound to a single column chunk and must
+not be shared between column chunks. See
+[Parquet Modular Encryption](Encryption.md) for the encryption layout and AAD
+construction.
 
 A self-reference identifies a stored representation, not necessarily the resolved
 bytes. Consumers must use a Parquet reader to resolve a self-reference; copying
