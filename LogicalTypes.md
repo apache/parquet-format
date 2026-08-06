@@ -692,7 +692,7 @@ The byte length of the stored representation. Must be zero or a positive integer
 A value of 0 indicates an empty stored representation. `size` must be set whenever
 `offset` is set. It may be omitted only for a whole-file external reference (`uri` set,
 `offset` not set), in which case the range runs to the end of the referenced file.
-Because a self-reference always sets `offset`, it always sets `size` as well.
+Because a self-reference always sets `offset`, it must always set `size` as well.
 
 ##### content_type
 
