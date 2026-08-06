@@ -760,8 +760,8 @@ A schema that permits self-references must include the `inline` field.
 
 Each self-reference inherits the compression and encryption settings of the `inline`
 column chunk of the same row group. These settings are properties of the column chunk,
-so all self-references of a column chunk share them regardless of the page a value is
-stored in.
+so all self-references of a column chunk share them regardless of where in the file the
+referenced value is stored.
 
 Each referenced byte range is compressed independently using the `CompressionCodec`
 of the `inline` column chunk. `UNCOMPRESSED` leaves the referenced bytes uncompressed.
@@ -775,23 +775,23 @@ is supplied to the codec, and its decompressed output is the resolved value.
 
 The decompressed size of a self-reference is not stored. Readers must rely on the
 framing of the codec where it provides one, or decompress into a dynamically sized
-buffer. A future revision of this specification may add an explicit decompressed size.
+buffer.
 
 The encryption state and key are inherited from the `inline` column chunk. If the
 column chunk is encrypted, each self-reference is encrypted independently using the
 same column key and file encryption algorithm. Compression is applied before
 encryption. If the column chunk is not encrypted, its self-references are not
-encrypted. An encrypted self-reference is limited to 2 GiB by the length field of the
-encrypted module; a value too large to store this way must use an external reference
-(`uri`). An encrypted stored representation is bound to a single column chunk and must
-not be shared between column chunks. See
-[Parquet Modular Encryption](Encryption.md) for the encryption layout and AAD
-construction.
+encrypted. For an encrypted self-reference, `offset` and `size` identify the encrypted
+module, so `size` is the size after compression and encryption. An encrypted
+self-reference is limited to 2 GiB by the length field of the encrypted module; a value
+too large to store this way must use an external reference (`uri`). An encrypted stored
+representation is bound to a single column chunk and must not be shared between column
+chunks. See [Parquet Modular Encryption](Encryption.md) for the encryption layout and
+AAD construction.
 
 A self-reference identifies a stored representation, not necessarily the resolved
-bytes. Consumers must use a Parquet reader to resolve a self-reference; copying
-`[offset, offset + size)` directly may return compressed or encrypted data. To resolve
-a self-reference, a reader:
+bytes. Copying `[offset, offset + size)` directly may return compressed or encrypted
+data. To resolve a self-reference, a reader:
 
 1. reads the stored representation identified by `offset` and `size`;
 2. decrypts it when the corresponding `inline` column chunk is encrypted;
