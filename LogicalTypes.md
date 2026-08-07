@@ -782,12 +782,13 @@ column chunk is encrypted, each self-reference is encrypted independently using 
 same column key and file encryption algorithm. Compression is applied before
 encryption. If the column chunk is not encrypted, its self-references are not
 encrypted. For an encrypted self-reference, `offset` and `size` identify the encrypted
-module, so `size` is the size after compression and encryption. An encrypted
-self-reference is limited to 2 GiB by the length field of the encrypted module; a value
-too large to store this way must use an external reference (`uri`). An encrypted stored
-representation is bound to a single column chunk and must not be shared between column
-chunks. See [Parquet Modular Encryption](Encryption.md) for the encryption layout and
-AAD construction.
+module, whose exact extent is defined in
+[Encrypted module serialization](Encryption.md#51-encrypted-module-serialization). An
+encrypted self-reference is limited to 2 GiB by the length field of the encrypted
+module; a value too large to store this way must use an external reference (`uri`). An
+encrypted stored representation is bound to a single column chunk and must not be shared
+between column chunks. See [Parquet Modular Encryption](Encryption.md) for the
+encryption layout and AAD construction.
 
 A self-reference identifies a stored representation, not necessarily the resolved
 bytes. Copying `[offset, offset + size)` directly may return compressed or encrypted
