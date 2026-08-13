@@ -23,7 +23,7 @@ ALP (Adaptive Lossless floating-Point) Encoding
 This file contains the detailed specification of the
 [ALP encoding](Encodings.md#ALP) (`ALP = 10`).
 
-#### Overview
+## Overview
 
 For each data page, ALP encoding consists of a header followed by an offset array
 and one or more encoded vectors (batches of values). Each vector contains up to
@@ -81,9 +81,9 @@ byte layout and the [Decoding](#decoding) procedure are normative.
 The `fast_round` used in step 2 is one recommended rounding technique, described in
 [Fast Rounding](#fast-rounding) below; it is informative, not normative.
 
-#### Page Layout
+## Page Layout
 
-##### Header (7 bytes)
+### Header (7 bytes)
 
 All multi-byte values are stored in little-endian order.
 
@@ -108,7 +108,7 @@ contain fewer than `vector_size` elements.
 **Note:** The number of elements per vector is NOT stored in the header — it is
 derived: `vector_size` for all vectors except the last, which may be smaller.
 
-##### Offset Array
+### Offset Array
 
 Immediately following the header is an array of `num_vectors` little-endian uint32
 values. Each offset gives the byte position of the corresponding vector's data,
@@ -126,7 +126,7 @@ size of the ALP header. (When the page is uncompressed and carries no repetition
 or definition levels, `alp_data_start` coincides with the first byte after the
 page's Thrift header.)
 
-##### Vector Format
+### Vector Format
 
 Each vector is self-describing and contains the encoding parameters, FOR metadata,
 bit-packed encoded values, and exception data. The layout described here applies
@@ -162,7 +162,7 @@ Data section sizes:
 Here `bit_width` and `num_exceptions` are read from the vector header (`ForInfo`
 and `AlpInfo` respectively), described below.
 
-###### AlpInfo (4 bytes, both types)
+#### AlpInfo (4 bytes, both types)
 
 ```
  Byte:    0           1          2       3
@@ -178,7 +178,7 @@ and `AlpInfo` respectively), described below.
 | 1 | factor | 1 byte | uint8 | Power-of-10 factor *f*. Range: \[0, *e*\]. |
 | 2 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
 
-###### ForInfo for FLOAT (5 bytes)
+#### ForInfo for FLOAT (5 bytes)
 
 ```
  Byte:    0    1    2    3       4
@@ -193,7 +193,7 @@ and `AlpInfo` respectively), described below.
 | 0 | frame_of_reference | 4 bytes | int32 | Minimum encoded integer in the vector |
 | 4 | bit_width | 1 byte | uint8 | Bits per packed value. Range: \[0, 32\]. |
 
-###### ForInfo for DOUBLE (9 bytes)
+#### ForInfo for DOUBLE (9 bytes)
 
 ```
  Byte:    0    1    2    3    4    5    6    7       8
@@ -208,7 +208,7 @@ and `AlpInfo` respectively), described below.
 | 0 | frame_of_reference | 8 bytes | int64 | Minimum encoded long in the vector |
 | 8 | bit_width | 1 byte | uint8 | Bits per packed value. Range: \[0, 64\]. |
 
-###### PackedValues
+#### PackedValues
 
 The FOR-encoded deltas, bit-packed into `ceil(num_elements_in_vector * bit_width / 8)` bytes.
 Values are bit-packed using the same LSB-first packing order as the
@@ -226,12 +226,12 @@ vector, every delta is non-negative.
 If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all encoded
 integers are equal to `frame_of_reference`).
 
-###### ExceptionPositions
+#### ExceptionPositions
 
 An array of `num_exceptions` little-endian uint16 values, each giving
 the 0-based index within the vector of an exception value.
 
-###### ExceptionValues
+#### ExceptionValues
 
 An array of `num_exceptions` values in the original floating-point type
 (4 bytes little-endian IEEE 754 for FLOAT, 8 bytes for DOUBLE), stored in
@@ -239,9 +239,9 @@ the same order as the corresponding positions. Each value is stored as its exact
 IEEE 754 bit pattern; implementations MUST NOT canonicalize NaN or otherwise alter
 the bits, so that decoding reproduces the original value bit-for-bit.
 
-#### Encoding
+## Encoding
 
-##### Encoding Formula
+### Encoding Formula
 
 ```
 +-------------------------------------------------------------------+
@@ -272,7 +272,7 @@ is stored as an exception. The rounding method therefore affects only compressio
 ratio and exception count, never correctness or what a reader decodes. The
 `fast_round` technique below is one recommended implementation.
 
-##### Fast Rounding (informative)
+### Fast Rounding (informative)
 
 `fast_round` recovers the integer intended by `value * 10^e * 10^(-f)` — which
 carries floating-point rounding noise — by rounding it to the nearest integer
@@ -295,7 +295,7 @@ The two forms round some large-magnitude inputs differently, but since any value
 that fails to round-trip is stored as an exception, the choice affects only
 compression ratio, never correctness.
 
-##### Parameter Selection
+### Parameter Selection
 
 Any valid (exponent, factor) pair produces a correct encoding — the decoder is
 agnostic to the selection strategy, and the exception mechanism guarantees
@@ -327,7 +327,7 @@ Suggested sampling parameters (from the paper):
 | Max Combinations     | 5     | Best (e,f) pairs kept in preset     |
 | Sample Vectors       | 8     | Vectors sampled per row group       |
 
-##### Exception Detection
+### Exception Detection
 
 A value becomes an exception if any of the following is true:
 
@@ -343,7 +343,7 @@ Exception values at positions in the vector are replaced with a placeholder
 (the encoded integer of the first non-exception value, or 0 if all values
 are exceptions) before FOR encoding. This keeps the FOR range tight.
 
-##### Example: Frame of Reference and Bit-Packing
+### Example: Frame of Reference and Bit-Packing
 
 Given the following data after decimal encoding and exception substitution:
 
@@ -366,7 +366,7 @@ Given the following data after decimal encoding and exception substitution:
 
 Special case: If all values are identical, bit\_width = 0 and no packed data is stored.
 
-#### Decoding
+## Decoding
 
 ```
                     Input: Serialized vector bytes
@@ -408,7 +408,7 @@ For each vector:
 5. Patch exceptions: for each (position, value) in the exception arrays,
    overwrite the decoded output at that position with the stored value.
 
-#### Worked Example: Exceptions and Non-Zero Factor
+## Worked Example: Exceptions and Non-Zero Factor
 
 **Input:** `double values[4] = { 1500.0, NaN, 2500.0, 333.5 }`
 
@@ -458,4 +458,3 @@ packed\_size = ceil(4 * 15 / 8) = 8 bytes
 
 Compared to PLAIN encoding (4 * 8 = 32 bytes). With 1024 values, the 13-byte
 vector header becomes negligible and compression ratios of 2-8x are typical.
-
