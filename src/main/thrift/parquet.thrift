@@ -280,7 +280,7 @@ struct Statistics {
     */
    1: optional binary max;
    2: optional binary min;
-   /** 
+   /**
     * Count of null values in the column.
     *
     * Writers SHOULD always write this field even if it is zero (i.e. no null value)
@@ -309,6 +309,13 @@ struct Statistics {
    7: optional bool is_max_value_exact;
    /** If true, min_value is the actual minimum value for a column */
    8: optional bool is_min_value_exact;
+   /**
+    * Count of NaN values in the column; only present if physical type is FLOAT
+    * or DOUBLE, or logical type is FLOAT16.
+    * If this field is not present, readers MUST assume NaNs may be present
+    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
+    */
+   9: optional i64 nan_count;
 }
 
 /** Empty structs to use as logical type annotations */
@@ -712,9 +719,14 @@ struct DictionaryPageHeader {
 }
 
 /**
- * New page format allowing reading levels without decompressing the data
+ * Alternate page format allowing reading levels without decompressing the data
  * Repetition and definition levels are uncompressed
  * The remaining section containing the data is compressed if is_compressed is true
+ *
+ * Implementation note - this header is not necessarily a strict improvement over
+ * `DataPageHeader` (in particular the original header might provide better compression
+ * in some scenarios). Page indexes require pages to start and end at row boundaries,
+ * regardless of which page header is used.
  **/
 struct DataPageHeaderV2 {
   /** Number of values, including NULLs, in this data page. **/
@@ -880,13 +892,8 @@ struct ColumnMetaData {
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema
-   *
-   *  Made optional in parquet-format 3.0. If not written
-   *  PARX magic number must be used (PATH_IN_SCHEMA_OMITTED, bit 1 in the
-   *  feature flag bitmap, must be set).
-   **/
-  3: optional list<string> path_in_schema
+  /** Path in schema **/
+  3: required list<string> path_in_schema
 
   /** Compression codec **/
   4: required CompressionCodec codec
@@ -897,7 +904,7 @@ struct ColumnMetaData {
   /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
   6: required i64 total_uncompressed_size
 
-  /** total byte size of all compressed, and potentially encrypted, pages 
+  /** total byte size of all compressed, and potentially encrypted, pages
    *  in this column chunk (including the headers) **/
   7: required i64 total_compressed_size
 
@@ -963,6 +970,21 @@ union ColumnCryptoMetaData {
 struct ColumnChunk {
   /** File where column data is stored.  If not set, assumed to be same file as
     * metadata.  This path is relative to the current file.
+    *
+    * As of December 2025, the only known use-case for this field is writing summary
+    * parquet files (i.e. "_metadata" files).  These files consolidate footers from
+    * multiple parquet files to allow for efficient reading of footers to avoid file
+    * listing costs and prune out files that do not need to be read based on statistics.
+    *
+    * These files do not appear to have ever been formally specified in the specification.
+    * and are potentially problematic from a correctness perspective [1].
+    *
+    * [1] https://lists.apache.org/thread/ootf2kmyg3p01b1bvplpvp4ftd1bt72d
+    *
+    * There is no other known usage of this field. Specifically, there are no known
+    * reference implementations that will read externally stored column data if this field is populated
+    * within a standard parquet file. Making use of the field for this purpose is
+    * not considered part of the Parquet specification.
     **/
   1: optional string file_path
 
@@ -1024,16 +1046,19 @@ struct RowGroup {
    * in this row group **/
   5: optional i64 file_offset
 
-  /** Total byte size of all compressed (and potentially encrypted) column data 
+  /** Total byte size of all compressed (and potentially encrypted) column data
    *  in this row group **/
   6: optional i64 total_compressed_size
-  
+
   /** Row group ordinal in the file **/
   7: optional i16 ordinal
 }
 
 /** Empty struct to signal the order defined by the physical or logical type */
 struct TypeDefinedOrder {}
+
+/** Empty struct to signal IEEE 754 total order for floating point types */
+struct IEEE754TotalOrder {}
 
 /**
  * Union to specify the order used for the min_value and max_value fields for a
@@ -1043,6 +1068,7 @@ struct TypeDefinedOrder {}
  * Possible values are:
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
+ * * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -1096,23 +1122,78 @@ union ColumnOrder {
    *      64-bit signed integer (nanos)
    *    See https://github.com/apache/parquet-format/issues/502 for more details
    *
-   * (*) Because the sorting order is not specified properly for floating
-   *     point values (relations vs. total ordering) the following
+   * (*) Because TYPE_ORDER is ambiguous for floating point types due to
+   *     underspecified handling of NaN and -0/+0, it is recommended that writers
+   *     use IEEE_754_TOTAL_ORDER for these types.
+   *
+   *     If TYPE_ORDER is used for floating point types, then the following
    *     compatibility rules should be applied when reading statistics:
    *     - If the min is a NaN, it should be ignored.
    *     - If the max is a NaN, it should be ignored.
+   *     - If the nan_count field is set, a reader can compute
+   *       nan_count + null_count == num_values to deduce whether all non-null
+   *       values are NaN.
    *     - If the min is +0, the row group may contain -0 values as well.
    *     - If the max is -0, the row group may contain +0 values as well.
    *     - When looking for NaN values, min and max should be ignored.
-   * 
-   *     When writing statistics the following rules should be followed:
-   *     - NaNs should not be written to min or max statistics fields.
+   *       If the nan_count field is set, it can be used to check whether
+   *       NaNs are present.
+   *
+   *     When writing page or column chunk statistics for columns with
+   *     TYPE_ORDER order, the following rules must be followed:
+   *     - The nan_count field must be set for floating point types, even if
+   *       it is zero.
+   *     - If the nan_count field is set, min and max statistics fields, when
+   *       present, must not contain NaN values and must be computed from
+   *       non-NaN values only. This signals to readers that the min and max
+   *       statistics are reliable for non-NaN values.
+   *     - If all non-null values are NaN, min and max statistics must not be
+   *       written.
    *     - If the computed max value is zero (whether negative or positive),
    *       `+0.0` should be written into the max statistics field.
    *     - If the computed min value is zero (whether negative or positive),
    *       `-0.0` should be written into the min statistics field.
+   *
+   *     When writing column indexes for columns with TYPE_ORDER order, the
+   *     following rules must be followed:
+   *     - NaNs must not be written to min_values or max_values.
+   *     - If all non-null values of a page are NaN, a column index must not
+   *       be written for this column chunk because min_values and max_values
+   *       are required.
+   *     - If the computed max value is zero (whether negative or positive),
+   *       `+0.0` should be written into the corresponding max_values entry.
+   *     - If the computed min value is zero (whether negative or positive),
+   *       `-0.0` should be written into the corresponding min_values entry.
    */
   1: TypeDefinedOrder TYPE_ORDER;
+
+  /*
+   * The floating point type is ordered according to the totalOrder predicate,
+   * as defined in section 5.10 of IEEE-754 (2008 revision). Only columns of
+   * physical type FLOAT or DOUBLE, or logical type FLOAT16 may use this ordering.
+   *
+   * Intuitively, this orders floats mathematically, but defines -0 to be less
+   * than +0, -NaN to be less than anything else, and +NaN to be greater than
+   * anything else. It also defines an order between different bit representations
+   * of the same value.
+   *
+   * When writing statistics for columns with IEEE_754_TOTAL_ORDER order, then
+   * following rules must be followed:
+   * - Writing the nan_count field is mandatory when using this ordering.
+   * - Min and max statistics must contain the smallest and largest non-NaN
+   *   values respectively, or if all non-null values are NaN, the smallest and
+   *   largest NaN values as defined by IEEE 754 total order.
+   *
+   * When reading statistics for columns with this order, the following rules
+   * should be followed:
+   * - Readers should consult the nan_count field to determine whether NaNs
+   *   are present.
+   * - A reader can compute nan_count + null_count == num_values to deduce
+   *   whether all non-null values are NaN. In the page index, which does not
+   *   have a num_values field, the presence of a NaN value in min_values
+   *   or max_values indicates that all non-null values are NaN.
+   */
+  2: IEEE754TotalOrder IEEE_754_TOTAL_ORDER;
 }
 
 struct PageLocation {
@@ -1184,6 +1265,18 @@ struct ColumnIndex {
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
    * using them by inspecting null_pages.
+   *
+   * For columns of physical type FLOAT or DOUBLE, or logical type FLOAT16,
+   * NaN values are not to be included in these bounds. If all non-null values
+   * of a page are NaN, then a writer must do the following:
+   * - If the order of this column is TYPE_ORDER, then a column index must
+   *   not be written for this column chunk. While this is unfortunate for
+   *   performance, it is necessary to avoid conflict with legacy files that
+   *   still included NaN in min_values and max_values even if the page had
+   *   non-NaN values. To mitigate this, IEEE754_TOTAL_ORDER is recommended.
+   * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
+   *   and max_values[i] of that page must be set to the smallest and largest
+   *   NaN values as defined by IEEE 754 total order.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1197,13 +1290,13 @@ struct ColumnIndex {
   4: required BoundaryOrder boundary_order
 
   /**
-   * A list containing the number of null values for each page 
+   * A list containing the number of null values for each page
    *
    * Writers SHOULD always write this field even if no null values
    * are present or the column is not nullable.
-   * Readers MUST distinguish between null_counts not being present 
+   * Readers MUST distinguish between null_counts not being present
    * and null_count being 0.
-   * If null_counts are not present, readers MUST NOT assume all 
+   * If null_counts are not present, readers MUST NOT assume all
    * null counts are 0.
    */
   5: optional list<i64> null_counts
@@ -1225,6 +1318,15 @@ struct ColumnIndex {
     * Same as repetition_level_histograms except for definitions levels.
     **/
    7: optional list<i64> definition_level_histograms;
+
+   /**
+    * A list containing the number of NaN values for each page. Only present
+    * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
+    * If this field is not present, readers MUST assume that there might be
+    * NaN values in any page.
+    */
+   8: optional list<i64> nan_counts
+
 }
 
 struct AesGcmV1 {
@@ -1260,7 +1362,14 @@ union EncryptionAlgorithm {
  * Description for file metadata
  */
 struct FileMetaData {
-  /** Version of this file **/
+  /** Version of this file
+    *
+    * As of December 2025, there is no agreed upon consensus of what constitutes
+    * version 2 of the file. For maximum compatibility with readers, writers should
+    * always populate "1" for version. For maximum compatibility with writers,
+    * readers should accept "1" and "2" interchangeably.  All other versions are
+    * reserved for potential future use-cases.
+    */
   1: required i32 version
 
   /** Parquet schema for this file.  This schema contains metadata for all the columns.
@@ -1304,30 +1413,30 @@ struct FileMetaData {
    */
   7: optional list<ColumnOrder> column_orders;
 
-  /** 
+  /**
    * Encryption algorithm. This field is set only in encrypted files
    * with plaintext footer. Files with encrypted footer store algorithm id
    * in FileCryptoMetaData structure.
    */
   8: optional EncryptionAlgorithm encryption_algorithm
 
-  /** 
-   * Retrieval metadata of key used for signing the footer. 
-   * Used only in encrypted files with plaintext footer. 
-   */ 
+  /**
+   * Retrieval metadata of key used for signing the footer.
+   * Used only in encrypted files with plaintext footer.
+   */
   9: optional binary footer_signing_key_metadata
 }
 
 /** Crypto metadata for files with encrypted footer **/
 struct FileCryptoMetaData {
-  /** 
+  /**
    * Encryption algorithm. This field is only used for files
    * with encrypted footer. Files with plaintext footer store algorithm id
    * inside footer (FileMetaData structure).
    */
   1: required EncryptionAlgorithm encryption_algorithm
-    
-  /** Retrieval metadata of key used for encryption of footer, 
+
+  /** Retrieval metadata of key used for encryption of footer,
    *  and (possibly) columns **/
   2: optional binary key_metadata
 }
