@@ -44,7 +44,7 @@ When `typed_value` is present, readers **must** reconstruct shredded values acco
 
 For example, a Variant field, `measurement` may be shredded as long values by adding `typed_value` with type `int64`:
 ```
-required group measurement (VARIANT) {
+required group measurement (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
@@ -85,8 +85,8 @@ Shredded values must use the following Parquet types:
 | Variant Type                | Parquet Physical Type             | Parquet Logical Type     |
 |-----------------------------|-----------------------------------|--------------------------|
 | boolean                     | BOOLEAN                           |                          |
-| int8                        | INT32                             | INT(8, signed=true)      |
-| int16                       | INT32                             | INT(16, signed=true)     |
+| int8                        | INT32                             | INT(8, true)             |
+| int16                       | INT32                             | INT(16, true)            |
 | int32                       | INT32                             |                          |
 | int64                       | INT64                             |                          |
 | float                       | FLOAT                             |                          |
@@ -100,8 +100,8 @@ Shredded values must use the following Parquet types:
 | timestamptz(9)              | INT64                             | TIMESTAMP(true, NANOS)   |
 | timestampntz(6)             | INT64                             | TIMESTAMP(false, MICROS) |
 | timestampntz(9)             | INT64                             | TIMESTAMP(false, NANOS)  |
-| binary                      | BINARY                            |                          |
-| string                      | BINARY                            | STRING                   |
+| binary                      | BYTE_ARRAY                        |                          |
+| string                      | BYTE_ARRAY                        | STRING                   |
 | uuid                        | FIXED_LEN_BYTE_ARRAY[len=16]      | UUID                     |
 | array                       | GROUP; see Arrays below           | LIST                     |
 | object                      | GROUP; see Objects below          |                          |
@@ -128,7 +128,7 @@ However, at least one of the two fields must be present.
 
 For example, a `tags` Variant may be shredded as a list of strings using the following definition:
 ```
-optional group tags (VARIANT) {
+optional group tags (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional group typed_value (LIST) {   # must be optional to allow a null list
@@ -148,7 +148,7 @@ Null elements must be encoded in `value` as Variant null: basic type 0 (primitiv
 
 The series of `tags` arrays `["comedy", "drama"], ["horror", null], ["comedy", "drama", "romance"], null` would be stored as:
 
-| Array                            | `value`     | `typed_value `| `typed_value...value` | `typed_value...typed_value`    |
+| Array                            | `value`     | `typed_value` | `typed_value...value` | `typed_value...typed_value`    |
 |----------------------------------|-------------|---------------|-----------------------|--------------------------------|
 | `["comedy", "drama"]`            | null        | non-null      | [null, null]          | [`comedy`, `drama`]            |
 | `["horror", null]`               | null        | non-null      | [null, `00`]          | [`horror`, null]               |
@@ -174,7 +174,7 @@ As a result, reads when a field is defined in both `value` and a `typed_value` s
 
 For example, a Variant `event` field may shred `event_type` (`string`) and `event_ts` (`timestamp`) columns using the following definition:
 ```
-optional group event (VARIANT) {
+optional group event (VARIANT(1)) {
   required binary metadata;
   optional binary value;                # a variant, expected to be an object
   optional group typed_value {          # shredded fields for the variant object
@@ -206,7 +206,7 @@ The table below shows how the series of objects in the first column would be sto
 |-----------------------------------------------------------------------------------|-----------------------------------|---------------|--------------------------------|--------------------------------------|------------------------------|------------------------------------|----------------------------------------------------------------------------|
 | `{"event_type": "noop", "event_ts": 1729794114937}`                               | null                              | non-null      | null                           | `noop`                               | null                         | 1729794114937                      | Fully shredded object                                                      |
 | `{"event_type": "login", "event_ts": 1729794146402, "email": "user@example.com"}` | `{"email": "user@example.com"}`   | non-null      | null                           | `login`                              | null                         | 1729794146402                      | Partially shredded object                                                  |
-| `{"error_msg": "malformed: ..."}`                                                 | `{"error_msg", "malformed: ..."}` | non-null      | null                           | null                                 | null                         | null                               | Object with all shredded fields missing                                    |
+| `{"error_msg": "malformed: ..."}`                                                 | `{"error_msg": "malformed: ..."}` | non-null      | null                           | null                                 | null                         | null                               | Object with all shredded fields missing                                    |
 | `"malformed: not an object"`                                                      | `malformed: not an object`        | null          |                                |                                      |                              |                                    | Not an object (stored as Variant string)                                   |
 | `{"event_ts": 1729794240241, "click": "_button"}`                                 | `{"click": "_button"}`            | non-null      | null                           | null                                 | null                         | 1729794240241                      | Field `event_type` is missing                                              |
 | `{"event_type": null, "event_ts": 1729794954163}`                                 | null                              | non-null      | `00` (field exists, is null)   | null                                 | null                         | 1729794954163                      | Field `event_type` is present and is null                                  |
@@ -229,7 +229,7 @@ The `typed_value` associated with any Variant `value` field can be any shredded 
 For example, the `event` object above may also shred sub-fields as object (`location`) or array (`tags`).
 
 ```
-optional group event (VARIANT) {
+optional group event (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional group typed_value {
@@ -294,7 +294,7 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
             # this is a shredded object
             object_fields = {
                 name: construct_variant(metadata, field.value, field.typed_value)
-                for (name, field) in typed_value
+                for name, field in typed_value.items()
             }
 
             if value is not None:
@@ -303,6 +303,9 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
                 assert typed_value.keys().isdisjoint(value.keys()), "object keys must be disjoint"
 
                 # union the shredded fields and non-shredded fields
+                # (field IDs and offsets must be in the order of the
+                # corresponding field names, sorted lexicographically
+                # (unsigned byte ordering for UTF-8))
                 return VariantObject(metadata, object_fields).union(VariantObject(metadata, value))
 
             else:
@@ -331,7 +334,7 @@ def construct_variant(metadata: Metadata, value: Variant, typed_value: Any) -> V
         # value is missing
         return None
 
-def primitive_to_variant(typed_value: Any): Variant:
+def primitive_to_variant(typed_value: Any) -> Variant:
     if isinstance(typed_value, int):
         return VariantInteger(typed_value)
     elif isinstance(typed_value, str):

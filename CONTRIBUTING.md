@@ -43,10 +43,10 @@ The general steps for adding features to the format are as follows:
 1. Design/scoping: The goal of this phase is to identify design goals of a
    feature and provide some demonstration that the feature meets those goals.
    This phase starts with a discussion of changes on the developer mailing list
-   (dev@parquet.apache.org). Depending on the scope and goals of the feature the
-   it can be useful to provide additional artifacts as part of a discussion. The
-   artifacts can include a design docuemnt, a draft pull request to make the
-   discussion concrete and/or an prototype implementation to demostrate the
+   (dev@parquet.apache.org). Depending on the scope and goals of the feature, it
+   can be useful to provide additional artifacts as part of a discussion. The
+   artifacts can include a design document, a draft pull request to make the
+   discussion concrete and/or a prototype implementation to demonstrate the
    viability of implementation. This step is complete when there is lazy
    consensus. Part of the consensus is whether it is sufficient to provide two
    working implementations as outlined in step 2, or if demonstration of the
@@ -58,7 +58,7 @@ The general steps for adding features to the format are as follows:
 2. Completeness: The goal of this phase is to ensure the feature is viable,
    there is no ambiguity in its specification by demonstrating compatibility
    between implementations. Once a change has lazy consensus, two
-   implementations of the feature demonstrating interopability must also be
+   implementations of the feature demonstrating interoperability must also be
    provided.  One implementation MUST be
    [`parquet-java`](http://github.com/apache/parquet-java).  It is preferred
    that the second implementation be
@@ -73,21 +73,21 @@ The general steps for adding features to the format are as follows:
    fit for inclusion (for example, they were submitted as a pull request against
    the target repository and committers gave positive reviews). Reports on the
    benefits from closed source implementations are welcome and can help lend
-   weight to features desirability but are not sufficient for acceptance of a
+   weight to a feature's desirability but are not sufficient for acceptance of a
    new feature.
 
 Unless otherwise discussed, it is expected the implementations will be developed
 from their respective main branch (i.e. backporting is not required), to
 demonstrate that the feature is mergeable to its implementation.
 
-3. Ratification: After the first two steps are complete a formal vote is held on
+3. Ratification: After the first two steps are complete, a formal vote is held on
    dev@parquet.apache.org to officially ratify the feature.  After the vote
-   passes the format change is merged into the `parquet-format` repository and
+   passes, the format change is merged into the `parquet-format` repository and
    it is expected the changes from step 2 will also be merged soon after
    (implementations should not be merged until the addition has been merged to
    `parquet-format`).
 
-#### General guidelines/preferences on additions.
+#### General guidelines/preferences on additions
 
 1. To the greatest extent possible changes should have an option for forward
    compatibility (old readers can still read files). The [compatibility and
@@ -95,13 +95,13 @@ demonstrate that the feature is mergeable to its implementation.
    provides more details on expectations for changes that break compatibility.
 
 2. New encodings should be fully specified in this repository and not
-   rely on an external dependencies for implementation (i.e. `parquet-format` is
+   rely on external dependencies for implementation (i.e. `parquet-format` is
    the source of truth for the encoding). If it does require an
    external dependency, then the external dependency must have its
    own specification separate from implementation.
 
 3. New compression mechanisms should have a pure Java implementation that can be
-   used as a dependency in `parquet-java`, exceptions may be
+   used as a dependency in `parquet-java`; exceptions may be
    discussed on the mailing list to see if a non-native Java
    implementation is acceptable.
 
@@ -154,7 +154,7 @@ recommendations for managing features:
 2. Forward compatible features/changes may be enabled and used by default in
    implementations once the parquet-format containing those changes has been
    formally released.  For features that may pose a significant performance
-   regression to older format readers, libaries should consider delaying default
+   regression to older format readers, libraries should consider delaying default
    enablement until 1 year after the release of the parquet-java implementation
    that contains the feature implementation.
 
@@ -162,7 +162,7 @@ recommendations for managing features:
    until 2 years after the parquet-java implementation containing the feature is
    released. It is recommended that changing the default value for a forward
    incompatible feature flag should be clearly advertised to consumers (e.g. via
-   a major version release if using Semantic Versioning, or highlighed in
+   a major version release if using Semantic Versioning, or highlighted in
    release notes).
 
 For forward compatible changes which have a high chance of performance
@@ -174,7 +174,7 @@ the same timelines as `parquet-java`. Parquet-java will wait to enable features
 by default until the most conservative timelines outlined above have been
 exceeded. This timeline is an attempt to balance ensuring
 new features make their way into the ecosystem and avoiding
-breaking compatiblity for readers that are slower to adopt new standards. We
+breaking compatibility for readers that are slower to adopt new standards. We
 encourage earlier adoption of new features when an organization using Parquet
 can guarantee that all readers of the parquet files they produce can read a new
 feature.

@@ -41,7 +41,7 @@ enum Type {
 }
 
 /**
- * DEPRECATED: Common types used by frameworks(e.g. hive, pig) using parquet.
+ * DEPRECATED: Common types used by frameworks (e.g. Hive, Pig) using parquet.
  * ConvertedType is superseded by LogicalType.  This enum should not be extended.
  *
  * See LogicalTypes.md for conversion between ConvertedType and LogicalType.
@@ -431,7 +431,7 @@ enum EdgeInterpolationAlgorithm {
 /**
  * Embedded Geometry logical type annotation
  *
- * Geospatial features in the Well-Known Binary (WKB) format and edges interpolation
+ * Geospatial features in the Well-Known Binary (WKB) format and `edges` interpolation
  * is always linear/planar.
  *
  * A custom CRS can be set by the crs field. If unset, it defaults to "OGC:CRS84",
@@ -450,13 +450,13 @@ struct GeometryType {
  * Embedded Geography logical type annotation
  *
  * Geospatial features in the WKB format with an explicit (non-linear/non-planar)
- * edges interpolation algorithm.
+ * `edges` interpolation algorithm.
  *
  * A custom geographic CRS can be set by the crs field, where longitudes are
  * bound by [-180, 180] and latitudes are bound by [-90, 90]. If unset, the CRS
  * defaults to "OGC:CRS84".
  *
- * An optional algorithm can be set to correctly interpret edges interpolation
+ * An optional algorithm can be set to correctly interpret `edges` interpolation
  * of the geometries. If unset, the algorithm defaults to SPHERICAL.
  *
  * Allowed for physical type: BYTE_ARRAY.
@@ -466,6 +466,18 @@ struct GeometryType {
 struct GeographyType {
   1: optional string crs;
   2: optional EdgeInterpolationAlgorithm algorithm;
+}
+
+/**
+ * File logical type annotation
+ *
+ * Annotates a group that represents a reference to a file, or to a range of
+ * bytes that may be stored inline, elsewhere in this file, or in an external
+ * file.
+ *
+ * See LogicalTypes.md for details.
+ */
+struct FileType {
 }
 
 /**
@@ -501,10 +513,11 @@ union LogicalType {
   16: VariantType VARIANT     // no compatible ConvertedType
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
+  19: FileType FILE           // no compatible ConvertedType
 }
 
 /**
- * Represents a element inside a schema definition.
+ * Represents an element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
  * the nodes are listed in depth first traversal order.
@@ -583,15 +596,15 @@ enum Encoding {
   PLAIN = 0;
 
   /** Group VarInt encoding for INT32/INT64.
-   * This encoding is deprecated. It was never used
+   * This encoding is deprecated. It was never used.
    */
   //  GROUP_VAR_INT = 1;
 
   /**
-   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * DEPRECATED: Dictionary encoding. The values in the dictionary are encoded in the
    * plain type.
-   * in a data page use RLE_DICTIONARY instead.
-   * in a Dictionary page use PLAIN instead
+   * For a data page use RLE_DICTIONARY instead.
+   * For a Dictionary page use PLAIN instead.
    */
   PLAIN_DICTIONARY = 2;
 
@@ -600,8 +613,9 @@ enum Encoding {
    */
   RLE = 3;
 
-  /** Bit packed encoding.  This can only be used if the data has a known max
+  /** DEPRECATED: Bit packed encoding.  This can only be used if the data has a known max
    * width.  Usable for definition/repetition levels encoding.
+   * Superseded by RLE (which is a hybrid of RLE and bit packing); see Encodings.md.
    */
   BIT_PACKED = 4;
 
@@ -635,6 +649,14 @@ enum Encoding {
       Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
    */
   BYTE_STREAM_SPLIT = 9;
+
+  /** Adaptive Lossless floating-Point (ALP) encoding for FLOAT and DOUBLE.
+      Losslessly converts decimal-like floating-point values to integers via
+      decimal scaling, then applies Frame of Reference (FOR) encoding and
+      bit-packing; values that cannot be converted losslessly are stored as
+      exceptions. See Encodings.md for the detailed specification.
+   */
+  ALP = 10;
 }
 
 /**
@@ -679,7 +701,7 @@ struct DataPageHeader {
   /**
    * Number of values, including NULLs, in this data page.
    *
-   * If a OffsetIndex is present, a page must begin at a row
+   * If an OffsetIndex is present, a page must begin at a row
    * boundary (repetition_level = 0). Otherwise, pages may begin
    * within a row (repetition_level > 0).
    **/
@@ -752,7 +774,7 @@ struct DataPageHeaderV2 {
 
   /**  Whether the values are compressed.
   Which means the section of the page between
-  definition_levels_byte_length + repetition_levels_byte_length + 1 and compressed_page_size (included)
+  definition_levels_byte_length + repetition_levels_byte_length and compressed_page_size (included)
   is compressed with the compression_codec.
   If missing it is considered compressed */
   7: optional bool is_compressed = true;
@@ -816,10 +838,10 @@ struct PageHeader {
   /** Compressed (and potentially encrypted) page size in bytes, not including this header **/
   3: required i32 compressed_page_size
 
-  /** The 32-bit CRC checksum for the page, to be be calculated as follows:
+  /** The 32-bit CRC checksum for the page, to be calculated as follows:
    *
    * - The standard CRC32 algorithm is used (with polynomial 0x04C11DB7,
-   *   the same as in e.g. GZip).
+   *   the same as in e.g. GZIP).
    * - All page types can have a CRC (v1 and v2 data pages, dictionary pages,
    *   etc.).
    * - The CRC is computed on the serialization binary representation of the page
@@ -988,7 +1010,7 @@ struct ColumnChunk {
     **/
   1: optional string file_path
 
-  /** Deprecated: Byte offset in file_path to the ColumnMetaData
+  /** DEPRECATED: Byte offset in file_path to the ColumnMetaData
    *
    * Past use of this field has been inconsistent, with some implementations
    * using it to point to the ColumnMetaData and some using it to point to
@@ -1060,6 +1082,9 @@ struct TypeDefinedOrder {}
 /** Empty struct to signal IEEE 754 total order for floating point types */
 struct IEEE754TotalOrder {}
 
+/** Empty struct to signal chronological ordering of physical type INT96 */
+struct Int96TimestampOrder {}
+
 /**
  * Union to specify the order used for the min_value and max_value fields for a
  * column. This union takes the role of an enhanced enum that allows rich
@@ -1069,6 +1094,8 @@ struct IEEE754TotalOrder {}
  * * TypeDefinedOrder - the column uses the order defined by its logical or
  *                      physical type (if there is no logical type).
  * * IEEE754TotalOrder - the floating point column uses IEEE 754 total order.
+ *
+ * * Int96TimestampOrder - the INT96 column uses chronological timestamp order.
  *
  * If the reader does not support the value of this union, min and max stats
  * for this column should be ignored.
@@ -1102,25 +1129,29 @@ union ColumnOrder {
    *   VARIANT - undefined
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
+   *   FILE - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
    *   INT32 - signed comparison
    *   INT64 - signed comparison
-   *   INT96 (only used for legacy timestamps) - undefined(+)
+   *   INT96 (only used for legacy timestamps) - depends on sort order (+)
    *   FLOAT - signed comparison of the represented value (*)
    *   DOUBLE - signed comparison of the represented value (*)
    *   BYTE_ARRAY - unsigned byte-wise comparison
    *   FIXED_LEN_BYTE_ARRAY - unsigned byte-wise comparison
    *
    * (+) While the INT96 type has been deprecated, at the time of writing it is
-   *    still used in many legacy systems. If a Parquet implementation chooses
-   *    to write statistics for INT96 columns, it is recommended to order them
-   *    according to the legacy rules:
-   *    - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
-   *    - if equal last 4 bytes, compare the first 8 bytes as a little-endian
-   *      64-bit signed integer (nanos)
-   *    See https://github.com/apache/parquet-format/issues/502 for more details
+   *     still used in many legacy systems. It is optional for writers to emit
+   *     statistics for INT96 columns. Writers that emit stats for such columns
+   *     should use the INT96_TIMESTAMP_ORDER for this type and order the values
+   *     according to the legacy rules:
+   *     - compare the last 4 bytes (days) as a little-endian 32-bit signed integer
+   *     - if equal last 4 bytes, compare the first 8 bytes as a little-endian
+   *       64-bit signed integer (nanos)
+   *     If TYPE_ORDER is used for an INT96 column, readers should ignore all statistics
+   *     (`min`/`max` fields in `Statistics` and `min_values`/`max_values` fields in
+   *     `ColumnIndex`) for that column.
    *
    * (*) Because TYPE_ORDER is ambiguous for floating point types due to
    *     underspecified handling of NaN and -0/+0, it is recommended that writers
@@ -1194,6 +1225,12 @@ union ColumnOrder {
    *   or max_values indicates that all non-null values are NaN.
    */
   2: IEEE754TotalOrder IEEE_754_TOTAL_ORDER;
+
+  /*
+   * The INT96 timestamp type is ordered chronologically. Only columns of
+   * physical type INT96 may use this ordering.
+   */
+  3: Int96TimestampOrder INT96_TIMESTAMP_ORDER;
 }
 
 struct PageLocation {
@@ -1201,8 +1238,8 @@ struct PageLocation {
   1: required i64 offset
 
   /**
-   * Size of the page, including header. Sum of compressed_page_size and header
-   * length
+   * Size of the page, including header. Equal to the sum of the page's
+   * PageHeader.compressed_page_size and the size of the serialized PageHeader.
    */
   2: required i32 compressed_page_size
 
@@ -1230,7 +1267,7 @@ struct OffsetIndex {
   /**
    * Unencoded/uncompressed size for BYTE_ARRAY types.
    *
-   * See documention for unencoded_byte_array_data_bytes in SizeStatistics for
+   * See documentation for unencoded_byte_array_data_bytes in SizeStatistics for
    * more details on this field.
    */
   2: optional list<i64> unencoded_byte_array_data_bytes
@@ -1260,7 +1297,7 @@ struct ColumnIndex {
    * Two lists containing lower and upper bounds for the values of each page
    * determined by the ColumnOrder of the column. These may be the actual
    * minimum and maximum values found on a page, but can also be (more compact)
-   * values that do not exist on a page. For example, instead of storing ""Blart
+   * values that do not exist on a page. For example, instead of storing "Blart
    * Versenwald III", a writer may set min_values[i]="B", max_values[i]="C".
    * Such more compact values must still be valid values within the column's
    * logical type. Readers must make sure that list entries are populated before
@@ -1277,6 +1314,13 @@ struct ColumnIndex {
    * - If the order of this column is IEEE754_TOTAL_ORDER, then min_values[i]
    *   and max_values[i] of that page must be set to the smallest and largest
    *   NaN values as defined by IEEE 754 total order.
+   *
+   * For columns of physical type INT96, the writer must do the following:
+   * - If the order of this column is not INT96_TIMESTAMP_ORDER, then a column
+   *   index must not be written for this column chunk.
+   * - If the order of this column is INT96_TIMESTAMP_ORDER, the min_values[i]
+   *   and max_values[i] of that page must be set to the smallest and largest
+   *   values as defined by the INT96 chronological timestamp ordering.
    */
   2: required list<binary> min_values
   3: required list<binary> max_values
@@ -1399,7 +1443,7 @@ struct FileMetaData {
    * Sort order used for the min_value and max_value fields in the Statistics
    * objects and the min_values and max_values fields in the ColumnIndex
    * objects of each column in this file. Sort orders are listed in the order
-   * matching the columns in the schema. The indexes are not necessary the same
+   * matching the columns in the schema. The indexes are not necessarily the same
    * though, because only leaf nodes of the schema are represented in the list
    * of sort orders.
    *

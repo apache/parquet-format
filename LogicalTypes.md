@@ -97,7 +97,7 @@ The sort order used for `UUID` values is unsigned byte-wise comparison.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 For signed integers, the second parameter should be `true`,
-for example, a signed integer with bit width of 8 is defined as `INT(8, true)`
+for example, a signed integer with bit width of 8 is defined as `INT(8, true)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -120,7 +120,7 @@ along with a maximum number of bits in the stored value.
 The annotation has two parameters: bit width and sign.
 Allowed bit width values are `8`, `16`, `32`, `64`, and sign can be `true` or `false`.
 In case of unsigned integers, the second parameter should be `false`,
-for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`
+for example, an unsigned integer with bit width of 8 is defined as `INT(8, false)`.
 Implementations may use these annotations to produce smaller
 in-memory representations when reading data.
 
@@ -166,7 +166,7 @@ unsigned integers with 8, 16, 32, or 64 bit width.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -227,7 +227,7 @@ integer. A precision too large for the underlying type (see below) is an error.
 * `int32`: for 1 &lt;= precision &lt;= 9
 * `int64`: for 1 &lt;= precision &lt;= 18; precision &lt; 10 will produce a
   warning
-* `fixed_len_byte_array`: precision is limited by the array size. Length `n`
+* `fixed_len_byte_array`: `precision` is limited by the array size. Length `n`
   can store &lt;= `floor(log_10(2^(8*n - 1) - 1))` base-10 digits
 * `byte_array`: `precision` is not limited, but is required. The minimum number of
   bytes to store the unscaled value should be used.
@@ -254,7 +254,10 @@ Used in contexts where precision is traded off for smaller footprint and potenti
 
 The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
 
-The sort order for `FLOAT16` is signed (with special handling of NANs and signed zeros); it uses the same [logic](https://github.com/apache/parquet-format#sort-order) as `FLOAT` and `DOUBLE`.
+Like `FLOAT` and `DOUBLE`, the sort order for `FLOAT16` is signed with special
+handling for NaNs and signed zeros. Writers should use IEEE754TotalOrder for
+consistent handling of these edge cases. See the `ColumnOrder` union in the
+[Thrift definition](src/main/thrift/parquet.thrift) for details.
 
 ## Temporal Types
 
@@ -268,9 +271,10 @@ The sort order used for `DATE` is signed.
 
 ### TIME
 
-`TIME` is used for a logical time type without a date with millisecond or microsecond precision.
+`TIME` is used for a logical time type without a date with millisecond, microsecond,
+or nanosecond precision.
 The type has two type parameters: UTC adjustment (`true` or `false`)
-and unit (`MILLIS` or `MICROS`, `NANOS`).
+and unit (`MILLIS`, `MICROS`, or `NANOS`).
 
 `TIME` with unit `MILLIS` is used for millisecond precision.
 It must annotate an `int32` that stores the number of
@@ -296,10 +300,10 @@ counterpart, it must annotate an `int32`.
 type that is UTC normalized and has `MICROS` precision. Like the logical type
 counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local time semantic,
+Although there is no exact corresponding ConvertedType for local time semantic,
 in order to support forward compatibility with those libraries, which annotated
-their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotation,
-Parquet writer implementation *must* annotate local time with legacy annotations too,
+their local time with legacy `TIME_MICROS` and `TIME_MILLIS` annotations,
+Parquet writer implementations *must* annotate local time with legacy annotations too,
 as shown below.
 
 *Backward compatibility:*
@@ -312,7 +316,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -355,7 +359,7 @@ time-line and such interpretations are allowed on purpose.
 
 The `TIMESTAMP` type has two type parameters:
 - `isAdjustedToUTC` must be either `true` or `false`.
-- `unit` must be one of `MILLIS`, `MICROS` or `NANOS`. This list is subject
+- `unit` must be one of `MILLIS`, `MICROS`, or `NANOS`. This list is subject
   to potential expansion in the future. Upon reading, unknown `unit`-s must
   be handled as unsupported features (rather than as errors in the data files).
 
@@ -445,7 +449,7 @@ limits and implementations may choose to only support a limited range.
 On the other hand, not every combination of year, month, day, hour, minute,
 second and subsecond values can be encoded into an `int64`. Most notably:
 
-- An arbitrary combination of timestamp fields can not be encoded as a single
+- An arbitrary combination of timestamp fields cannot be encoded as a single
   number if the values for some of the fields are outside of their normal range
   (where the "normal range" corresponds to everyday usage). For example, neither
   of the following can be represented in a timestamp:
@@ -456,7 +460,7 @@ second and subsecond values can be encoded into an `int64`. Most notably:
   - day = 29, month = 2, year = any non-leap year
 - Due to the range of the `int64` type, timestamps using the `NANOS` unit
   can only represent values between 1677-09-21 00:12:43 and 2262-04-11 23:47:16.
-  Values outside of this range can not be represented with the `NANOS`
+  Values outside of this range cannot be represented with the `NANOS`
   unit. (Other precisions have similar limits but those are outside of the
   domain for practical everyday usage.)
 
@@ -472,10 +476,10 @@ type counterpart, it must annotate an `int64`.
 logical type that is UTC normalized and has `MICROS` precision. Like the logical
 type counterpart, it must annotate an `int64`.
 
-Despite there is no exact corresponding ConvertedType for local timestamp semantic,
+Although there is no exact corresponding ConvertedType for local timestamp semantic,
 in order to support forward compatibility with those libraries, which annotated
-their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotation,
-Parquet writer implementation *must* annotate local timestamps with legacy annotations too,
+their local timestamps with legacy `TIMESTAMP_MICROS` and `TIMESTAMP_MILLIS` annotations,
+Parquet writer implementations *must* annotate local timestamps with legacy annotations too,
 as shown below.
 
 *Backward compatibility:*
@@ -488,7 +492,7 @@ as shown below.
 *Forward compatibility:*
 
 <table>
-    <tr colspan="3">
+    <tr>
         <th colspan="3">LogicalType</th>
         <th>ConvertedType</th>
     </tr>
@@ -541,7 +545,7 @@ are found during reading, they must be ignored.
 
 ## Embedded Types
 
-Embedded types do not have type-specific orderings.
+Embedded types do not have type-specific orderings unless otherwise specified.
 
 ### JSON
 
@@ -571,7 +575,8 @@ type `binary`, which is also called `BYTE_ARRAY` in the Parquet thrift definitio
 The `VARIANT` annotated group can be used to store either an unshredded Variant
 value, or a shredded Variant value.
 
-* The Variant group must be annotated with the `VARIANT` logical type.
+* The Variant group must be annotated with the `VARIANT` logical type, with the version number
+  included in the declaration.
 * Both fields `value` and `metadata` must be of type `binary` (called `BYTE_ARRAY`
   in the Parquet thrift definition).
 * The `metadata` field is required and must be a valid Variant metadata component,
@@ -584,7 +589,7 @@ value, or a shredded Variant value.
 
 This is the expected representation of an unshredded Variant in Parquet:
 ```
-optional group variant_unshredded (VARIANT) {
+optional group variant_unshredded (VARIANT(1)) {
   required binary metadata;
   required binary value;
 }
@@ -592,7 +597,7 @@ optional group variant_unshredded (VARIANT) {
 
 This is an example representation of a shredded Variant in Parquet:
 ```
-optional group variant_shredded (VARIANT) {
+optional group variant_shredded (VARIANT(1)) {
   required binary metadata;
   optional binary value;
   optional int64 typed_value;
@@ -602,7 +607,7 @@ optional group variant_shredded (VARIANT) {
 ### GEOMETRY
 
 `GEOMETRY` is used for geospatial features in the Well-Known Binary (WKB) format
-with linear/planar edges interpolation. It must annotate a `BYTE_ARRAY`
+with linear/planar `edges` interpolation. It must annotate a `BYTE_ARRAY`
 primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has only one type parameter:
@@ -617,20 +622,200 @@ are found during reading, they must be ignored.
 ### GEOGRAPHY
 
 `GEOGRAPHY` is used for geospatial features in the WKB format with an explicit
-(non-linear/non-planar) edges interpolation algorithm. It must annotate a
+(non-linear/non-planar) `edges` interpolation algorithm. It must annotate a
 `BYTE_ARRAY` primitive type. See [Geospatial.md](Geospatial.md) for more detail.
 
 The type has two type parameters:
 - `crs`: An optional string value for CRS. It must be a geographic CRS, where
   longitudes are bound by [-180, 180] and latitudes are bound by [-90, 90].
   If unset, the CRS defaults to `"OGC:CRS84"`.
-- `algorithm`: An optional enum value to describes the edge interpolation
+- `algorithm`: An optional enum value that describes the edge interpolation
   algorithm. Supported values are: `SPHERICAL`, `VINCENTY`, `THOMAS`, `ANDOYER`,
   `KARNEY`. If unset, the algorithm defaults to `SPHERICAL`.
 
 The sort order used for `GEOGRAPHY` is undefined. When writing data, no min/max
 statistics should be saved for this type and if such non-compliant statistics
-are found during reading, they must be ignored. 
+are found during reading, they must be ignored.
+
+### FILE
+
+`FILE` annotates a group that represents a reference to a range of bytes, which may
+be stored inline in the value, elsewhere within the current file, or in an external file. It
+is intended for use cases such as storing file inventories, manifests, and unstructured
+data references (e.g., images or audio files stored in object storage).
+
+The annotated group may contain the following fields, identified by name case sensitively,
+not by field order. Field IDs, if they exist, may also be used for projection. Every field
+is optional both in the schema and in the data: a writer may omit any field from the group
+definition, and any field that is present has a field repetition type of `OPTIONAL`.
+A group need only define the fields it uses (for example, an inline-only group may define
+just `inline`, and an external reference may define just `uri`).
+
+| Field          | Type       |
+|----------------|------------|
+| `uri`          | STRING     |
+| `offset`       | INT64      |
+| `size`         | INT64      |
+| `content_type` | STRING     |
+| `checksum`     | STRING     |
+| `inline`       | BYTE_ARRAY |
+
+A value resolves to bytes determined by `inline` / `uri` / `offset` / `size`;
+`content_type` and `checksum` are metadata describing whatever is resolved.
+
+#### Fields
+
+For the descriptions below, a field is *set* when it is present in the `FILE` group
+and its value is non-null (and, for string fields, non-empty[1]). A field is *not set*
+when it is absent from the group, or is present but null or empty.
+
+[1] Implementations are not expected to treat empty strings as null
+
+##### uri
+
+A URI-reference as defined by RFC 3986, encoded as a Parquet STRING (e.g., `s3://bucket/file.jpg`).
+The URI may be absolute or relative. No additional encoding (e.g., URI encoding) is applied on top
+of the user-provided data. If `uri` is not set, the value refers to the current file
+(a self-reference).
+
+##### offset
+
+A byte offset indicating the start of the byte range within the referenced data.
+If not set, readers must treat the value as 0.
+If set and non-zero, readers must seek to this offset to retrieve the referenced data.
+`offset` must be set for a self-reference (`uri` not set); it is optional for an
+external reference (`uri` set). `offset` must not be < 0.
+
+##### size
+
+The byte length of the referenced data. Must be zero or a positive integer if set; a
+value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
+It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
+in which case the range runs to the end of the referenced file. Because a self-reference
+always sets `offset`, it always sets `size` as well.
+
+##### content_type
+
+The media type (MIME type), as defined by RFC 2046, of the resolved bytes (e.g., `image/png`).
+When not set, the type can be assumed as `application/octet-stream`.
+
+##### checksum
+
+A self-describing integrity token for the resolved bytes, of the form
+`<algorithm>:<digest>`, where `<digest>` is encoded according to the `Encoding`
+column below. Readers should ignore unknown algorithms. The recognized algorithms
+are:
+
+| Algorithm | Encoding      | Notes                                                    |
+|-----------|---------------|----------------------------------------------------------|
+| `ETAG`    | opaque        | the object-store eTag, not recomputable                  |
+| `MD5`     | lowercase hex | as defined in RFC 1321 represented as 32 hex characters  |
+| `CRC32`   | lowercase hex | as defined in RFC 2083, represented as 8 hex characters  |
+| `CRC32C`  | lowercase hex | as defined in RFC 3385, represented as 8 hex characters  |
+| `SHA-256` | lowercase hex | as defined in RFC 6234, represented as 64 hex characters |
+
+`<digest>` encodings are:
+
+* `lowercase hex`: the digest bytes rendered as lowercase hexadecimal, two
+  characters per byte and no separators (e.g. `MD5:d41d8cd98f00b204e9800998ecf8427e`).
+* `opaque`: the token supplied verbatim by the object store, used only for
+  equality comparison and not otherwise interpreted.
+
+`checksum` applies to the resolved bytes, except for `ETAG`, which is the
+object-store eTag for the whole file referenced by `uri`.
+
+##### inline
+
+The referenced bytes stored inline in the value. If `inline` is set, it supplies the
+bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance
+only.
+
+#### Resolution
+
+A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
+set:
+
+| `inline` | `uri` | `offset` | `size` | Resolves to                                           |
+|----------|-------|----------|--------|-------------------------------------------------------|
+| set      | -     | -        | -      | the inline bytes                                      |
+| -        | set   | -        | -      | whole external file at `uri`                          |
+| -        | set   | set      | -      | invalid                                               |
+| -        | set   | -        | set    | external `uri`, `[0, size)`                           |
+| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`             |
+| -        | -     | set      | -      | invalid                                               |
+| -        | -     | -        | set    | invalid                                               |
+| -        | -     | set      | set    | this file, `[offset, offset + size)` (self-reference) |
+| -        | -     | -        | -      | nothing - invalid                                     |
+
+`size` must be set whenever `offset` is set, so any offset-based read always carries an
+explicit `size`. A self-reference (`uri` not set) must set `offset`, and therefore also
+`size`. `size` may be omitted only for a whole-file external reference, where the range
+runs to the end of the referenced file.
+
+A self-reference points within the same Parquet file using `offset` and `size` (both
+required). A self-reference is when `uri` is not set. A file containing self-references
+can be renamed or relocated as a single unit.
+
+Parquet files containing self-references must not use Parquet modular encryption.
+Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
+be encrypted or authenticated independently. Encryption of external files referenced
+by `uri` is outside the scope of the Parquet format.
+
+#### Validation
+
+* A value must resolve to some referenced data. It resolves only if `inline`, `uri`, or
+  `offset` is set; if none of them are set, the value does not resolve and is invalid, even
+  if `size` is set.
+* A self-reference (`uri` not set) must set `offset`. A value with neither `uri` nor
+  `offset` set (and not `inline`) does not resolve and is invalid.
+* `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
+  is invalid. Because a self-reference must set `offset`, it must also set `size`.
+* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
+  locator fields as mutually exclusive.
+* Field names within a `FILE`-annotated group must not be renamed.
+* Additional metadata about the file (e.g., modification timestamp) must
+  be stored adjacent to this group by engines or table formats, not inside it.
+* If a reader comes across an invalid file reference, the reader may return a `null` file reference
+  for that row.
+
+Statistics may be collected for the individual fields of a `FILE`-annotated group
+according to the sort order defined in each field's logical type.
+
+This is an example of a `FILE`-annotated group that defines all fields:
+
+```
+optional group my_file (FILE) {
+  optional binary uri (STRING);
+  optional int64 offset;
+  optional int64 size;
+  optional binary content_type (STRING);
+  optional binary checksum (STRING);
+  optional binary inline;
+}
+```
+
+Because every field is optional, a group need only define the fields it uses. A group
+whose values are always stored inline may define just `inline` and optionally `content_type`
+as additional metadata:
+
+```
+optional group inline_file (FILE) {
+  optional binary inline;
+  optional binary content_type (STRING);
+}
+```
+
+A group whose values are always whole external files may define just `uri` and optionally
+`content_type` and `checksum` for validation:
+
+```
+optional group external_file (FILE) {
+  optional binary uri (STRING);
+  optional binary content_type (STRING);
+  optional binary checksum (STRING);
+}
+```
+
 
 ## Nested Types
 
@@ -830,7 +1015,7 @@ to values. `MAP` must annotate a 3-level structure:
   field of the repeated `key_value` group.
 * The `value` field encodes the map's value type and repetition. This field can
   be `required`, `optional`, or omitted. It must always be the second field of
-  the repeated `key_value` group if present. In case of not present, it can be
+  the repeated `key_value` group if present. If not present, it can be
   represented as a map with all null values or as a set of keys.
 
 The following example demonstrates the type for a non-null map from strings to

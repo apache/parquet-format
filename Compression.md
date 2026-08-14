@@ -48,7 +48,7 @@ No-op codec.  Data is left uncompressed.
 A codec based on the
 [Snappy compression format](https://github.com/google/snappy/blob/master/format_description.txt).
 If any ambiguity arises when implementing this format, the implementation
-provided by Google Snappy [library](https://github.com/google/snappy/)
+provided by the [Snappy compression library](https://github.com/google/snappy/)
 is authoritative.
 
 ### GZIP
@@ -58,21 +58,21 @@ formats) defined by [RFC 1952](https://tools.ietf.org/html/rfc1952).
 If any ambiguity arises when implementing this format, the implementation
 provided by the [zlib compression library](https://zlib.net/) is authoritative.
 
-Readers should support reading pages containing multiple GZIP members, however,
+Readers should support reading pages containing multiple GZIP members; however,
 as this has historically not been supported by all implementations, it is recommended
 that writers refrain from creating such pages by default for better interoperability.
 
 ### LZO
 
 A codec based on or interoperable with the
-[LZO compression library](http://www.oberhumer.com/opensource/lzo/).
+[LZO compression library](https://www.oberhumer.com/opensource/lzo/).
 
 ### BROTLI
 
 A codec based on the Brotli format defined by
 [RFC 7932](https://tools.ietf.org/html/rfc7932).
 If any ambiguity arises when implementing this format, the implementation
-provided by the  [Brotli compression library](https://github.com/google/brotli)
+provided by the [Brotli compression library](https://github.com/google/brotli)
 is authoritative.
 
 ### LZ4
@@ -89,13 +89,13 @@ switch to the newer, interoperable `LZ4_RAW` codec.
 ### ZSTD
 
 A codec based on the Zstandard format defined by
-[RFC 8478](https://tools.ietf.org/html/rfc8478).  If any ambiguity arises
+[RFC 8878](https://tools.ietf.org/html/rfc8878).  If any ambiguity arises
 when implementing this format, the implementation provided by the
-[ZStandard compression library](https://facebook.github.io/zstd/)
+[Zstandard compression library](https://facebook.github.io/zstd/)
 is authoritative.
 
 ### LZ4_RAW
 
 A codec based on the [LZ4 block format](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md).
 If any ambiguity arises when implementing this format, the implementation
-provided by the [LZ4 compression library](http://www.lz4.org/) is authoritative.
+provided by the [LZ4 compression library](https://www.lz4.org/) is authoritative.

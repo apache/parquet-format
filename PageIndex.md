@@ -17,13 +17,13 @@
   - under the License.
   -->
 
-# Parquet page index: Layout to Support Page Skipping
+# Parquet Page Index: Layout to Support Page Skipping
 
 In Parquet, a *page index* is optional metadata for a
 ColumnChunk, containing statistics for DataPages that can be used
 to skip those pages when scanning in ordered and unordered columns.
 The page index is stored using the OffsetIndex and ColumnIndex structures,
-defined in [`parquet.thrift`](src/main/thrift/parquet.thrift)
+defined in [`parquet.thrift`](src/main/thrift/parquet.thrift).
 
 ## Problem Statement
 In previous versions of the format, Statistics are stored for ColumnChunks in
@@ -37,7 +37,7 @@ data from disk.
 1. Make both range scans and point lookups I/O efficient by allowing direct
    access to pages based on their min and max values. In particular:
     *  A single-row lookup in a row group based on the sort column of that row group
-  will only read one data page per the retrieved column.
+  will only read one data page per retrieved column.
     * Range scans on the sort column will only need to read the exact data 
       pages that contain relevant data.
     * Make other selective scans I/O efficient: if we have a very selective
@@ -81,7 +81,7 @@ Some observations:
 * We store lower and upper bounds for the values of each page. These may be the
   actual minimum and maximum values found on a page, but can also be (more
   compact) values that do not exist on a page. For example, instead of storing
-  ""Blart Versenwald III", a writer may set `min_values[i]="B"`,
+  `"Blart Versenwald III"`, a writer may set `min_values[i]="B"`,
   `max_values[i]="C"`. This allows writers to truncate large values and writers
   should use this to enforce some reasonable bound on the size of the index
   structures.

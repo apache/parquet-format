@@ -79,7 +79,7 @@ in order to verify its integrity. New footer fields keep an
 information about the file encryption algorithm and the footer signing key.
 
 For encrypted columns, the following modules are always encrypted, with the same column key: 
-pages and  page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
+pages and page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
 headers and bitsets.  If the 
 column key is different from the footer encryption key, the column metadata is serialized 
 separately and encrypted with the column key. In this case, the column metadata is also 
@@ -101,7 +101,7 @@ other on a combination of GCM and CTR modes.
 AES GCM is an authenticated encryption. Besides the data confidentiality (encryption), it 
 supports two levels of integrity verification (authentication): of the data (default), 
 and of the data combined with an optional AAD (“additional authenticated data”). The 
-authentication allows to make sure the data has not been tampered with. An AAD 
+authentication makes it possible to verify that the data has not been tampered with. An AAD
 is a free text to be authenticated, together with the data. The user can, for example, pass the 
 file name with its version (or creation timestamp) as an AAD input, to verify that the 
 file has not been replaced with an older version. The details on how Parquet creates 
@@ -136,9 +136,10 @@ one IV is ever repeated, then the implementation may be vulnerable"*. *"Complian
 requirement is crucial to the security of GCM"*.
 
 The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
-key shall not not be used for more than 2^31 (~2 billion) pages. In Parquet files encrypted with 
-multiple keys (footer and column keys), the constraint on the number of invocations is applied 
-to each key separately.
+key shall not be used for more than 2^32 total module encryptions, as per the NIST specification.
+Since each data page requires two module encryptions (header + data), this means in practice no
+more than 2^31 pages per key. In Parquet files encrypted with multiple keys (footer and column
+keys), the constraint on the number of invocations is applied to each key separately.
 
 When running in the context of a larger system, any particular Parquet writer implementation likely
 does not have sufficient context to enforce key invocation limits system-wide. Therefore,
@@ -161,8 +162,9 @@ tag used to verify the ciphertext and AAD integrity.
 
 
 #### 4.2.2 AES_GCM_CTR_V1
+
 In this Parquet algorithm, all modules except pages are encrypted with the GCM cipher, as described 
-above. The pages are encrypted by the CTR cipher without padding. This allows to encrypt/decrypt 
+above. The pages are encrypted by the CTR cipher without padding. This makes it possible to encrypt/decrypt
 the bulk of the data faster, while still verifying the metadata integrity and making 
 sure the file has not been replaced with a wrong version. However, tampering with the 
 page data might go unnoticed. The AES CTR cipher
@@ -208,7 +210,7 @@ it can't prevent replacement of one ciphertext with another (encrypted with the 
 Parquet modular encryption leverages AADs to protect against swapping ciphertext modules (encrypted 
 with AES GCM) inside a file or between files. Parquet can also protect against swapping full 
 files - for example, replacement of a file with an old version, or replacement of one table 
-partition with another. AADs are built to reflects the identity of a file and of the modules 
+partition with another. AADs are built to reflect the identity of a file and of the modules 
 inside the file. 
 
 Parquet constructs a module AAD from two components: an optional AAD prefix - a string provided 
@@ -221,12 +223,12 @@ group 1. The module AAD is a direct concatenation of the prefix and suffix parts
 
 #### 4.4.1 AAD prefix
 File swapping can be prevented by an AAD prefix string, that uniquely identifies the file and 
-allows to differentiate it e.g. from older versions of the file or from other partition files in the same 
+makes it possible to differentiate it e.g. from older versions of the file or from other partition files in the same
 data set (table). This string is optionally passed by a writer upon file creation. If provided,
 the AAD prefix is stored in an `aad_prefix` field in the file, and is made available to the readers. 
 This field is not encrypted. If a user is concerned about keeping the file identity inside the file, 
 the writer code can explicitly request Parquet not to store the AAD prefix. Then the aad_prefix field 
-will be empty; AAD prefixes must be fully managed by the caller code and supplied explictly to Parquet 
+will be empty; AAD prefixes must be fully managed by the caller code and supplied explicitly to Parquet 
 readers for each file.
 
 The protection against swapping full files is optional. It is not enabled by default because 
@@ -246,15 +248,15 @@ of all partition files (prefixes) from 0 to N-1.
    
 #### 4.4.2 AAD suffix
 The suffix part of a module AAD protects against module swapping inside a file. It also protects against 
-module swapping between files  - in situations when an encryption key is re-used in multiple files and the 
+module swapping between files - in situations when an encryption key is re-used in multiple files and the 
 writer has not provided a unique AAD prefix for each file. 
 
 Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenation of the following parts: 
 1.	[All modules] internal file identifier - a random byte array generated for each file (implementation-defined length)
 2.	[All modules] module type (1 byte)
-3.	[All modules except footer] row group ordinal (2 byte short, little endian)
-4.	[All modules except footer] column ordinal (2 byte short, little endian)
-5.	[Data page and header only] page ordinal (2 byte short, little endian)
+3.	[All modules except footer] row group ordinal (2-byte short, little-endian)
+4.	[All modules except footer] column ordinal (2-byte short, little-endian)
+5.	[Data page and header only] page ordinal (2-byte short, little-endian)
 
 The following module types are defined:  
 
@@ -262,8 +264,8 @@ The following module types are defined:
    * ColumnMetaData (1)
    * Data Page (2)
    * Dictionary Page (3)
-   * Data PageHeader (4)
-   * Dictionary PageHeader (5)
+   * Data Page Header (4)
+   * Dictionary Page Header (5)
    * ColumnIndex (6)
    * OffsetIndex (7)
    * BloomFilter Header (8)
@@ -276,8 +278,8 @@ The following module types are defined:
 | ColumnMetaData       |       yes        |   yes (1)   |        yes        |      yes       |     no      |
 | Data Page            |       yes        |   yes (2)   |        yes        |      yes       |     yes     |
 | Dictionary Page      |       yes        |   yes (3)   |        yes        |      yes       |     no      |
-| Data PageHeader      |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
-| Dictionary PageHeader|       yes        |   yes (5)   |        yes        |      yes       |     no      |
+| Data Page Header     |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
+| Dictionary Page Header|      yes        |   yes (5)   |        yes        |      yes       |     no      |
 | ColumnIndex          |       yes        |   yes (6)   |        yes        |      yes       |     no      |
 | OffsetIndex          |       yes        |   yes (7)   |        yes        |      yes       |     no      |
 | BloomFilter Header   |       yes        |   yes (8)   |        yes        |      yes       |     no      |
@@ -285,7 +287,7 @@ The following module types are defined:
 
 
 
-## 5 File Format
+## 5. File Format
 
 ### 5.1 Encrypted module serialization
 All modules, except column pages, are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
@@ -392,7 +394,7 @@ struct ColumnChunk {
 
 ### 5.3 Protection of sensitive metadata
 The Parquet file footer, and its nested structures, contain sensitive information - ranging 
-from a secret data (column statistics) to other information that can be exploited by an 
+from secret data (column statistics) to other information that can be exploited by an 
 attacker (e.g. schema, num_values, key_value_metadata, encoding 
 and crypto_metadata). This information is automatically protected when the footer and 
 secret columns are encrypted with the same key. In other cases - when column(s) and the 
@@ -408,7 +410,7 @@ field in the `ColumnChunk`.
 struct ColumnChunk {
 ...
   
-  /** Column metadata for this chunk.. **/
+  /** Column metadata for this chunk **/
   3: optional ColumnMetaData meta_data
 ..
   /** Crypto metadata of encrypted columns **/
@@ -439,7 +441,7 @@ little endian integer, followed by a final magic string, "PARE". The same magic 
 written at the beginning of the file (offset 0). Parquet readers start file parsing by 
 reading and checking the magic string. Therefore, the encrypted footer mode uses a new 
 magic string ("PARE") in order to instruct readers to look for a file crypto metadata 
-before the footer - and also to immediately inform legacy readers (expecting ‘PAR1’ 
+before the footer - and also to immediately inform legacy readers (expecting "PAR1" 
 bytes) that they can’t parse this file.
 
 ```c
@@ -490,14 +492,14 @@ The plaintext footer is signed in order to prevent tampering with the
 structure with the 
 AES GCM algorithm - using a footer signing key, and an AAD constructed according to the instructions 
 of the section 4.4. Only the nonce and GCM tag are stored in the file – as a 28-byte 
-fixed-length array, written right after  the footer itself. The ciphertext is not stored, 
+fixed-length array, written right after the footer itself. The ciphertext is not stored, 
 because it is not required for footer integrity verification by readers.
 
 | nonce (12 bytes) |  tag (16 bytes) |
 |------------------|-----------------|
 
 
-The plaintext footer mode sets the following fields in the the FileMetaData structure:
+The plaintext footer mode sets the following fields in the FileMetaData structure:
 
 ```c
 struct FileMetaData {
@@ -522,7 +524,7 @@ The 28-byte footer signature is written after the plaintext footer, followed by 
 that contains the combined length of the footer and its signature. A final magic string, 
 "PAR1", is written at the end of the 
 file. The same magic string is written at the beginning of the file (offset 0). The magic bytes 
-for plaintext footer mode are ‘PAR1’ to allow legacy readers to read projections of the file 
+for plaintext footer mode are "PAR1" to allow legacy readers to read projections of the file 
 that do not include encrypted columns.
 
  ![File Layout - Encrypted footer](doc/images/FileLayoutEncryptionPF.png)
