@@ -396,6 +396,14 @@ Bytes  AA 00 A3 BB 11 B4 CC 22 C5 DD 33 D6
 <a name="ALP"></a>
 ### Adaptive Lossless floating-Point: (ALP = 10)
 
+**As of 2026-08-01, this encoding is in Preview.**
+
+**Note**: Preview means that:
+1. The encoding is finalized (the specification is stable).
+2. The implementation is ongoing in the ecosystem (e.g., parquet-java, etc.) but may not be complete.
+3. The Parquet community recommends only using the encoding when you are sure your reader supports it.
+4. Writers are recommended to provide an opt-in flag to enable this encoding.
+
 Supported Types: FLOAT, DOUBLE
 
 This encoding is adapted from the paper
