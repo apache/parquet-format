@@ -78,9 +78,9 @@ In a plaintext footer mode, the contents of the footer structure is visible and 
 in order to verify its integrity. New footer fields keep an
 information about the file encryption algorithm and the footer signing key.
 
-For encrypted columns, the following modules are always encrypted, with the same column key:
-pages and page headers (both dictionary and data), self-reference payloads, column indexes,
-offset indexes, bloom filter headers and bitsets. If the
+For encrypted columns, the following modules are always encrypted, with the same column key: 
+pages and page headers (both dictionary and data), column indexes, offset indexes, bloom filter 
+headers and bitsets.  If the 
 column key is different from the footer encryption key, the column metadata is serialized 
 separately and encrypted with the column key. In this case, the column metadata is also 
 considered to be a module.  
@@ -135,12 +135,11 @@ related to the "uniqueness requirement of IVs and keys" (section 8 in the NIST s
 one IV is ever repeated, then the implementation may be vulnerable"*. *"Compliance with this 
 requirement is crucial to the security of GCM"*.
 
-The bulk of modules in a Parquet file are page headers, data pages, and self-references.
-Therefore, one encryption key shall not be used for more than 2^32 total module encryptions,
-as per the NIST specification. Each data page requires two module encryptions (header and
-data), and each self-reference requires one. In Parquet files encrypted with multiple keys
-(footer and column keys), the constraint on the number of invocations is applied to each key
-separately.
+The bulk of modules in a Parquet file are page headers and data pages. Therefore, one encryption 
+key shall not be used for more than 2^32 total module encryptions, as per the NIST specification.
+Since each data page requires two module encryptions (header + data), this means in practice no
+more than 2^31 pages per key. In Parquet files encrypted with multiple keys (footer and column
+keys), the constraint on the number of invocations is applied to each key separately.
 
 When running in the context of a larger system, any particular Parquet writer implementation likely
 does not have sufficient context to enforce key invocation limits system-wide. Therefore,
@@ -164,11 +163,11 @@ tag used to verify the ciphertext and AAD integrity.
 
 #### 4.2.2 AES_GCM_CTR_V1
 
-In this Parquet algorithm, all modules except pages and self-references are encrypted with the
-GCM cipher, as described above. Pages and self-references are encrypted by the CTR cipher
-without padding. This makes it possible to encrypt/decrypt the bulk of the data faster, while
-still verifying the metadata integrity and making sure the file has not been replaced with a
-wrong version. However, tampering with page or self-reference data might go unnoticed. The AES CTR cipher
+In this Parquet algorithm, all modules except pages are encrypted with the GCM cipher, as described 
+above. The pages are encrypted by the CTR cipher without padding. This makes it possible to encrypt/decrypt
+the bulk of the data faster, while still verifying the metadata integrity and making 
+sure the file has not been replaced with a wrong version. However, tampering with the 
+page data might go unnoticed. The AES CTR cipher
 must be implemented by a cryptographic provider according to the NIST SP 800-38A specification. 
 
 In Parquet, an input to the CTR cipher is an encryption key, a 16-byte IV and a plaintext. IVs are comprised of 
@@ -257,8 +256,7 @@ Unlike AAD prefix, a suffix is built internally by Parquet, by direct concatenat
 2.	[All modules] module type (1 byte)
 3.	[All modules except footer] row group ordinal (2-byte short, little-endian)
 4.	[All modules except footer] column ordinal (2-byte short, little-endian)
-5.	[Data page and data page header only] page ordinal (2-byte short, little-endian)
-6.	[Self-reference only] offset of the self-reference within the file (8-byte integer, little-endian)
+5.	[Data page and header only] page ordinal (2-byte short, little-endian)
 
 The following module types are defined:  
 
@@ -272,40 +270,28 @@ The following module types are defined:
    * OffsetIndex (7)
    * BloomFilter Header (8)
    * BloomFilter Bitset (9)
-   * Self-Reference (10)
 
 
-|                       | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal | Self-reference offset  |
-|-----------------------|------------------|-------------|-------------------|----------------|--------------|------------------------|
-| Footer                |       yes        |   yes (0)   |        no         |      no        |     no       |          no            |
-| ColumnMetaData        |       yes        |   yes (1)   |        yes        |      yes       |     no       |          no            |
-| Data Page             |       yes        |   yes (2)   |        yes        |      yes       |     yes      |          no            |
-| Dictionary Page       |       yes        |   yes (3)   |        yes        |      yes       |     no       |          no            |
-| Data Page Header      |       yes        |   yes (4)   |        yes        |      yes       |     yes      |          no            |
-| Dictionary Page Header|       yes        |   yes (5)   |        yes        |      yes       |     no       |          no            |
-| ColumnIndex           |       yes        |   yes (6)   |        yes        |      yes       |     no       |          no            |
-| OffsetIndex           |       yes        |   yes (7)   |        yes        |      yes       |     no       |          no            |
-| BloomFilter Header    |       yes        |   yes (8)   |        yes        |      yes       |     no       |          no            |
-| BloomFilter Bitset    |       yes        |   yes (9)   |        yes        |      yes       |     no       |          no            |
-| Self-Reference        |       yes        |   yes (10)  |        yes        |      yes       |     no       |          yes           |
-
-For a self-reference, the column ordinal is that of the `inline` column and the
-self-reference offset is the value of its `offset` field. Because `offset` locates the
-stored representation within the file, it is available to a reader without counting
-preceding values. A reader may therefore resolve a self-reference without decoding the
-pages it skips.
-
-The AAD of a self-reference binds its stored representation to a single column chunk. A
-writer must not share one encrypted byte range between column chunks; each column chunk
-that references the same bytes stores its own representation.
+|                      | Internal File ID | Module type | Row group ordinal | Column ordinal | Page ordinal|
+|----------------------|------------------|-------------|-------------------|----------------|-------------|
+| Footer               |       yes        |   yes (0)   |        no         |      no        |     no      |
+| ColumnMetaData       |       yes        |   yes (1)   |        yes        |      yes       |     no      |
+| Data Page            |       yes        |   yes (2)   |        yes        |      yes       |     yes     |
+| Dictionary Page      |       yes        |   yes (3)   |        yes        |      yes       |     no      |
+| Data Page Header     |       yes        |   yes (4)   |        yes        |      yes       |     yes     |
+| Dictionary Page Header|      yes        |   yes (5)   |        yes        |      yes       |     no      |
+| ColumnIndex          |       yes        |   yes (6)   |        yes        |      yes       |     no      |
+| OffsetIndex          |       yes        |   yes (7)   |        yes        |      yes       |     no      |
+| BloomFilter Header   |       yes        |   yes (8)   |        yes        |      yes       |     no      |
+| BloomFilter Bitset   |       yes        |   yes (9)   |        yes        |      yes       |     no      |
 
 
 
 ## 5. File Format
 
 ### 5.1 Encrypted module serialization
-All modules, except column pages and self-references, are encrypted with the GCM cipher. In the
-AES_GCM_V1 algorithm, column pages and self-references are also encrypted with AES GCM. For each module, the GCM encryption
+All modules, except column pages, are encrypted with the GCM cipher. In the AES_GCM_V1 algorithm, 
+the column pages are also encrypted with AES GCM. For each module, the GCM encryption 
 buffer is comprised of a nonce, ciphertext and tag, described in the Algorithms section. The length of 
 the encryption buffer (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
@@ -313,20 +299,13 @@ the encryption buffer (a 4-byte little endian) is written to the output stream, 
 |-----------------|------------------|------------------------------|----------------|
 
 
-In the AES_GCM_CTR_V1 algorithm, column pages and self-references are encrypted with AES CTR.
-For each page or self-reference, the CTR encryption buffer is comprised of a nonce and ciphertext,
+In the AES_GCM_CTR_V1 algorithm, the column pages are encrypted with AES CTR.
+For each page, the CTR encryption buffer is comprised of a nonce and ciphertext, 
 described in the Algorithms section. The length of the encryption buffer 
 (a 4-byte little endian) is written to the output stream, followed by the buffer itself.
 
 |length (4 bytes) | nonce (12 bytes) | ciphertext (length-12 bytes) |
 |-----------------|------------------|------------------------------|
-
-For a self-reference, `offset` points to the beginning of the 4-byte length and `size`
-is the size of the complete encrypted module, including the length, nonce, ciphertext,
-and GCM tag when present. The encryption buffer of a self-reference must therefore fit
-the 4-byte length field, which limits it to 2 GiB as for any other module. A value whose
-encryption buffer would exceed this limit must be stored as an external reference (`uri`)
-instead of a self-reference.
 
 
 ### 5.2 Crypto structures
@@ -561,3 +540,4 @@ algorithm (no 16-byte tag in AES_GCM_CTR_V1) and with page configuration or data
 The throughput overhead of Parquet modular encryption depends on whether AES enciphering is 
 done in software or hardware. In both cases, performing encryption on full pages (~1MB buffers) 
 instead of on much smaller individual data values causes AES to work at its maximal speed. 
+

@@ -639,10 +639,10 @@ are found during reading, they must be ignored.
 
 ### FILE
 
-`FILE` annotates a group that represents a reference to a range of bytes, which may
-be stored inline in the value, elsewhere within the current file, or in an external file. It
-is intended for use cases such as storing file inventories, manifests, and unstructured
-data references (e.g., images or audio files stored in object storage).
+`FILE` annotates a group that represents a reference to a range of bytes, which may be
+stored inline in the value or in an external file. It is intended for use cases such as
+storing file inventories, manifests, and unstructured data references (e.g., images or
+audio files stored in object storage).
 
 The annotated group may contain the following fields, identified by name case sensitively,
 not by field order. Field IDs, if they exist, may also be used for projection. Every field
@@ -675,24 +675,21 @@ when it is absent from the group, or is present but null or empty.
 
 A URI-reference as defined by RFC 3986, encoded as a Parquet STRING (e.g., `s3://bucket/file.jpg`).
 The URI may be absolute or relative. No additional encoding (e.g., URI encoding) is applied on top
-of the user-provided data. If `uri` is not set, the value refers to the current file
-(a self-reference).
+of the user-provided data.
 
 ##### offset
 
 A byte offset indicating the start of the byte range within the referenced data.
 If not set, readers must treat the value as 0.
 If set and non-zero, readers must seek to this offset to retrieve the referenced data.
-`offset` must be set for a self-reference (`uri` not set); it is optional for an
-external reference (`uri` set). `offset` must not be < 0.
+`offset` may only be set together with `uri`. `offset` must not be < 0.
 
 ##### size
 
-The byte length of the stored representation. Must be zero or a positive integer if set.
-A value of 0 indicates an empty stored representation. `size` must be set whenever
-`offset` is set. It may be omitted only for a whole-file external reference (`uri` set,
-`offset` not set), in which case the range runs to the end of the referenced file.
-Because a self-reference always sets `offset`, it must always set `size` as well.
+The byte length of the referenced data. Must be zero or a positive integer if set; a
+value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
+It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
+in which case the range runs to the end of the referenced file.
 
 ##### content_type
 
@@ -735,84 +732,35 @@ only.
 A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
 set:
 
-| `inline` | `uri` | `offset` | `size` | Resolves to                                                           |
-|----------|-------|----------|--------|-----------------------------------------------------------------------|
-| set      | -     | -        | -      | the inline bytes                                                      |
-| -        | set   | -        | -      | whole external file at `uri`                                          |
-| -        | set   | set      | -      | invalid                                                               |
-| -        | set   | -        | set    | external `uri`, `[0, size)`                                           |
-| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`                             |
-| -        | -     | set      | -      | invalid                                                               |
-| -        | -     | -        | set    | invalid                                                               |
-| -        | -     | set      | set    | stored bytes in this file, `[offset, offset + size)` (self-reference) |
-| -        | -     | -        | -      | nothing - invalid                                                     |
+| `inline` | `uri` | `offset` | `size` | Resolves to                               |
+|----------|-------|----------|--------|-------------------------------------------|
+| set      | -     | -        | -      | the inline bytes                          |
+| -        | set   | -        | -      | whole external file at `uri`              |
+| -        | set   | set      | -      | invalid                                   |
+| -        | set   | -        | set    | external `uri`, `[0, size)`               |
+| -        | set   | set      | set    | external `uri`, `[offset, offset + size)` |
+| -        | -     | set      | -      | invalid                                   |
+| -        | -     | -        | set    | invalid                                   |
+| -        | -     | set      | set    | invalid                                   |
+| -        | -     | -        | -      | nothing - invalid                         |
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
-explicit `size`. A self-reference (`uri` not set) must set `offset`, and therefore also
-`size`. `size` may be omitted only for a whole-file external reference, where the range
-runs to the end of the referenced file.
+explicit `size`. `size` may be omitted only for a whole-file external reference, where
+the range runs to the end of the referenced file. A byte range within the current file
+cannot be referenced: `offset` and `size` apply only to data referenced by `uri`.
 
-A self-reference points within the same Parquet file using `offset` and `size` (both
-required). A self-reference is when `uri` is not set. A file containing self-references
-can be renamed or relocated as a single unit.
-
-A schema that permits self-references must include the `inline` field.
-
-Each self-reference inherits the compression and encryption settings of the `inline`
-column chunk of the same row group. These settings are properties of the column chunk,
-so all self-references of a column chunk share them regardless of where in the file the
-referenced value is stored.
-
-Each referenced byte range is compressed independently using the `CompressionCodec`
-of the `inline` column chunk. `UNCOMPRESSED` leaves the referenced bytes uncompressed.
-
-Each compressed byte range is an independent compression block. Compression state is
-not shared with the data page or with other referenced ranges.
-
-For an unencrypted self-reference, `offset` and `size` identify either the independent
-compressed block or the uncompressed bytes. For a compressed block, the complete range
-is supplied to the codec, and its decompressed output is the resolved value.
-
-The decompressed size of a self-reference is not stored. Readers must rely on the
-framing of the codec where it provides one, or decompress into a dynamically sized
-buffer.
-
-The encryption state and key are inherited from the `inline` column chunk. If the
-column chunk is encrypted, each self-reference is encrypted independently using the
-same column key and file encryption algorithm. Compression is applied before
-encryption. If the column chunk is not encrypted, its self-references are not
-encrypted. For an encrypted self-reference, `offset` and `size` identify the encrypted
-module, whose exact extent is defined in
-[Encrypted module serialization](Encryption.md#51-encrypted-module-serialization). An
-encrypted self-reference is limited to 2 GiB by the length field of the encrypted
-module; a value too large to store this way must use an external reference (`uri`). An
-encrypted stored representation is bound to a single column chunk and must not be shared
-between column chunks. See [Parquet Modular Encryption](Encryption.md) for the
-encryption layout and AAD construction.
-
-A self-reference identifies a stored representation, not necessarily the resolved
-bytes. Copying `[offset, offset + size)` directly may return compressed or encrypted
-data. To resolve a self-reference, a reader:
-
-1. reads the stored representation identified by `offset` and `size`;
-2. decrypts it when the corresponding `inline` column chunk is encrypted;
-3. decompresses it using the `CompressionCodec` of the corresponding `inline` column
-   chunk, unless the codec is `UNCOMPRESSED`;
-4. returns the resulting bytes.
-
-`content_type` and `checksum` describe the resolved bytes after these transformations.
-These compression and encryption rules do not apply to external references. Encryption
-of external files referenced by `uri` is outside the scope of the Parquet format.
+Encryption of external files referenced by `uri` is outside the scope of the Parquet
+format.
 
 #### Validation
 
-* A value must resolve to some referenced data. It resolves only if `inline`, `uri`, or
-  `offset` is set; if none of them are set, the value does not resolve and is invalid, even
-  if `size` is set.
-* A self-reference (`uri` not set) must set `offset`. A value with neither `uri` nor
-  `offset` set (and not `inline`) does not resolve and is invalid.
+* A value must resolve to some referenced data. It resolves only if `inline` or `uri` is
+  set; if neither is set, the value does not resolve and is invalid, even if `offset` or
+  `size` is set.
+* `offset` may only be set together with `uri`. A value that sets `offset` without `uri`
+  (and not `inline`) does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
-  is invalid. Because a self-reference must set `offset`, it must also set `size`.
+  is invalid.
 * If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
   locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
