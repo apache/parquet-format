@@ -724,8 +724,10 @@ object-store eTag for the whole file referenced by `uri`.
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
-bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance
-only.
+bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance only.
+Both representations must denote the same bytes: a locator set alongside `inline` records
+where those bytes came from, and must not be a partial or otherwise different
+representation of the value.
 
 #### Resolution
 
@@ -734,7 +736,7 @@ set:
 
 | `inline` | `uri` | `offset` | `size` | Resolves to                               |
 |----------|-------|----------|--------|-------------------------------------------|
-| set      | -     | -        | -      | the inline bytes                          |
+| set      | any   | any      | any    | the inline bytes                          |
 | -        | set   | -        | -      | whole external file at `uri`              |
 | -        | set   | set      | -      | invalid                                   |
 | -        | set   | -        | set    | external `uri`, `[0, size)`               |
@@ -746,11 +748,18 @@ set:
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. `size` may be omitted only for a whole-file external reference, where
-the range runs to the end of the referenced file. A byte range within the current file
-cannot be referenced: `offset` and `size` apply only to data referenced by `uri`.
+the range runs to the end of the referenced file. `offset` and `size` apply only to data
+referenced by `uri`; there is no form that addresses a byte range in the current file
+directly.
+
+A `uri` is always resolved as an external reference, even when it names the file that
+contains it. Parquet applies no compression or encryption of its own to the referenced
+bytes, and a reference remains the writer's responsibility if the file is copied or
+renamed.
 
 Encryption of external files referenced by `uri` is outside the scope of the Parquet
-format.
+format. The fields of a `FILE`-annotated group are ordinary columns and are encoded,
+compressed, and encrypted like any other column, `inline` included.
 
 #### Validation
 
@@ -758,11 +767,12 @@ format.
   set; if neither is set, the value does not resolve and is invalid, even if `offset` or
   `size` is set.
 * `offset` may only be set together with `uri`. A value that sets `offset` without `uri`
-  (and not `inline`) does not resolve and is invalid.
+  does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
-* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
-  locator fields as mutually exclusive.
+* If `inline` is set, it supplies the bytes for readers, and any locator fields that are
+  also set must denote the same bytes. Producers may treat `inline` and the locator
+  fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
