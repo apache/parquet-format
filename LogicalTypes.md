@@ -747,9 +747,8 @@ set:
 | -        | -     | set      | set    | invalid                                   |
 | -        | -     | -        | -      | nothing - invalid                         |
 
-† Any combination of the locator fields that is valid on its own. A locator set
-alongside `inline` must satisfy the same rules as one used on its own, so `offset`
-requires `uri` and `size`.
+† The locator fields may all be unset. Otherwise, fields set alongside `inline` must
+form a locator valid on its own, so `offset` requires `uri` and `size`.
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. `size` may be omitted only for a whole-file external reference, where
