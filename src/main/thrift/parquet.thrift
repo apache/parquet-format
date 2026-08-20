@@ -472,8 +472,7 @@ struct GeographyType {
  * File logical type annotation
  *
  * Annotates a group that represents a reference to a file, or to a range of
- * bytes that may be stored inline, elsewhere in this file, or in an external
- * file.
+ * bytes that may be stored inline or in an external file.
  *
  * See LogicalTypes.md for details.
  */

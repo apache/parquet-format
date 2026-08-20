@@ -640,9 +640,9 @@ are found during reading, they must be ignored.
 ### FILE
 
 `FILE` annotates a group that represents a reference to a range of bytes, which may be
-stored inline in the value or in an external file. It is intended for use cases such as
-storing file inventories, manifests, and unstructured data references (e.g., images or
-audio files stored in object storage).
+stored inline or in an external file. It is intended for use cases such as storing file
+inventories, manifests, and unstructured data references (e.g., images or audio files
+stored in object storage).
 
 The annotated group may contain the following fields, identified by name case sensitively,
 not by field order. Field IDs, if they exist, may also be used for projection. Every field
@@ -737,7 +737,7 @@ set:
 
 | `inline` | `uri` | `offset` | `size` | Resolves to                               |
 |----------|-------|----------|--------|-------------------------------------------|
-| set      | any   | any      | any    | the inline bytes (same as any locator)    |
+| set      | †     | †        | †      | the inline bytes (same as any locator)    |
 | -        | set   | -        | -      | whole external file at `uri`              |
 | -        | set   | set      | -      | invalid                                   |
 | -        | set   | -        | set    | external `uri`, `[0, size)`               |
@@ -746,6 +746,10 @@ set:
 | -        | -     | -        | set    | invalid                                   |
 | -        | -     | set      | set    | invalid                                   |
 | -        | -     | -        | -      | nothing - invalid                         |
+
+† Any combination of the locator fields that is valid on its own. A locator set
+alongside `inline` must satisfy the same rules as one used on its own, so `offset`
+requires `uri` and `size`.
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. `size` may be omitted only for a whole-file external reference, where
