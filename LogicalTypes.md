@@ -639,10 +639,10 @@ are found during reading, they must be ignored.
 
 ### FILE
 
-`FILE` annotates a group that represents a reference to a range of bytes, which may
-be stored inline in the value, elsewhere within the current file, or in an external file. It
-is intended for use cases such as storing file inventories, manifests, and unstructured
-data references (e.g., images or audio files stored in object storage).
+`FILE` annotates a group that represents a reference to a range of bytes, which may be
+stored inline or in an external file. It is intended for use cases such as storing file
+inventories, manifests, and unstructured data references (e.g., images or audio files
+stored in object storage).
 
 The annotated group may contain the following fields, identified by name case sensitively,
 not by field order. Field IDs, if they exist, may also be used for projection. Every field
@@ -675,24 +675,21 @@ when it is absent from the group, or is present but null or empty.
 
 A URI-reference as defined by RFC 3986, encoded as a Parquet STRING (e.g., `s3://bucket/file.jpg`).
 The URI may be absolute or relative. No additional encoding (e.g., URI encoding) is applied on top
-of the user-provided data. If `uri` is not set, the value refers to the current file
-(a self-reference).
+of the user-provided data.
 
 ##### offset
 
 A byte offset indicating the start of the byte range within the referenced data.
 If not set, readers must treat the value as 0.
 If set and non-zero, readers must seek to this offset to retrieve the referenced data.
-`offset` must be set for a self-reference (`uri` not set); it is optional for an
-external reference (`uri` set). `offset` must not be < 0.
+`offset` may only be set together with `uri`. `offset` must not be < 0.
 
 ##### size
 
 The byte length of the referenced data. Must be zero or a positive integer if set; a
 value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
 It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
-in which case the range runs to the end of the referenced file. Because a self-reference
-always sets `offset`, it always sets `size` as well.
+in which case the range runs to the end of the referenced file.
 
 ##### content_type
 
@@ -727,51 +724,60 @@ object-store eTag for the whole file referenced by `uri`.
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
-bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance
-only.
+bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance only.
+Both representations must denote the same bytes, so a reader may resolve the value from
+either and obtain the same result; reading `inline` requires no external access and is
+the cheaper path. A locator set alongside `inline` records where those bytes came from,
+and must not be a partial or otherwise different representation of the value.
 
 #### Resolution
 
 A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
 set:
 
-| `inline` | `uri` | `offset` | `size` | Resolves to                                           |
-|----------|-------|----------|--------|-------------------------------------------------------|
-| set      | -     | -        | -      | the inline bytes                                      |
-| -        | set   | -        | -      | whole external file at `uri`                          |
-| -        | set   | set      | -      | invalid                                               |
-| -        | set   | -        | set    | external `uri`, `[0, size)`                           |
-| -        | set   | set      | set    | external `uri`, `[offset, offset + size)`             |
-| -        | -     | set      | -      | invalid                                               |
-| -        | -     | -        | set    | invalid                                               |
-| -        | -     | set      | set    | this file, `[offset, offset + size)` (self-reference) |
-| -        | -     | -        | -      | nothing - invalid                                     |
+| `inline` | `uri` | `offset` | `size` | Resolves to                               |
+|----------|-------|----------|--------|-------------------------------------------|
+| set      | †     | †        | †      | the inline bytes (same as any locator)    |
+| -        | set   | -        | -      | whole external file at `uri`              |
+| -        | set   | set      | -      | invalid                                   |
+| -        | set   | -        | set    | external `uri`, `[0, size)`               |
+| -        | set   | set      | set    | external `uri`, `[offset, offset + size)` |
+| -        | -     | set      | -      | invalid                                   |
+| -        | -     | -        | set    | invalid                                   |
+| -        | -     | set      | set    | invalid                                   |
+| -        | -     | -        | -      | nothing - invalid                         |
+
+† The locator fields may all be unset. Otherwise, fields set alongside `inline` must
+form a locator valid on its own, so `offset` requires `uri` and `size`.
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
-explicit `size`. A self-reference (`uri` not set) must set `offset`, and therefore also
-`size`. `size` may be omitted only for a whole-file external reference, where the range
-runs to the end of the referenced file.
+explicit `size`. `size` may be omitted only for a whole-file external reference, where
+the range runs to the end of the referenced file. `offset` and `size` apply only to data
+referenced by `uri`; there is no form that addresses a byte range in the current file
+directly.
 
-A self-reference points within the same Parquet file using `offset` and `size` (both
-required). A self-reference is when `uri` is not set. A file containing self-references
-can be renamed or relocated as a single unit.
+A `uri` is always resolved as an external reference, even when it names the file that
+contains it. Parquet applies no compression or encryption of its own to the referenced
+bytes, and a reference remains the writer's responsibility if the file is copied or
+renamed.
 
-Parquet files containing self-references must not use Parquet modular encryption.
-Self-referenced byte ranges are not Parquet encryption modules and therefore cannot
-be encrypted or authenticated independently. Encryption of external files referenced
-by `uri` is outside the scope of the Parquet format.
+Encryption of external files referenced by `uri` is outside the scope of the Parquet
+format. The fields of a `FILE`-annotated group are ordinary columns and are encoded,
+compressed, and encrypted like any other column, `inline` included.
 
 #### Validation
 
-* A value must resolve to some referenced data. It resolves only if `inline`, `uri`, or
-  `offset` is set; if none of them are set, the value does not resolve and is invalid, even
-  if `size` is set.
-* A self-reference (`uri` not set) must set `offset`. A value with neither `uri` nor
-  `offset` set (and not `inline`) does not resolve and is invalid.
+* A value must resolve to some referenced data. It resolves only if `inline` or `uri` is
+  set; if neither is set, the value does not resolve and is invalid, even if `offset` or
+  `size` is set.
+* `offset` may only be set together with `uri`. A value that sets `offset` without `uri`
+  does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
-  is invalid. Because a self-reference must set `offset`, it must also set `size`.
-* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and the
-  locator fields as mutually exclusive.
+  is invalid.
+* If `inline` and a locator are both set, they must denote the same bytes, and a reader
+  may resolve the value from either. If they disagree the value is invalid; a reader is
+  not required to detect this and may return the bytes of either representation.
+  Producers may treat `inline` and the locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
