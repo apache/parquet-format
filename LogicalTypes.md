@@ -732,24 +732,55 @@ and must not be a partial or otherwise different representation of the value.
 
 #### Resolution
 
-A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
-set:
+A value resolves to bytes based on which of `uri`, `offset`, and `size` are set. The
+`inline` field is independent of that combination and is shown in the last column:
 
-| `inline` | `uri` | `offset` | `size` | Resolves to                               |
-|----------|-------|----------|--------|-------------------------------------------|
-| set      | †     | †        | †      | the inline bytes (same as any locator)    |
-| -        | set   | -        | -      | whole external file at `uri`              |
-| -        | set   | set      | -      | invalid                                   |
-| -        | set   | -        | set    | external `uri`, `[0, size)`               |
-| -        | set   | set      | set    | external `uri`, `[offset, offset + size)` |
-| -        | -     | set      | -      | invalid                                   |
-| -        | -     | -        | set    | invalid                                   |
-| -        | -     | set      | set    | invalid                                   |
-| -        | -     | -        | -      | nothing - invalid                         |
-
-† Any combination of the locator fields that is valid on its own. A locator set
-alongside `inline` must satisfy the same rules as one used on its own, so `offset`
-requires `uri` and `size`.
+<table>
+    <tr>
+        <th><code>uri</code></th>
+        <th><code>offset</code></th>
+        <th><code>size</code></th>
+        <th>Resolves to</th>
+        <th><code>inline</code></th>
+    </tr>
+    <tr>
+        <td>set</td><td>-</td><td>-</td>
+        <td>whole external file at <code>uri</code></td>
+        <td rowspan="8">May be set in any of these combinations. When set, it holds the
+        same bytes that resolving the rest of the row would return, so a reader may use
+        either and obtain the same result. Reading <code>inline</code> requires no
+        external access and is the cheaper path. A value whose locator fields are
+        invalid still resolves from <code>inline</code>.</td>
+    </tr>
+    <tr>
+        <td>set</td><td>set</td><td>-</td>
+        <td>invalid</td>
+    </tr>
+    <tr>
+        <td>set</td><td>-</td><td>set</td>
+        <td>external <code>uri</code>, <code>[0, size)</code></td>
+    </tr>
+    <tr>
+        <td>set</td><td>set</td><td>set</td>
+        <td>external <code>uri</code>, <code>[offset, offset + size)</code></td>
+    </tr>
+    <tr>
+        <td>-</td><td>set</td><td>-</td>
+        <td>invalid</td>
+    </tr>
+    <tr>
+        <td>-</td><td>-</td><td>set</td>
+        <td>invalid</td>
+    </tr>
+    <tr>
+        <td>-</td><td>set</td><td>set</td>
+        <td>invalid</td>
+    </tr>
+    <tr>
+        <td>-</td><td>-</td><td>-</td>
+        <td>nothing - invalid, unless <code>inline</code> is set</td>
+    </tr>
+</table>
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. `size` may be omitted only for a whole-file external reference, where
@@ -771,10 +802,12 @@ compressed, and encrypted like any other column, `inline` included.
 * A value must resolve to some referenced data. It resolves only if `inline` or `uri` is
   set; if neither is set, the value does not resolve and is invalid, even if `offset` or
   `size` is set.
-* `offset` may only be set together with `uri`. A value that sets `offset` without `uri`
-  does not resolve and is invalid.
-* `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
-  is invalid.
+* `offset` may only be set together with `uri`. A locator that sets `offset` without
+  `uri` does not resolve and is invalid.
+* `size` must be set whenever `offset` is set. A locator that sets `offset` without
+  `size` is invalid.
+* An invalid locator does not invalidate a value whose `inline` is set, because `inline`
+  resolves the value on its own.
 * If `inline` and a locator are both set, they must denote the same bytes, and a reader
   may resolve the value from either. If they disagree the value is invalid; a reader is
   not required to detect this and may return the bytes of either representation.
