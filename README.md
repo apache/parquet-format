@@ -221,6 +221,12 @@ Additionally, files can contain an optional column index to allow readers to
 skip pages more efficiently. See [PageIndex.md](PageIndex.md) for details and
 the reasoning behind adding these to the format.
 
+The file metadata may also be encoded as a *modular footer*: a struct-of-arrays,
+module-addressable footer format that lets readers fetch and decode metadata in
+proportion to the columns a query projects rather than the width of the table.
+See [`ModularFooter.thrift`](src/main/thrift/ModularFooter.thrift) for the proposed metadata
+definitions, layout, and adoption path.
+
 ## Checksumming
 Pages of all kinds can be individually checksummed. This allows disabling of checksums
 at the HDFS file level, to better support single row lookups. Checksums are calculated

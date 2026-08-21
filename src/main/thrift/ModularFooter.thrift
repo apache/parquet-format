@@ -1,0 +1,400 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
+ * Modular Footer: a struct-of-arrays (SoA) encoding of Parquet file metadata.
+ *
+ * STATUS: proposal / draft for discussion.
+ *
+ * The standard footer (parquet.thrift FileMetaData) is an array of structs, one ColumnChunk per
+ * (row group, column). Thrift-compact has no random access into it: even a parser that skips the
+ * field values it does not need must still walk every field header in order, so reaching a
+ * projected column means traversing all num_columns * num_row_groups chunks. The cost scales with
+ * table width, not projection. Interleaving each chunk's heterogeneous fields in one struct also
+ * packs and decodes worse than storing each field as its own homogeneous array.
+ *
+ * The modular footer groups the metadata into independently decodable modules and stores each
+ * module column-major, so a reader decodes only the columns, and only the modules, a query needs.
+ *
+ * Module layout. Each module is serialized as an independent Thrift-compact struct. The
+ * ModularFooter index carries the footer-level scalars, the two always-present modules inline
+ * (schema and placement), and a directory locating each optional module by absolute file offset,
+ * so an optional module can be placed anywhere in the file. See ModularFooterDirectoryEntry and
+ * PageIndexDirectory for the mechanics.
+ *
+ * This file defines only the metadata, not the file-level framing that wraps it (the magic, footer
+ * location, and any checksum, the analog of Parquet's PAR1 + footer length). The framing is
+ * specified separately.
+ *
+ * Compatibility. The modular footer is a forward-incompatible layout: an old reader cannot parse
+ * it in place of FileMetaData. Parquet versioning handles this by signalling a breaking footer
+ * layout change at the file level, so an unaware reader rejects the file cleanly rather than
+ * misreading it.
+ *
+ * Adoption. The target end state is the modular footer as the sole footer, which is what delivers
+ * the full footer-size and projection-scaling benefit. During migration it may instead be written
+ * alongside the standard footer so an unaware reader falls back to FileMetaData; that transitional
+ * coexistence is out of scope here.
+ *
+ * Extensibility. Optional modules are per-file presence flags in the directory, not a migration
+ * state. A new module type is added as a directory entry under a version bump, and a reader treats
+ * an absent or unrecognized module uniformly, so the format never sits in a partially migrated
+ * state. Bloom filters are a planned future module added this way (not specified in this draft).
+ *
+ * Encryption. Footer encryption is unchanged in spirit: the footer key encrypts all modules.
+ * Per-column encryption differs from today's whole-ColumnMetaData scheme. Because placement and
+ * statistics are separate modules, and placement is a shared column-major array whose single-column
+ * value cannot be encrypted under a per-column key, only the per-column statistics are encrypted
+ * (under the column key) while placement stays plaintext. A column's location leaks little; its
+ * min/max are the sensitive part. The full modular-encryption design is specified separately.
+ *
+ * Indexing. The whole-file column-major modules (placement and stats) store each per-chunk array
+ * column-major: the value for (leaf column c, row group g) is at index c * num_row_groups + g, so
+ * a column's per-row-group values are contiguous. The page index does not use this index; it is
+ * split into per-column blobs (OffsetIndexColumn, ColumnIndexColumn), each holding one column's
+ * arrays indexed per page (delimited by first_page_index across that column's row groups).
+ *
+ * Every value array is full-length and positional: exactly one entry per chunk (or per page, for
+ * the page index) at its index, addressed directly. A parallel presence bitset (has_null_count,
+ * has_minmax, and so on) marks which entries are valid; the slot at the aligned index still exists
+ * when the bit is 0 (a zero under fixed-width BITPACK, an empty element in VarLenColumn). Values
+ * are never compacted to present-only, which would force a popcount over the bitset and destroy
+ * O(1) random access. Arrays marked "per column" hold num_columns entries indexed by c; arrays
+ * marked "per schema element" follow FileMetaData.schema pre-order. Integer arrays are stored as
+ * `binary` under one encoding chosen for the whole footer (the ColumnArrayEncoding enum below);
+ * variable-length byte columns (stat min/max and their prefixes) use VarLenColumn so they are
+ * random-accessible too.
+ */
+
+include "parquet.thrift"
+
+namespace cpp parquet.modular
+namespace java org.apache.parquet.format.modular
+
+/**
+ * Identifies a module. SCHEMA and PLACEMENT are always present and carried inline in ModularFooter
+ * (the `schema` and `chunks` fields), so the directory lists only the optional modules: RG_STATS,
+ * OFFSET_INDEX, COLUMN_INDEX, and FILE_METADATA. The two inline kinds remain in the enum as the
+ * module taxonomy. (Bloom filters are a planned future module, per the extensibility note above,
+ * and get an enum value when specified.)
+ */
+enum ModularFooterModule {
+  SCHEMA = 0;
+  PLACEMENT = 1;
+  RG_STATS = 2;
+  OFFSET_INDEX = 3;
+  COLUMN_INDEX = 4;
+  FILE_METADATA = 5;
+}
+
+/**
+ * Encoding of the footer's per-chunk and per-column integer arrays. One encoding is chosen for the
+ * whole footer and named once (ModularFooter.array_encoding); every encoded array uses it, there is
+ * no per-array tag, and a reader MUST reject an unknown value. The shared tag fixes the scheme, not
+ * a bit width: under BITPACK each array carries its own bit_width in its payload, sized to that
+ * array's values, so widths differ across arrays and per-column blobs.
+ *
+ * All encoded values are non-negative. An array with an "absent" case (e.g. null_count) is paired
+ * with a presence bitset (e.g. has_null_count), so the value array never needs a negative sentinel
+ * and BITPACK stays a clean unsigned width. Variable-length byte blobs (min/max stat bytes) and
+ * boolean flag bytes are not integer arrays and are stored as-is; the schema arrays are read
+ * wholesale and stay plain Thrift lists.
+ *
+ * Each encoded array is a self-describing `binary` payload (little-endian; varint = unsigned
+ * LEB128):
+ *   BITPACK (0): `u8 bit_width; varint count`, then `count` values packed bit_width bits each,
+ *   LSB-first. bit_width is per payload (each array picks its own minimal width). O(1) random
+ *   access: value i is the bit_width-bit field at bit offset i * bit_width.
+ * BITPACK is the only encoding for now; the tag is retained so a future encoding (e.g. a compact
+ * delta variant) can be added without re-encoding data or bumping the footer version.
+ */
+enum ColumnArrayEncoding {
+  BITPACK = 0;
+}
+
+/**
+ * A variable-length byte column stored for random access. A Thrift list<binary> is sequential
+ * (reaching element i means walking every element before it), which breaks column-selective
+ * decode. Instead `data` concatenates all elements in column-major order and `offsets` is an
+ * encoded array of count+1 cumulative byte positions (offsets[0] = 0, offsets[count] =
+ * length(data)); element i is data[offsets[i] : offsets[i+1]]. Because `offsets` uses
+ * array_encoding, under BITPACK a reader jumps straight to element i's bounds in O(1). Used for the
+ * column-major byte columns (stat min/max values and their common prefixes). The column is
+ * full-length: one element per chunk or page at its column-major index, with an empty element
+ * (offsets[i] == offsets[i+1]) where the gating presence bit is 0. It keeps a slot for every entry
+ * rather than storing only the present ones, so element i is always at index i.
+ */
+struct VarLenColumn {
+  /** Encoded per array_encoding: count+1 cumulative byte offsets into `data`. */
+  1: required binary offsets;
+  /** Concatenated element bytes, in the column's column-major order. */
+  2: required binary data;
+}
+
+// Boolean columns below are packed bitsets, not list<byte>: a `binary` of ceil(count/8) bytes where
+// entry i is bit i (LSB-first within each byte). One bit per entry, O(1) random-accessible, at 1/8
+// the size of a byte-per-entry list. (Thrift has no bit type; the `binary` carries the packed bits,
+// and the entry count comes from the module's chunk or page count.)
+
+/**
+ * Schema module: parallel arrays, one entry per schema element in the pre-order flattened tree
+ * (same order as FileMetaData.schema). Enum-valued columns use i32 with a sentinel for "absent"
+ * because group nodes lack some attributes. The schema needs no random access: every reader fully
+ * decodes the whole tree (it is required to interpret any projected column), so these stay plain
+ * Thrift lists rather than the random-access `binary` encoding the per-chunk modules use, and keep
+ * their negative "absent" sentinels.
+ */
+struct SchemaMatrix {
+  /** Path segment name of the element. */
+  1: required list<string> names;
+  /** parquet.Type value for leaves; -1 for group nodes. */
+  2: required list<i32> physical_types;
+  /** parquet.FieldRepetitionType value; -1 if absent. */
+  3: required list<i32> repetition_types;
+  /** Number of children; -1 for leaves (distinguishes a leaf from a 0-child group). */
+  4: required list<i32> num_children;
+  /** Length for FIXED_LEN_BYTE_ARRAY; -1 otherwise. */
+  5: required list<i32> type_lengths;
+  /** Field id; -2147483648 (min i32) if unset. */
+  6: required list<i32> field_ids;
+  /** Logical type; an empty union means none. Decimals etc. carried here. */
+  7: required list<parquet.LogicalType> logical_types;
+  /** parquet.ColumnOrder, one per element (empty union = unset, group node, or type-defined order).
+   *  Required to interpret min/max stats, e.g. float NaN and signed-zero ordering. */
+  8: required list<parquet.ColumnOrder> column_orders;
+}
+
+/**
+ * Placement module (always present): per-(leaf column, row group) locators, column-major. Every
+ * numeric array is `binary` encoded per array_encoding, so a projection random-accesses only its
+ * columns' slices instead of decoding the whole module. Dictionary pages use a per-chunk start
+ * index (first_dict_page) into a flattened offset array, so a chunk may carry zero, one, or (for a
+ * future multi-dictionary feature) several dictionary pages, each located in O(1); the footer does
+ * not bake in the current one-dictionary-per-chunk rule.
+ */
+struct ColumnChunkMatrix {
+  /** First data page byte offset, per (column, row group), column-major. Encoded. */
+  1: required binary data_page_offsets;
+  /** Index within dictionary_page_offsets of each chunk's first dictionary page: num_chunks+1
+   *  cumulative entries (first_dict_page[num_chunks] = total). Chunk k's dictionary offsets are
+   *  dictionary_page_offsets[first_dict_page[k] : first_dict_page[k+1]], so its dictionary count is
+   *  the difference and a reader random-accesses it in O(1) with no prefix sum. A chunk with no
+   *  dictionary has an empty slice (first_dict_page[k] == first_dict_page[k+1]); no sentinel used.
+   *  Column-major. Encoded. */
+  2: required binary first_dict_page;
+  /** Byte offset of each dictionary page, flattened in column-major chunk order (then in-chunk
+   *  order), sliced by first_dict_page. Encoded. */
+  3: required binary dictionary_page_offsets;
+  /** Compressed size of the column chunk. Encoded. */
+  4: required binary total_compressed_sizes;
+  /** Uncompressed size of the column chunk. Encoded. */
+  5: required binary total_uncompressed_sizes;
+  /** Number of values in the column chunk. Encoded. */
+  6: required binary num_values;
+  /** parquet.CompressionCodec value. Encoded. */
+  7: required binary codecs;
+  /** parquet.Type value; one entry per column (uniform across row groups). Encoded. */
+  8: required binary physical_types;
+  /** Packed bitset: 1 iff every data page in the chunk is dictionary-encoded (the dictionary-
+   *  pushdown fast path). Per chunk, column-major. Replaces ColumnMetaData.encoding_stats. */
+  9: required binary is_fully_dict_encoded;
+}
+
+/**
+ * Statistics module: per-(leaf column, row group) chunk statistics for row-group pruning,
+ * column-major. Mirrors parquet.Statistics min_value/max_value/null_count with two space
+ * optimizations: the longest common prefix of a chunk's min and max is stored once (min/max keep
+ * only the differing suffix), and either bound may be truncated and flagged inexact (an inexact min
+ * stays a valid lower bound, <= true min; an inexact max a valid upper bound, >= true max), so
+ * pruning stays correct while long values do not bloat the footer.
+ *
+ * All-NaN chunks: a chunk whose non-null values are all NaN carries no ordering min/max. A reader
+ * detects this via nan_count + null_count == num_values (num_values from ColumnChunkMatrix), and
+ * such a chunk MAY set has_minmax = 0. The column index cannot use this test (it has no per-page
+ * num_values), so it signals the all-NaN case differently (see ColumnIndexColumn).
+ */
+struct RgStatsMatrix {
+  /** Packed bitset: 1 iff the null count is known. Per chunk, column-major. */
+  1: required binary has_null_count;
+  /** Null count, non-negative; encoded. Meaningful iff has_null_count. */
+  2: required binary null_counts;
+  /** Packed bitset: 1 iff this chunk has min/max (min/max entries below meaningful iff 1). */
+  3: required binary has_minmax;
+  /** Longest common prefix of each chunk's min and max (empty if none), column-major. */
+  4: required VarLenColumn minmax_prefixes;
+  /** Each chunk's min with minmax_prefixes stripped (suffix only), column-major. */
+  5: required VarLenColumn min_suffixes;
+  /** Each chunk's max with minmax_prefixes stripped (suffix only), column-major. */
+  6: required VarLenColumn max_suffixes;
+  /** Packed bitset: 1 iff min is exact; 0 iff a truncated lower bound (<= true min).
+   *  Meaningful iff has_minmax. */
+  7: required binary min_exact;
+  /** Packed bitset: 1 iff max is exact; 0 iff a truncated upper bound (>= true max).
+   *  Meaningful iff has_minmax. */
+  8: required binary max_exact;
+  /** Packed bitset: 1 iff the NaN count is known (mandatory for float types under total order). */
+  9: required binary has_nan_count;
+  /** NaN count, non-negative; encoded. Meaningful iff has_nan_count. FLOAT/DOUBLE/FLOAT16 only. */
+  10: required binary nan_counts;
+}
+
+/**
+ * Offset-index module (optional, per-page placement): a separate, independent module from the
+ * column index. The OFFSET_INDEX directory entry's (offset, length) locates a PageIndexDirectory
+ * (the per-column locator), not these blobs; the reader follows that directory's per-column offset
+ * to fetch one OffsetIndexColumn per projected leaf column. A column with no offset index has an
+ * empty slice in the directory.
+ *
+ * Each OffsetIndexColumn holds one leaf column's pages across its row groups. first_page_index has
+ * num_row_groups+1 cumulative entries, so row group g's pages are the flattened slice
+ * [first_page_index[g], first_page_index[g+1]). Equivalent to parquet.thrift OffsetIndex,
+ * transposed to SoA.
+ */
+struct OffsetIndexColumn {
+  /** Cumulative page index per row group: num_row_groups+1 entries; row group g's pages are the
+   *  flattened slice [first_page_index[g], first_page_index[g+1]) (first_page_index[0] = 0,
+   *  last entry = total pages), giving O(1) access to a row group. Encoded. */
+  1: required binary first_page_index;
+  /** Page byte offset. Encoded. */
+  2: required binary offsets;
+  /** Compressed page size. Encoded. */
+  3: required binary compressed_page_sizes;
+  /** First row index of the page within its row group. Encoded. */
+  4: required binary first_row_indexes;
+}
+
+/**
+ * Column-index module (optional, per-page statistics): a separate, independent module from the
+ * offset index. As with the offset index, the COLUMN_INDEX directory entry's (offset, length)
+ * locates a PageIndexDirectory (the per-column locator), not these blobs; a column with no column
+ * index has an empty slice there, so a chunk may have an offset index but no column index without
+ * either module referencing the other. Equivalent to parquet.thrift ColumnIndex, transposed to SoA;
+ * this version omits the optional repetition/definition level histograms and
+ * unencoded_byte_array_data_bytes. Per-page min/max use the same prefix + inexact scheme as
+ * RgStatsMatrix (common prefix stored once, truncated bounds flagged and still valid).
+ *
+ * null_pages is the min/max presence gate (there is no separate has_minmax): every non-null page
+ * carries min/max, and where null_pages[i] = 1 the page is all-null, so its minmax_prefixes[i],
+ * min_suffixes[i], and max_suffixes[i] are empty and its min_exact[i] and max_exact[i] are
+ * meaningless (the per-page null and nan counts remain valid).
+ *
+ * All-NaN pages: with no per-page num_values, a reader cannot use the RgStatsMatrix test
+ * (nan_count + null_count == num_values) to spot a page whose non-null values are all NaN. Instead
+ * the writer MUST record the actual NaN min/max for such a page (min/max are not dropped), and a
+ * reader that sees a NaN min/max treats the page's non-null values as all NaN.
+ *
+ * Each ColumnIndexColumn holds one leaf column's pages across its row groups; first_page_index
+ * delimits each row group's pages exactly as in OffsetIndexColumn.
+ */
+struct ColumnIndexColumn {
+  /** Cumulative page index per row group (num_row_groups+1 entries), as in OffsetIndexColumn.
+   *  Encoded. */
+  1: required binary first_page_index;
+  /** parquet.BoundaryOrder value per row group (num_row_groups entries): whether this column's
+   *  pages within each chunk are ordered, enabling binary-search page skipping. Encoded. */
+  2: required binary boundary_orders;
+  /** Packed bitset: 1 iff the page is all-null. Flattened over pages. */
+  3: required binary null_pages;
+  /** Packed bitset: 1 iff the per-page null count is known. Flattened over pages. */
+  4: required binary has_null_count;
+  /** Per-page null count, non-negative; encoded. Meaningful iff has_null_count. Flattened. */
+  5: required binary null_counts;
+  /** Longest common prefix of each page's min and max (empty if none), pages flattened. */
+  6: required VarLenColumn minmax_prefixes;
+  /** Per-page min with minmax_prefixes stripped (suffix), pages flattened. */
+  7: required VarLenColumn min_suffixes;
+  /** Per-page max with minmax_prefixes stripped (suffix), pages flattened. */
+  8: required VarLenColumn max_suffixes;
+  /** Packed bitset: 1 iff the page min is exact; 0 iff a truncated lower bound. Flattened. */
+  9: required binary min_exact;
+  /** Packed bitset: 1 iff the page max is exact; 0 iff a truncated upper bound. Flattened. */
+  10: required binary max_exact;
+  /** Packed bitset: 1 iff the per-page NaN count is known. Flattened. */
+  11: required binary has_nan_count;
+  /** Per-page NaN count, non-negative; encoded. Meaningful iff has_nan_count. Flattened. */
+  12: required binary nan_counts;
+}
+
+/**
+ * File-level metadata module (optional): descriptive metadata a reader does not need to navigate
+ * the footer, namely the writer identity and the arbitrary key/value pairs (Arrow, Spark, or Delta
+ * schema, geo metadata, and so on). Read wholesale (small, never projected) and located via the
+ * directory.
+ */
+struct FileMetadataMatrix {
+  /** Writer identity (like FileMetaData.created_by); lets readers gate on known-bad stats. */
+  1: optional string created_by;
+  /** Arbitrary key/value metadata (as FileMetaData.key_value_metadata). Read wholesale, so it stays
+   *  a plain list rather than a column-major SoA structure. */
+  2: optional list<parquet.KeyValue> key_value_metadata;
+}
+
+/**
+ * Per-column locator at the base of a page-index region (offset index or column index). The
+ * module's directory entry addresses this locator, and its (offset, length) spans the whole region
+ * (this directory followed by the per-column blobs). A reader fetches it once, then uses
+ * column_offsets to fetch only the projected columns' OffsetIndexColumn or ColumnIndexColumn blobs.
+ *
+ * column_offsets holds num_columns+1 cumulative byte offsets relative to the region base, so column
+ * c's blob is [region_base + column_offsets[c], region_base + column_offsets[c+1]): one integer per
+ * column, no separate length, and an empty slice for a column absent from the module.
+ */
+struct PageIndexDirectory {
+  /** Encoded per array_encoding (see above). */
+  1: required binary column_offsets;
+}
+
+/**
+ * One entry of the footer directory, locating a module's serialized bytes by absolute file offset.
+ * For OFFSET_INDEX and COLUMN_INDEX the offset points to the module's PageIndexDirectory (the
+ * per-column locator), not the page data.
+ */
+struct ModularFooterDirectoryEntry {
+  1: required ModularFooterModule module;
+  /** Absolute byte offset of the module in the file. For OFFSET_INDEX and COLUMN_INDEX it is the
+   *  page-index region base that PageIndexDirectory.column_offsets are relative to. */
+  2: required i64 offset;
+  /** Byte length of the module (for the page index, the region: PageIndexDirectory + blobs). */
+  3: required i64 length;
+}
+
+/**
+ * Top-level footer index (the always-read skeleton): the footer-level scalars plus the two
+ * always-present modules, SchemaMatrix and ColumnChunkMatrix (placement), carried directly. The
+ * optional modules (RgStatsMatrix, the page index, file metadata) are not fields here; each is
+ * serialized independently and located via `directory`, so a reader decodes only the optional
+ * modules it needs. Schema and placement are inline (never in `directory`), and every module's
+ * column-major arrays stay independently walkable so a projection touches only its columns' slices.
+ * version identifies the metadata layout (like FileMetaData.version); which optional modules are
+ * present is given by `directory`.
+ */
+struct ModularFooter {
+  /** Metadata layout version (analogous to FileMetaData.version). */
+  1: required i32 version;
+  2: required i32 num_row_groups;
+  3: required i32 num_columns;            // leaf columns
+  4: required i64 num_rows;               // file total
+  5: required list<i64> row_group_num_rows;
+  /** Encoding shared by every encoded array in this footer. BITPACK is the only value today. */
+  6: required ColumnArrayEncoding array_encoding;
+  7: required SchemaMatrix schema;        // always present
+  8: required ColumnChunkMatrix chunks;   // placement; always present
+  /** Locations of the optional modules (stats, page index, file metadata). */
+  9: optional list<ModularFooterDirectoryEntry> directory;
+}
