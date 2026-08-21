@@ -67,8 +67,8 @@
  * Indexing. The whole-file column-major modules (placement and stats) store each per-chunk array
  * column-major: the value for (leaf column c, row group g) is at index c * num_row_groups + g, so
  * a column's per-row-group values are contiguous. The page index does not use this index; it is
- * split into per-column blobs (OffsetIndexColumn, ColumnIndexColumn), each holding one column's
- * arrays indexed per page (delimited by first_page_index across that column's row groups).
+ * split into one blob per column chunk (OffsetIndexChunk, ColumnIndexChunk), each holding just that
+ * chunk's per-page arrays, located per chunk through a PageIndexDirectory.
  *
  * Every value array is full-length and positional: exactly one entry per chunk (or per page, for
  * the page index) at its index, addressed directly. A parallel presence bitset (has_null_count,
@@ -227,7 +227,7 @@ struct ColumnChunkMatrix {
  * All-NaN chunks: a chunk whose non-null values are all NaN carries no ordering min/max. A reader
  * detects this via nan_count + null_count == num_values (num_values from ColumnChunkMatrix), and
  * such a chunk MAY set has_minmax = 0. The column index cannot use this test (it has no per-page
- * num_values), so it signals the all-NaN case differently (see ColumnIndexColumn).
+ * num_values), so it signals the all-NaN case differently (see ColumnIndexChunk).
  */
 struct RgStatsMatrix {
   /** Packed bitset: 1 iff the null count is known. Per chunk, column-major. */
@@ -256,38 +256,33 @@ struct RgStatsMatrix {
 
 /**
  * Offset-index module (optional, per-page placement): a separate, independent module from the
- * column index. The OFFSET_INDEX directory entry's (offset, length) locates a PageIndexDirectory
- * (the per-column locator), not these blobs; the reader follows that directory's per-column offset
- * to fetch one OffsetIndexColumn per projected leaf column. A column with no offset index has an
+ * column index. The OFFSET_INDEX directory entry locates a PageIndexDirectory (the per-chunk
+ * locator), not these blobs; the reader follows that directory's per-chunk offset to fetch one
+ * OffsetIndexChunk per projected (column, row group) chunk. A chunk with no offset index has an
  * empty slice in the directory.
  *
- * Each OffsetIndexColumn holds one leaf column's pages across its row groups. first_page_index has
- * num_row_groups+1 cumulative entries, so row group g's pages are the flattened slice
- * [first_page_index[g], first_page_index[g+1]). Equivalent to parquet.thrift OffsetIndex,
- * transposed to SoA.
+ * Each OffsetIndexChunk holds one column chunk's pages (one per (leaf column, row group)); the
+ * per-page arrays are parallel and self-delimiting, so their common length is the chunk's page
+ * count and no separate page-count field is stored. Equivalent to parquet.thrift OffsetIndex (SoA).
  */
-struct OffsetIndexColumn {
-  /** Cumulative page index per row group: num_row_groups+1 entries; row group g's pages are the
-   *  flattened slice [first_page_index[g], first_page_index[g+1]) (first_page_index[0] = 0,
-   *  last entry = total pages), giving O(1) access to a row group. Encoded. */
-  1: required binary first_page_index;
+struct OffsetIndexChunk {
   /** Page byte offset. Encoded. */
-  2: required binary offsets;
+  1: required binary offsets;
   /** Compressed page size. Encoded. */
-  3: required binary compressed_page_sizes;
+  2: required binary compressed_page_sizes;
   /** First row index of the page within its row group. Encoded. */
-  4: required binary first_row_indexes;
+  3: required binary first_row_indexes;
 }
 
 /**
  * Column-index module (optional, per-page statistics): a separate, independent module from the
- * offset index. As with the offset index, the COLUMN_INDEX directory entry's (offset, length)
- * locates a PageIndexDirectory (the per-column locator), not these blobs; a column with no column
- * index has an empty slice there, so a chunk may have an offset index but no column index without
- * either module referencing the other. Equivalent to parquet.thrift ColumnIndex, transposed to SoA;
- * this version omits the optional repetition/definition level histograms and
- * unencoded_byte_array_data_bytes. Per-page min/max use the same prefix + inexact scheme as
- * RgStatsMatrix (common prefix stored once, truncated bounds flagged and still valid).
+ * offset index. As with the offset index, the COLUMN_INDEX directory entry locates a
+ * PageIndexDirectory (the per-chunk locator), not these blobs; a chunk with no column index has an
+ * empty slice there, so a chunk may have an offset index but no column index without either module
+ * referencing the other. Equivalent to parquet.thrift ColumnIndex, transposed to SoA; this version
+ * omits the optional repetition/definition level histograms and unencoded_byte_array_data_bytes.
+ * Per-page min/max use the same prefix + inexact scheme as RgStatsMatrix (common prefix stored
+ * once, truncated bounds flagged and still valid).
  *
  * null_pages is the min/max presence gate (there is no separate has_minmax): every non-null page
  * carries min/max, and where null_pages[i] = 1 the page is all-null, so its minmax_prefixes[i],
@@ -299,36 +294,33 @@ struct OffsetIndexColumn {
  * the writer MUST record the actual NaN min/max for such a page (min/max are not dropped), and a
  * reader that sees a NaN min/max treats the page's non-null values as all NaN.
  *
- * Each ColumnIndexColumn holds one leaf column's pages across its row groups; first_page_index
- * delimits each row group's pages exactly as in OffsetIndexColumn.
+ * Each ColumnIndexChunk holds one column chunk's pages; the per-page arrays are parallel and their
+ * common length is the chunk's page count (no separate page-count field).
  */
-struct ColumnIndexColumn {
-  /** Cumulative page index per row group (num_row_groups+1 entries), as in OffsetIndexColumn.
-   *  Encoded. */
-  1: required binary first_page_index;
-  /** parquet.BoundaryOrder value per row group (num_row_groups entries): whether this column's
-   *  pages within each chunk are ordered, enabling binary-search page skipping. Encoded. */
-  2: required binary boundary_orders;
-  /** Packed bitset: 1 iff the page is all-null. Flattened over pages. */
-  3: required binary null_pages;
-  /** Packed bitset: 1 iff the per-page null count is known. Flattened over pages. */
-  4: required binary has_null_count;
-  /** Per-page null count, non-negative; encoded. Meaningful iff has_null_count. Flattened. */
-  5: required binary null_counts;
-  /** Longest common prefix of each page's min and max (empty if none), pages flattened. */
-  6: required VarLenColumn minmax_prefixes;
-  /** Per-page min with minmax_prefixes stripped (suffix), pages flattened. */
-  7: required VarLenColumn min_suffixes;
-  /** Per-page max with minmax_prefixes stripped (suffix), pages flattened. */
-  8: required VarLenColumn max_suffixes;
-  /** Packed bitset: 1 iff the page min is exact; 0 iff a truncated lower bound. Flattened. */
-  9: required binary min_exact;
-  /** Packed bitset: 1 iff the page max is exact; 0 iff a truncated upper bound. Flattened. */
-  10: required binary max_exact;
-  /** Packed bitset: 1 iff the per-page NaN count is known. Flattened. */
-  11: required binary has_nan_count;
-  /** Per-page NaN count, non-negative; encoded. Meaningful iff has_nan_count. Flattened. */
-  12: required binary nan_counts;
+struct ColumnIndexChunk {
+  /** parquet.BoundaryOrder for this chunk: whether the pages are ordered, enabling binary-search
+   *  page skipping. */
+  1: required parquet.BoundaryOrder boundary_order;
+  /** Packed bitset, one bit per page: 1 iff the page is all-null. */
+  2: required binary null_pages;
+  /** Packed bitset, per page: 1 iff the per-page null count is known. */
+  3: required binary has_null_count;
+  /** Per-page null count, non-negative; encoded. Meaningful iff has_null_count. */
+  4: required binary null_counts;
+  /** Longest common prefix of each page's min and max (empty if none), per page. */
+  5: required VarLenColumn minmax_prefixes;
+  /** Per-page min with minmax_prefixes stripped (suffix). */
+  6: required VarLenColumn min_suffixes;
+  /** Per-page max with minmax_prefixes stripped (suffix). */
+  7: required VarLenColumn max_suffixes;
+  /** Packed bitset, per page: 1 iff the min is exact; 0 iff a truncated lower bound. */
+  8: required binary min_exact;
+  /** Packed bitset, per page: 1 iff the max is exact; 0 iff a truncated upper bound. */
+  9: required binary max_exact;
+  /** Packed bitset, per page: 1 iff the per-page NaN count is known. */
+  10: required binary has_nan_count;
+  /** Per-page NaN count, non-negative; encoded. Meaningful iff has_nan_count. */
+  11: required binary nan_counts;
 }
 
 /**
@@ -346,29 +338,31 @@ struct FileMetadataMatrix {
 }
 
 /**
- * Per-column locator at the base of a page-index region (offset index or column index). The
- * module's directory entry addresses this locator, and its (offset, length) spans the whole region
- * (this directory followed by the per-column blobs). A reader fetches it once, then uses
- * column_offsets to fetch only the projected columns' OffsetIndexColumn or ColumnIndexColumn blobs.
+ * Per-chunk locator at the base of a page-index region (offset index or column index). The module's
+ * directory entry addresses this locator, and its (offset, length) spans the whole region (this
+ * directory followed by the per-chunk blobs). A reader fetches it once, then uses chunk_offsets to
+ * fetch only the projected chunks' OffsetIndexChunk or ColumnIndexChunk blobs.
  *
- * column_offsets holds num_columns+1 cumulative byte offsets relative to the region base, so column
- * c's blob is [region_base + column_offsets[c], region_base + column_offsets[c+1]): one integer per
- * column, no separate length, and an empty slice for a column absent from the module.
+ * chunk_offsets holds num_chunks+1 cumulative byte offsets relative to the region base,
+ * column-major (chunk (c, g) at index c * num_row_groups + g), so that chunk's blob is
+ * [region_base + chunk_offsets[k], region_base + chunk_offsets[k+1]): one integer per chunk, no
+ * separate length, and an empty slice for a chunk absent from the module. A whole column's chunks
+ * are contiguous, so a reader can also range-fetch a column in one read.
  */
 struct PageIndexDirectory {
   /** Encoded per array_encoding (see above). */
-  1: required binary column_offsets;
+  1: required binary chunk_offsets;
 }
 
 /**
  * One entry of the footer directory, locating a module's serialized bytes by absolute file offset.
  * For OFFSET_INDEX and COLUMN_INDEX the offset points to the module's PageIndexDirectory (the
- * per-column locator), not the page data.
+ * per-chunk locator), not the page data.
  */
 struct ModularFooterDirectoryEntry {
   1: required ModularFooterModule module;
   /** Absolute byte offset of the module in the file. For OFFSET_INDEX and COLUMN_INDEX it is the
-   *  page-index region base that PageIndexDirectory.column_offsets are relative to. */
+   *  page-index region base that PageIndexDirectory.chunk_offsets are relative to. */
   2: required i64 offset;
   /** Byte length of the module (for the page index, the region: PageIndexDirectory + blobs). */
   3: required i64 length;
