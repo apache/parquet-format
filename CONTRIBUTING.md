@@ -186,7 +186,7 @@ iteration of this document.
 
 For features released prior to October 2024, target dates for each of these
 categories will be updated as part of the `parquet-java 2.0` release process
-based on a collected feature compatibility matrix.
+based on a the [implementation status matrix](https://parquet.apache.org/docs/file-format/implementationstatus/).
 
 For each release of `parquet-java` or `parquet-format` that influences this
 guidance it is expected exact dates will be added to parquet-format to provide
@@ -200,3 +200,29 @@ matrix.
 End users of software are generally encouraged to consult the feature matrix
 and vendor documentation before enabling features that are not yet widely
 adopted.
+
+#### Presets
+
+A practical consideration is the possible proliferation on the number of flags
+a user or implementor needs to understand for compatibility of parquet files. To help
+simplify this process we define "presets" by year.  Implementations are
+recommended to allow users to specify a preset that will enable by default
+any backward incompatible features added in the specified year or any year previously.
+
+Reader implementations can document which preset years they support.  This can
+also be calculated based on the [implementation status matrix](https://parquet.apache.org/docs/file-format/implementationstatus/).
+
+The first preset year defined is 2023 which includes features added in 2023 and all yaers prior. For any subsequent years, additional
+features will be added to the [implementation status matrix](https://parquet.apache.org/docs/file-format/implementationstatus/)
+for tracking.
+
+Presets cover the ability to write and read back data with out loss of fidelity. 
+They do not cover implementation level features such as the ability 
+to prune data more efficiently.
+
+Features excluded from the presets due to low adoption rates or deprecation are:
+
+* Modular Encryption 
+* Converted/Logical Types: ENUM, UUID, INTERVAL, JSON, BSON
+* Encodings: BIT_PACKED
+* Compresison Algorithms: LZ4 (deprecated), LZO
