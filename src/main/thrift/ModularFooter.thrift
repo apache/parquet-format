@@ -71,9 +71,12 @@
  * chunk's per-page arrays, located per chunk through a PageIndexDirectory.
  *
  * Every value array is full-length and positional: exactly one entry per chunk (or per page, for
- * the page index) at its index, addressed directly. A parallel presence bitset (has_null_count,
- * has_minmax, and so on) marks which entries are valid; the slot at the aligned index still exists
- * when the bit is 0 (a zero under fixed-width BITPACK, an empty element in VarLenColumn). Values
+ * the page index) at its index, addressed directly. Because a positional array cannot tell a
+ * genuine 0 (or empty bytes) from an unset value, an optional field pairs its value array with a
+ * presence bitset (has_null_count, has_minmax, and so on) recording which entries are actually set;
+ * this restores the optional/absent semantics the array-of-structs footer gets from Thrift field
+ * presence. The slot at the aligned index still exists when the bit is 0 (a zero under fixed-width
+ * BITPACK, an empty element in VarLenColumn). Values
  * are never compacted to present-only, which would force a popcount over the bitset and destroy
  * O(1) random access. Arrays marked "per column" hold num_columns entries indexed by c; arrays
  * marked "per schema element" follow FileMetaData.schema pre-order. Integer arrays are stored as
@@ -150,7 +153,9 @@ struct VarLenColumn {
 // Boolean columns below are packed bitsets, not list<byte>: a `binary` of ceil(count/8) bytes where
 // entry i is bit i (LSB-first within each byte). One bit per entry, O(1) random-accessible, at 1/8
 // the size of a byte-per-entry list. (Thrift has no bit type; the `binary` carries the packed bits,
-// and the entry count comes from the module's chunk or page count.)
+// and the entry count comes from the module's chunk or page count.) A bitset is used two ways: as
+// boolean data (e.g. null_pages, is_fully_dict_encoded), and as a presence flag gating a paired
+// value array (e.g. has_null_count marks which null_counts entries are set).
 
 /**
  * Schema module: parallel arrays, one entry per schema element in the pre-order flattened tree
