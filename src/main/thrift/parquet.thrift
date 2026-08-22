@@ -520,7 +520,9 @@ union LogicalType {
  * Represents an element inside a schema definition.
  *  - if it is a group (inner node) then type is undefined and num_children is defined
  *  - if it is a primitive type (leaf) then type is defined and num_children is undefined
- * the nodes are listed in depth first traversal order.
+ * Field names are scoped by their containing group.  The direct children of any
+ * group must have distinct names.  Name comparison is case-sensitive.
+ * The nodes are listed in depth first traversal order.
  */
 struct SchemaElement {
   /** Data type for this field. Not set if the current element is a non-leaf node */
@@ -914,7 +916,8 @@ struct ColumnMetaData {
    * whether we can decode those pages. **/
   2: required list<Encoding> encodings
 
-  /** Path in schema **/
+  /** Path in schema, from the root's child to this column.  The path must identify
+   * exactly one primitive field. **/
   3: required list<string> path_in_schema
 
   /** Compression codec **/
