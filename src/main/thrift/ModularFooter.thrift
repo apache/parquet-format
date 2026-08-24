@@ -186,25 +186,31 @@ struct SchemaMatrix {
 }
 
 /**
- * Placement module (always present): per-(leaf column, row group) locators, column-major. Every
- * numeric array is `binary` encoded per array_encoding, so a projection random-accesses only its
- * columns' slices instead of decoding the whole module. Dictionary pages use a per-chunk start
- * index (first_dict_page) into a flattened offset array, so a chunk may carry zero, one, or (for a
- * future multi-dictionary feature) several dictionary pages, each located in O(1); the footer does
- * not bake in the current one-dictionary-per-chunk rule.
+ * Placement module (always present): per-(leaf column, row group) chunk locators, column-major
+ * (chunk (c, g) at index c * num_row_groups + g). Per chunk unless a field notes otherwise; every
+ * numeric array is BITPACK-encoded (per array_encoding) for column-selective random access, so a
+ * projection decodes only its columns' slices instead of the whole module.
+ *
+ * Multiple dictionary pages per chunk. Instead of one dictionary_page_offset per chunk,
+ * dictionary_page_offsets is a single flattened array of every dictionary-page offset, and
+ * first_dict_page is a per-chunk cumulative index into it (CSR-style). Chunk k's dictionary pages
+ * are the slice dictionary_page_offsets[first_dict_page[k] : first_dict_page[k+1]], so a chunk may
+ * carry zero, one, or several dictionary pages, each located in O(1). This is why the footer does
+ * not bake in today's one-dictionary-per-chunk rule: a future multi-dictionary feature needs no
+ * format change, only more entries in the flat array.
  */
 struct ColumnChunkMatrix {
   /** First data page byte offset, per (column, row group), column-major. Encoded. */
   1: required binary data_page_offsets;
-  /** Index within dictionary_page_offsets of each chunk's first dictionary page: num_chunks+1
-   *  cumulative entries (first_dict_page[num_chunks] = total). Chunk k's dictionary offsets are
-   *  dictionary_page_offsets[first_dict_page[k] : first_dict_page[k+1]], so its dictionary count is
-   *  the difference and a reader random-accesses it in O(1) with no prefix sum. A chunk with no
-   *  dictionary has an empty slice (first_dict_page[k] == first_dict_page[k+1]); no sentinel used.
+  /** Per-chunk cumulative index into dictionary_page_offsets: num_chunks+1 entries with
+   *  first_dict_page[num_chunks] = total. Chunk k's dictionary pages are the slice
+   *  dictionary_page_offsets[first_dict_page[k] : first_dict_page[k+1]]; the page count is the
+   *  difference (0 = no dictionary), found in O(1) with no prefix sum and no sentinel.
    *  Column-major. Encoded. */
   2: required binary first_dict_page;
-  /** Byte offset of each dictionary page, flattened in column-major chunk order (then in-chunk
-   *  order), sliced by first_dict_page. Encoded. */
+  /** Byte offset of every dictionary page, flattened in column-major chunk order (then page order
+   *  within a chunk) and sliced per chunk by first_dict_page. Holds all of a chunk's dictionary
+   *  pages, so multiple per chunk are supported without a format change. Encoded. */
   3: required binary dictionary_page_offsets;
   /** Compressed size of the column chunk. Encoded. */
   4: required binary total_compressed_sizes;
@@ -214,10 +220,16 @@ struct ColumnChunkMatrix {
   6: required binary num_values;
   /** parquet.CompressionCodec value. Encoded. */
   7: required binary codecs;
-  /** parquet.Type value; one entry per column (uniform across row groups). Encoded. */
+  /** parquet.Type value; one entry per column, uniform across row groups (the noted exception to
+   *  per-chunk). Encoded. */
   8: required binary physical_types;
-  /** Packed bitset: 1 iff every data page in the chunk is dictionary-encoded (the dictionary-
-   *  pushdown fast path). Per chunk, column-major. Replaces ColumnMetaData.encoding_stats. */
+  /** Packed bitset, one bit per chunk: 1 iff every data page in the chunk is dictionary-encoded.
+   *  Replaces ColumnMetaData.encoding_stats. encoding_stats was a variable-length
+   *  list<PageEncodingStats> per chunk (encoding, page type, and counts) that does not fit the
+   *  fixed-width column-major layout and carries far more than readers use. The single fact the
+   *  fast path needs is whether the whole chunk is dictionary-encoded -- so filters and aggregations
+   *  can run directly on dictionary codes without materializing values -- and one bit captures it.
+   *  Per chunk, column-major. */
   9: required binary is_fully_dict_encoded;
 }
 
