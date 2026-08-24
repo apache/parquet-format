@@ -724,11 +724,9 @@ object-store eTag for the whole file referenced by `uri`.
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
-bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance only.
-Both representations must denote the same bytes, so a reader may resolve the value from
-either and obtain the same result; reading `inline` requires no external access and is
-the cheaper path. A locator set alongside `inline` records where those bytes came from,
-and must not be a partial or otherwise different representation of the value.
+bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
+bytes came from. A reader may resolve the value from `inline` or from the locator,
+whichever suits it; `inline` requires no external access and is the cheaper path.
 
 #### Resolution
 
@@ -737,7 +735,7 @@ set:
 
 | `inline` | `uri` | `offset` | `size` | Resolves to                               |
 |----------|-------|----------|--------|-------------------------------------------|
-| set      | †     | †        | †      | the inline bytes (same as any locator)    |
+| set      | †     | †        | †      | the inline bytes, or the locator          |
 | -        | set   | -        | -      | whole external file at `uri`              |
 | -        | set   | set      | -      | invalid                                   |
 | -        | set   | -        | set    | external `uri`, `[0, size)`               |
@@ -774,10 +772,10 @@ compressed, and encrypted like any other column, `inline` included.
   does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
-* If `inline` and a locator are both set, they must denote the same bytes, and a reader
-  may resolve the value from either. If they disagree the value is invalid; a reader is
-  not required to detect this and may return the bytes of either representation.
-  Producers may treat `inline` and the locator fields as mutually exclusive.
+* If `inline` and a locator are both set, a reader may resolve the value from either.
+  Producers are expected to write the same bytes in both, but a reader is not required
+  to check this and may return the bytes of either. Producers may treat `inline` and the
+  locator fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
