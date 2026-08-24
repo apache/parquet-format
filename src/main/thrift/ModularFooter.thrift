@@ -33,10 +33,10 @@
  * module column-major, so a reader decodes only the columns, and only the modules, a query needs.
  *
  * Module layout. Each module is serialized as an independent Thrift-compact struct. The
- * ModularFooter index carries the footer-level scalars, the two always-present modules inline
- * (schema and placement), and a directory locating each optional module by absolute file offset,
- * so an optional module can be placed anywhere in the file. See ModularFooterDirectoryEntry and
- * PageIndexDirectory for the mechanics.
+ * ModularFooter index carries only the footer-level scalars and a directory locating every module
+ * by absolute file offset, so any module can be placed anywhere in the file. Nothing is inlined:
+ * schema and placement are always present but, like the optional modules, are reached through the
+ * directory. See ModularFooterDirectoryEntry and PageIndexDirectory for the mechanics.
  *
  * This file defines only the metadata, not the file-level framing that wraps it (the magic, footer
  * location, and any checksum, the analog of Parquet's PAR1 + footer length). The framing is
@@ -91,16 +91,16 @@ namespace cpp parquet.modular
 namespace java org.apache.parquet.format.modular
 
 /**
- * Identifies a module. SCHEMA and PLACEMENT are always present and carried inline in ModularFooter
- * (the `schema` and `chunks` fields), so the directory lists only the optional modules: RG_STATS,
- * OFFSET_INDEX, COLUMN_INDEX, and FILE_METADATA. The two inline kinds remain in the enum as the
- * module taxonomy. (Bloom filters are a planned future module, per the extensibility note above,
- * and get an enum value when specified.)
+ * Identifies a module. Every module is located through the directory by absolute file offset;
+ * nothing is carried inline. SCHEMA and PLACEMENT are always present (the directory always has an
+ * entry for each); ROW_GROUP_STATS, OFFSET_INDEX, COLUMN_INDEX, and FILE_METADATA are optional and
+ * present only when the directory lists them. (Bloom filters are a planned future module, per the
+ * extensibility note above, and get an enum value when specified.)
  */
 enum ModularFooterModule {
   SCHEMA = 0;
   PLACEMENT = 1;
-  RG_STATS = 2;
+  ROW_GROUP_STATS = 2;
   OFFSET_INDEX = 3;
   COLUMN_INDEX = 4;
   FILE_METADATA = 5;
@@ -234,7 +234,7 @@ struct ColumnChunkMatrix {
  * such a chunk MAY set has_minmax = 0. The column index cannot use this test (it has no per-page
  * num_values), so it signals the all-NaN case differently (see ColumnIndexChunk).
  */
-struct RgStatsMatrix {
+struct RowGroupStatsMatrix {
   /** Packed bitset: 1 iff the null count is known. Per chunk, column-major. */
   1: required binary has_null_count;
   /** Null count, non-negative; encoded. Meaningful iff has_null_count. */
@@ -286,7 +286,7 @@ struct OffsetIndexChunk {
  * empty slice there, so a chunk may have an offset index but no column index without either module
  * referencing the other. Equivalent to parquet.thrift ColumnIndex, transposed to SoA; this version
  * omits the optional repetition/definition level histograms and unencoded_byte_array_data_bytes.
- * Per-page min/max use the same prefix + inexact scheme as RgStatsMatrix (common prefix stored
+ * Per-page min/max use the same prefix + inexact scheme as RowGroupStatsMatrix (common prefix stored
  * once, truncated bounds flagged and still valid).
  *
  * null_pages is the min/max presence gate (there is no separate has_minmax): every non-null page
@@ -294,7 +294,7 @@ struct OffsetIndexChunk {
  * min_suffixes[i], and max_suffixes[i] are empty and its min_exact[i] and max_exact[i] are
  * meaningless (the per-page null and nan counts remain valid).
  *
- * All-NaN pages: with no per-page num_values, a reader cannot use the RgStatsMatrix test
+ * All-NaN pages: with no per-page num_values, a reader cannot use the RowGroupStatsMatrix test
  * (nan_count + null_count == num_values) to spot a page whose non-null values are all NaN. Instead
  * the writer MUST record the actual NaN min/max for such a page (min/max are not dropped), and a
  * reader that sees a NaN min/max treats the page's non-null values as all NaN.
@@ -374,14 +374,14 @@ struct ModularFooterDirectoryEntry {
 }
 
 /**
- * Top-level footer index (the always-read skeleton): the footer-level scalars plus the two
- * always-present modules, SchemaMatrix and ColumnChunkMatrix (placement), carried directly. The
- * optional modules (RgStatsMatrix, the page index, file metadata) are not fields here; each is
- * serialized independently and located via `directory`, so a reader decodes only the optional
- * modules it needs. Schema and placement are inline (never in `directory`), and every module's
- * column-major arrays stay independently walkable so a projection touches only its columns' slices.
- * version identifies the metadata layout (like FileMetaData.version); which optional modules are
- * present is given by `directory`.
+ * Top-level footer index (the always-read skeleton): the footer-level scalars plus a directory
+ * locating every module. No module is carried inline. SchemaMatrix and ColumnChunkMatrix
+ * (placement) are always present, so `directory` always has an entry for each; the remaining
+ * modules (RowGroupStatsMatrix, the page index, file metadata) are listed only when present. Each
+ * module is serialized independently and reached through `directory`, so a reader decodes only the
+ * modules it needs, and every module's column-major arrays stay independently walkable so a
+ * projection touches only its columns' slices. version identifies the metadata layout (like
+ * FileMetaData.version); which modules are present is given by `directory`.
  */
 struct ModularFooter {
   /** Metadata layout version (analogous to FileMetaData.version). */
@@ -392,8 +392,7 @@ struct ModularFooter {
   5: required list<i64> row_group_num_rows;
   /** Encoding shared by every encoded array in this footer. BITPACK is the only value today. */
   6: required ColumnArrayEncoding array_encoding;
-  7: required SchemaMatrix schema;        // always present
-  8: required ColumnChunkMatrix chunks;   // placement; always present
-  /** Locations of the optional modules (stats, page index, file metadata). */
-  9: optional list<ModularFooterDirectoryEntry> directory;
+  /** Locates every module by absolute file offset. Always includes SCHEMA and PLACEMENT (both
+   *  always present); the other modules appear only when present. Nothing is inlined. */
+  7: required list<ModularFooterDirectoryEntry> directory;
 }
