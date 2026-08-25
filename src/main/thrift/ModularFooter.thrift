@@ -124,8 +124,30 @@ enum ModularFooterModule {
  *   BITPACK (0): `u8 bit_width; varint count`, then `count` values packed bit_width bits each,
  *   LSB-first. bit_width is per payload (each array picks its own minimal width). O(1) random
  *   access: value i is the bit_width-bit field at bit offset i * bit_width.
- * BITPACK is the only encoding for now; the tag is retained so a future encoding (e.g. a compact
- * delta variant) can be added without re-encoding data or bumping the footer version.
+ * Design goals for the array encoding, in priority order: (1) RANDOM ACCESS: a projection or a
+ * predicate must reach one column's slice in O(1) without decoding the rest, so any encoding added
+ * here must keep per-element addressability (BITPACK's fixed bit width; a checkpoint directory for a
+ * delta or variable-length scheme; etc.). (2) ALIGN WITH PARQUET: prefer the encoding families
+ * parquet.thrift already defines (RLE/bit-packing, DELTA_BINARY_PACKED, BYTE_STREAM_SPLIT) over
+ * bespoke schemes, so readers and writers reuse existing machinery and the format stays familiar.
+ * (3) MINIMAL SIZE: the footer is fetched cold on every open, so bytes matter, but never at the cost
+ * of goal (1).
+ *
+ * BITPACK is the only encoding today: it is the simplest scheme that meets goals (1) and (2), and
+ * this proposal deliberately keeps that single scheme rather than committing to a more complex one
+ * before there is evidence. Real footers already show where a better encoding could help. On a
+ * fleet parquet-mr footer (29,322 leaf columns, 78 row groups, ~2.29M chunks), min/max was present
+ * on under 1% of chunks, yet the full-length VarLenColumn keeps an offset slot per chunk regardless,
+ * so its min/max offset arrays cost ~10 MB to index ~0.44 MB of actual values; null_count, by
+ * contrast, was dense and packed efficiently. Sparse gated columns like this, and numeric columns
+ * whose offsets are derivable from a fixed width, are where a present-only, delta, or fixed-width
+ * variant would shrink the footer at equal random-access cost.
+ *
+ * Rather than pick a winner now, the tag stays pluggable and we gather evidence: by replaying real
+ * fleet queries we can re-encode the SAME real footers under candidate encodings and measure
+ * cold-read size and decode cost across the actual workload, then propose the best-supported
+ * encoding as a new enum value. Because the encoding is a self-describing tag, adopting it is
+ * additive: no re-encoding of existing data and no footer-version bump.
  */
 enum ColumnArrayEncoding {
   BITPACK = 0;
