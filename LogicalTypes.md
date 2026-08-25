@@ -726,7 +726,7 @@ object-store eTag for the whole file referenced by `uri`.
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
 bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
 bytes came from. A reader may resolve the value from `inline` or from the locator,
-whichever suits it; `inline` requires no external access and is the cheaper path.
+whichever suits it.
 
 #### Resolution
 
