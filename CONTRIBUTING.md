@@ -126,8 +126,9 @@ For the purposes of this discussion we classify features into the following buck
    the feature enabled can be read under an older version of the format, but
    some metadata might be missing or performance might be suboptimal. Simply
    phrased, forward compatible means all data can be read back in an older
-   version of the format. New logical types are considered forward
-   compatible despite the loss of semantic meaning.
+   version of the format. New logical types and new combinations of existing
+   logical/physical types are considered forward compatible despite the loss
+   of semantic meaning.
 
 3. Forward incompatible. A file written under a newer version of the format with
    the feature enabled cannot be read under an older version of the format (e.g.
