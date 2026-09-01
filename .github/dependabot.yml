@@ -24,9 +24,13 @@ updates:
     schedule:
       interval: "weekly"
       day: "sunday"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "sunday"
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
