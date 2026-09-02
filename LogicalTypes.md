@@ -60,7 +60,7 @@ in case `LogicalType` annotations are not present. Parquet writers must always w
 
 When reading a file written by a newer writer that contains an unrecognized logical type or an
 unrecognized logical/physical type combination on a column, readers should ignore both the logical
-type annotation and statistics for that column. Only the physical type information should be used
+type annotation and column order for that column. Only the physical type information should be used
 to process the column's data.
 
 Compatibility considerations are mentioned for each annotation in the corresponding section.
