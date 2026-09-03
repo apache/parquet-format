@@ -40,6 +40,8 @@ according to well defined conversion rules.
 
 ### Compatibility
 
+#### ConvertedType
+
 The Thrift definition of the metadata has two fields for logical types: `ConvertedType` and `LogicalType`.
 `ConvertedType` is an enum of all available annotations. Since Thrift enums can't have additional type parameters,
 it is cumbersome to define additional type parameters, like decimal scale and precision
@@ -53,6 +55,13 @@ Parquet readers should be able to read and interpret `ConvertedType` annotations
 in case `LogicalType` annotations are not present. Parquet writers must always write
 `LogicalType` annotations where applicable, but must also write the corresponding
 `ConvertedType` annotations (if any) to maintain compatibility with old readers.
+
+#### Unsupported Logical Types
+
+When reading a file written by a newer writer that contains an unrecognized logical type or an
+unrecognized logical/physical type combination on a column, readers should ignore both the logical
+type annotation and column order for that column. Only the physical type information should be used
+to process the column's data.
 
 Compatibility considerations are mentioned for each annotation in the corresponding section.
 
