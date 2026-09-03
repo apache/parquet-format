@@ -24,6 +24,9 @@ on:
     paths:
       - 'src/main/thrift/parquet.thrift' # Only run when there are changes in the structure
 
+permissions:
+  contents: read
+
 jobs:
   publish-snapshot:
     if: github.repository == 'apache/parquet-format'
