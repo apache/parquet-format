@@ -351,11 +351,18 @@ as shown below.
 
 ### TIMESTAMP
 
-In data annotated with the `TIMESTAMP` logical type, each value is a single
-`int64` number that can be decoded into year, month, day, hour, minute, second
-and subsecond fields using calculations detailed below. Please note that a value
-defined this way does not necessarily correspond to a single instant on the
-time-line and such interpretations are allowed on purpose.
+In data annotated with the `TIMESTAMP` logical type, each value is an `int64`
+or a 12-byte `FIXED_LEN_BYTE_ARRAY` that can be decoded into year, month, day,
+hour, minute, second and subsecond fields using calculations detailed below.
+Please note that a value defined this way does not necessarily correspond to a
+single instant on the time-line and such interpretations are allowed on purpose.
+
+For the `int64` carrier, the value is a signed 64-bit integer count of `unit`s
+since the Unix epoch.
+
+For the `FIXED_LEN_BYTE_ARRAY` carrier (with `type_length = 12`), the value is a
+signed 96-bit two's-complement little-endian integer count of `unit`s since the
+Unix epoch.
 
 The `TIMESTAMP` type has two type parameters:
 - `isAdjustedToUTC` must be either `true` or `false`.
@@ -442,12 +449,14 @@ local timestamp in reality.
 
 #### Common considerations
 
-Every possible `int64` number represents a valid timestamp, but depending on the
-precision, the corresponding year may be outside of the practical everyday
-limits and implementations may choose to only support a limited range.
+Every possible `int64` and `FIXED_LEN_BYTE_ARRAY(12)` value represents a valid
+timestamp, but depending on the precision, the corresponding year may be outside
+of the practical everyday limits and implementations may choose to only support
+a limited range.
 
 On the other hand, not every combination of year, month, day, hour, minute,
-second and subsecond values can be encoded into an `int64`. Most notably:
+second and subsecond values can be encoded into an `int64` or
+`FIXED_LEN_BYTE_ARRAY(12)`. Most notably:
 
 - An arbitrary combination of timestamp fields cannot be encoded as a single
   number if the values for some of the fields are outside of their normal range
@@ -458,13 +467,19 @@ second and subsecond values can be encoded into an `int64`. Most notably:
   - minute = 61
   - month = 13
   - day = 29, month = 2, year = any non-leap year
-- Due to the range of the `int64` type, timestamps using the `NANOS` unit
+- Due to the range of the `int64` type, `int64` timestamps using the `NANOS` unit
   can only represent values between 1677-09-21 00:12:43 and 2262-04-11 23:47:16.
-  Values outside of this range cannot be represented with the `NANOS`
-  unit. (Other precisions have similar limits but those are outside of the
-  domain for practical everyday usage.)
+  Values outside of this range should instead be represented with the
+  `FIXED_LEN_BYTE_ARRAY(12)` physical type using the `NANOS` unit. Other precisions
+  have similar limits but those are outside of the domain for practical everyday use.
 
-The sort order used for `TIMESTAMP` is signed.
+The sort order used for `TIMESTAMP` is signed:
+
+- For the `int64` carrier: signed integer comparison.
+- For the `FIXED_LEN_BYTE_ARRAY(12)` carrier: signed two's-complement comparison of
+  the represented value. The correct ordering can be produced by flipping the
+  most-significant bit of the last byte and then using unsigned byte-wise comparison
+  starting from the last byte.
 
 #### Deprecated timestamp ConvertedType
 
