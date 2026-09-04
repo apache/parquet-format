@@ -55,15 +55,7 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: temurin
       - name: before_install
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -qq protobuf-compiler
-          sudo apt-get install -qq libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
-          wget -qO- https://archive.apache.org/dist/thrift/0.24.0/thrift-0.24.0.tar.gz | tar zxf -
-          cd thrift-0.24.0/
-          chmod +x ./configure
-          ./configure --disable-libs
-          sudo make install
+        run: ./dev/install-thrift.sh
       - name: install
         run: |
           mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -Dsource.skip=true -Djava.version=${{ matrix.java }}
