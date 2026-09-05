@@ -61,8 +61,8 @@ The compression pipeline for each vector is:
                               v
     +----------------------------------------------------------+
     |  1. FRAME OF REFERENCE (FOR)                             |
-    |     min_val = min(values[])                              |
-    |     residual[i] = (unsigned)(values[i] - min_val)        |
+    |     frame = a value of the writer's choosing, often min   |
+    |     residual[i] = (unsigned)(values[i] - frame)          |
     +----------------------------------------------------------+
                               |
                               v
@@ -172,7 +172,7 @@ Data section sizes:
 
 | Offset | Field | Size | Type | Description |
 |--------|-------|------|------|-------------|
-| 0 | frame_of_reference | 4 bytes | int32 | Minimum value in the vector, or the minimum difference in the delta mode |
+| 0 | frame_of_reference | 4 bytes | int32 | Subtracted from every value in the vector, or from every difference in the delta mode. Any value of the type; see [Frame of Reference](#frame-of-reference). |
 | 4 | bit_width | 1 byte | uint8 | Bits per packed residual value in bits 0..6; bit 7 is the delta flag. Range: \[0, 32\]. |
 | 5 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
 
@@ -188,7 +188,7 @@ Data section sizes:
 
 | Offset | Field | Size | Type | Description |
 |--------|-------|------|------|-------------|
-| 0 | frame_of_reference | 8 bytes | int64 | Minimum value in the vector, or the minimum difference in the delta mode |
+| 0 | frame_of_reference | 8 bytes | int64 | Subtracted from every value in the vector, or from every difference in the delta mode. Any value of the type; see [Frame of Reference](#frame-of-reference). |
 | 8 | bit_width | 1 byte | uint8 | Bits per packed residual value in bits 0..6; bit 7 is the delta flag. Range: \[0, 64\]. |
 | 9 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
 
@@ -239,10 +239,12 @@ Exception positions contain 0 as a placeholder in the packed data. The actual
 exception values are stored separately and patched during decoding.
 
 If `bit_width` is 0, no bytes are stored: every residual is zero. In a plain vector
-that means every value equals `frame_of_reference`. In a delta vector it means every
-difference equals `frame_of_reference`, and because `d[0]` is 0 and the frame is the
-minimum of the differences, the frame of such a vector is 0 -- so the values are all
-equal to `start_value`.
+that means every value not named as an exception equals `frame_of_reference`. In a
+delta vector it means every difference not named as an exception equals
+`frame_of_reference`, so the values step by the frame from `start_value`, with the
+patched positions breaking the step. A vector with no exceptions at all is the case
+worth naming: `d[0]` is 0 and nothing overwrites it, so the frame must be 0 and every
+value equals `start_value`.
 
 #### ExceptionPositions
 
@@ -282,9 +284,9 @@ and writes `start_value` in the StartValue field.
 
 The subtraction is modular, but what it produces is an ordinary signed value in the
 column's type, and it is **not** zigzag-encoded. A vector with negative differences
-is handled by the frame instead: the frame is the minimum of `d[]`, so subtracting
-it makes every residual non-negative, which is the same mechanism a plain vector
-uses for negative values. `d[0]` is defined as 0 rather than as `values[0]` so that
+is handled by the frame instead: a frame at or below the smallest difference makes
+every residual fit without a sign, which is the same mechanism a plain vector uses
+for negative values. `d[0]` is defined as 0 rather than as `values[0]` so that
 the first element does not force a wide frame or an exception of its own; the reader
 adds `start_value` to it.
 
@@ -303,16 +305,43 @@ and still produce pages every reader accepts.
 
 ### Frame of Reference
 
-The frame of reference is the minimum value in the vector, or the minimum of the
-differences when the delta mode is in use:
+The frame of reference is subtracted from every value in the vector, or from every
+difference when the delta mode is in use:
 
 ```
-frame_of_reference = min(values[])
 residual[i] = (unsigned)(values[i] - frame_of_reference)
 ```
 
-All residuals are non-negative. The unsigned cast prevents signed overflow when
-values span a large range (e.g., INT32\_MIN to INT32\_MAX).
+The subtraction is modular, and the unsigned cast is what prevents signed overflow
+when values span a large range (e.g., INT32\_MIN to INT32\_MAX).
+
+**Which frame to use is the writer's choice.** Any value of the column's type is
+valid: the frame travels in the vector info at full width and a reader only ever adds
+it back. The minimum is the obvious choice and makes every residual fit without a
+sign, so a writer MAY simply use it.
+
+A writer MAY also choose a frame **above** the minimum, and on a tight cluster with a
+few low outliers it should. With the frame at the minimum, one value far below the
+cluster forces a width wide enough to reach the whole distance, and nothing can be
+done about it: exceptions only ever describe values above the packed window. A frame
+placed on the cluster instead narrows the window to the cluster's own spread and
+leaves the outliers to be patched -- and the values below the frame need no new
+mechanism, because the subtraction above is modular. A value below the frame wraps to
+a residual too large for `bit_width`, which is exactly the test a value above the
+window fails, so it becomes an exception like any other and the stored exception
+value is the original, unreduced one. There is no sign, no direction, and no second
+kind of exception to read.
+
+The consequence for a reader is nothing at all: steps 3 to 5 of
+[Decoding](#decoding) reconstruct either choice, because adding the frame and then
+overwriting the exception positions does not depend on where the frame sits. Two
+writers MAY choose different frames for the same input, and both pages decode to the
+same values.
+
+The consequence for a writer is a choice to make. A frame candidate is costed with the
+same expression the [cost model](#cost-model-bit-width-selection) applies to the
+residuals it produces, so the two decisions are made together. How a writer enumerates
+candidates is up to it; this specification does not prescribe a search.
 
 ### Cost-Model Bit Width Selection
 
@@ -430,8 +459,9 @@ matching how the writer took the differences.
 
 **Special case:** If `bit_width == 0` and `num_exceptions == 0`, every residual is
 zero, so a reader can fill the output instead of unpacking: in a plain vector with
-`frame_of_reference`, in a delta vector with `start_value`, because a delta vector
-whose residuals are all zero has a frame of 0. A reader MAY instead run the general
+`frame_of_reference`, in a delta vector with `start_value` -- the latter because
+`d[0]` is 0 and no exception overwrites it, which forces the frame of such a vector to
+be 0 too. A reader MAY instead run the general
 path -- add the frame to an all-zero array, then prefix-sum in the delta mode -- and
 get the same answer for any frame; the fill is an optimization, not a separate rule.
 
@@ -503,11 +533,12 @@ outlier keys at 2,415,022 (null sentinel) interspersed.
 
 | Metric        | Value       | Calculation                                 |
 |---------------|-------------|---------------------------------------------|
-| FOR min       | 2,415,022   | The null sentinel is the minimum             |
-| Max residual  | 37,983      | 2,453,005 - 2,415,022                       |
-| Plain FOR bw  | 16          | ceil(log2(37984)) = 16 bits                 |
-| PFOR bw       | 11          | ceil(log2(2191)) = 11 for range 2450815-2453005 |
-| Exceptions    | ~10         | The null sentinel outliers                   |
+| Minimum       | 2,415,022   | The null sentinel                            |
+| Plain FOR bw  | 16          | Frame at the minimum: ceil(log2(37,984)) = 16 bits |
+| PFOR frame    | 2,450,815   | The cluster's low end, above the sentinel    |
+| Max residual  | 2,190       | 2,453,005 - 2,450,815                       |
+| PFOR bw       | 11          | ceil(log2(2191)) = 11                       |
+| Exceptions    | ~10         | The null sentinels, which sit below the frame |
 
 **Size Comparison:**
 
@@ -518,7 +549,9 @@ outlier keys at 2,415,022 (null sentinel) interspersed.
 | PFOR          | 1,408 B     | 67 B     | 1,482 bytes  | 0.36x  |
 
 PFOR achieves 28% better compression than plain FOR by narrowing the bit width
-from 16 to 11 and storing 10 exceptions.
+from 16 to 11 and storing 10 exceptions. The narrowing is the frame's doing: with the
+frame at the minimum the residuals reach 37,983 and 11 bits cannot hold them, and the
+sentinels can only be patched because a value below the frame is an exception.
 
 ## Example 4: Delta Mode
 
@@ -529,9 +562,8 @@ Undifferenced, the frame is 1,700,000,000,000 and the residuals run to
 1023 * 7 = 7,161, so bits\_required(7,161) = 13 and there are no exceptions:
 `11 + ceil(1024 * 13 / 8)` = 1,675 bytes.
 
-Differenced, `start_value` = 1,700,000,000,000 and `d` = \[0, 7, 7, ..., 7\]. The
-frame is min(`d`) = 0, leaving residuals of 0 and 7, so bit\_width = 3 with no
-exceptions:
+Differenced, `start_value` = 1,700,000,000,000 and `d` = \[0, 7, 7, ..., 7\]. A frame
+at min(`d`) = 0 leaves residuals of 0 and 7, so bit\_width = 3 with no exceptions:
 
 | Section             | Content                                                | Size     |
 |---------------------|--------------------------------------------------------|----------|
@@ -540,15 +572,33 @@ exceptions:
 | PackedValues        | \[0, 7, 7, ..., 7\] at 3 bits                          | 384 bytes |
 | **Total**           |                                                        | **403 bytes** |
 
-The start value costs 8 bytes and the differencing saves 10 bits per value, so the
-delta vector is 4.2x smaller than the undifferenced one. The reader unpacks 1,024
-residuals, adds the frame of 0, and runs the prefix sum from 1,700,000,000,000.
+A frame of 7 does better. Every difference but `d[0]` is then a residual of 0, so
+bit\_width = 0 and nothing is packed at all; `d[0]` falls below the frame and becomes
+the vector's one exception:
+
+| Section             | Content                                                | Size     |
+|---------------------|--------------------------------------------------------|----------|
+| PforVectorInfo      | for=7, bit\_width=0 with bit 7 set, num\_exceptions=1  | 11 bytes |
+| StartValue          | 1,700,000,000,000                                      | 8 bytes  |
+| PackedValues        | nothing: bit\_width is 0                               | 0 bytes  |
+| ExceptionPositions  | \[0\]                                                  | 2 bytes  |
+| ExceptionValues     | \[0\] -- the *difference*, not the value                | 8 bytes  |
+| **Total**           |                                                        | **29 bytes** |
+
+Both are valid pages and a reader treats them alike: add the frame, patch the
+exceptions, prefix-sum from the start value. The second is what a writer that searches
+the frame produces, and the difference is the whole argument for
+[a frame above the minimum](#frame-of-reference) -- 58x smaller than the undifferenced
+vector, against the 4.2x a frame at the minimum gets. `d[0]` is the value below the
+window here, which is the one a frame at the minimum could never patch away.
 
 **With an exception.** Take the same column but with one gap: `values[500]` jumps a
 further 1,000,000,000. Then `d[500]` = 1,000,000,007 and every other difference is
 still 7. Packing all of them needs bits\_required(1,000,000,007) = 30 bits, while
 bit\_width = 3 with `d[500]` as an exception costs `1024 * 3 + 1 * (16 + 64)` =
-3,152 bits, so the cost model keeps width 3:
+3,152 bits, so with the frame at 0 the cost model keeps width 3. A frame of 7 is
+cheaper still, for the reason given above -- two exceptions and nothing packed -- but
+width 3 is the clearer illustration of the patch order, which is the same either way:
 
 | Section             | Content                                                 | Size     |
 |---------------------|---------------------------------------------------------|----------|
