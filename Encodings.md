@@ -425,10 +425,12 @@ the encoding and decoding procedures, is in [AlpEncoding.md](AlpEncoding.md).
 
 Supported Types: INT32, INT64
 
-PFOR (Patched Frame of Reference) compresses integer columns by subtracting the
-minimum value (Frame of Reference), then bit-packing the residuals at an optimal
-bit width selected by a cost model. Values that do not fit in the chosen bit width
-are stored as exceptions ("patches"). The cost model trades off narrower bit-packing
+PFOR (Patched Frame of Reference) compresses integer columns by subtracting a
+frame of reference, then bit-packing the residuals at an optimal bit width
+selected by a cost model. Values that do not fit in the chosen bit width are
+stored as exceptions ("patches"). The frame is any value of the column's type,
+so it may be the minimum of the vector or a value above it that leaves the
+outliers to be patched on either side. The cost model trades off narrower bit-packing
 against the overhead of storing exceptions, achieving better compression than plain
 FOR when a few outlier values would otherwise inflate the bit width.
 
