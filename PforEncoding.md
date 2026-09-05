@@ -47,8 +47,8 @@ The compression pipeline for each vector is:
                               v
     +----------------------------------------------------------+
     |  1. FRAME OF REFERENCE (FOR)                             |
-    |     min_val = min(values[])                              |
-    |     delta[i] = (unsigned)(values[i] - min_val)           |
+    |     frame = a value of the writer's choosing, often min  |
+    |     delta[i] = (unsigned)(values[i] - frame)             |
     +----------------------------------------------------------+
                               |
                               v
@@ -156,7 +156,7 @@ Data section sizes:
 
 | Offset | Field | Size | Type | Description |
 |--------|-------|------|------|-------------|
-| 0 | frame_of_reference | 4 bytes | int32 | Minimum value in the vector |
+| 0 | frame_of_reference | 4 bytes | int32 | Subtracted from every value in the vector. Any value of the type; see [Frame of Reference](#frame-of-reference). |
 | 4 | bit_width | 1 byte | uint8 | Bits per packed delta value. Range: \[0, 32\]. |
 | 5 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
 
@@ -172,7 +172,7 @@ Data section sizes:
 
 | Offset | Field | Size | Type | Description |
 |--------|-------|------|------|-------------|
-| 0 | frame_of_reference | 8 bytes | int64 | Minimum value in the vector |
+| 0 | frame_of_reference | 8 bytes | int64 | Subtracted from every value in the vector. Any value of the type; see [Frame of Reference](#frame-of-reference). |
 | 8 | bit_width | 1 byte | uint8 | Bits per packed delta value. Range: \[0, 64\]. |
 | 9 | num_exceptions | 2 bytes | uint16 | Number of exception values in this vector. |
 
@@ -186,8 +186,8 @@ in groups of 8 values, using the same bit-packing order as the
 Exception positions contain 0 as a placeholder in the packed data. The actual
 exception values are stored separately and patched during decoding.
 
-If `bit_width` is 0, no bytes are stored (all deltas are zero, meaning all values
-are equal to `frame_of_reference` and there are no exceptions).
+If `bit_width` is 0, no bytes are stored: every delta is zero, so every value not
+named as an exception equals `frame_of_reference`.
 
 #### ExceptionPositions
 
@@ -205,15 +205,41 @@ integer values (not FOR offsets).
 
 ### Frame of Reference
 
-The frame of reference is the minimum value in the vector:
+The frame of reference is subtracted from every value in the vector:
 
 ```
-frame_of_reference = min(values[])
 delta[i] = (unsigned)(values[i] - frame_of_reference)
 ```
 
-All deltas are non-negative. The unsigned cast prevents signed overflow when
-values span a large range (e.g., INT32\_MIN to INT32\_MAX).
+The subtraction is modular, and the unsigned cast is what prevents signed overflow
+when values span a large range (e.g., INT32\_MIN to INT32\_MAX).
+
+**Which frame to use is the writer's choice.** Any value of the column's type is
+valid: the frame travels in the vector info at full width and a reader only ever adds
+it back. The minimum is the obvious choice and makes every delta fit without a sign,
+so a writer MAY simply use it.
+
+A writer MAY also choose a frame **above** the minimum, and on a tight cluster with a
+few low outliers it should. With the frame at the minimum, one value far below the
+cluster forces a width wide enough to reach the whole distance, and nothing can be
+done about it: exceptions only ever describe values above the packed window. A frame
+placed on the cluster instead narrows the window to the cluster's own spread and
+leaves the outliers to be patched -- and the values below the frame need no new
+mechanism, because the subtraction above is modular. A value below the frame wraps to
+a delta too large for `bit_width`, which is exactly the test a value above the window
+fails, so it becomes an exception like any other and the stored exception value is the
+original, unreduced one. There is no sign, no direction, and no second kind of
+exception to read.
+
+The consequence for a reader is nothing at all: the [decoding](#decoding) steps
+reconstruct either choice, because adding the frame and then overwriting the exception
+positions does not depend on where the frame sits. Two writers MAY choose different
+frames for the same input, and both pages decode to the same values.
+
+The consequence for a writer is a choice to make. A frame candidate is costed with the
+same expression the [cost model](#cost-model-bit-width-selection) applies to the
+deltas it produces, so the two decisions are made together. How a writer enumerates
+candidates is up to it; this specification does not prescribe a search.
 
 ### Cost-Model Bit Width Selection
 
@@ -370,11 +396,12 @@ outlier keys at 2,415,022 (null sentinel) interspersed.
 
 | Metric        | Value       | Calculation                                 |
 |---------------|-------------|---------------------------------------------|
-| FOR min       | 2,415,022   | The null sentinel is the minimum             |
-| Max delta     | 37,983      | 2,453,005 - 2,415,022                       |
-| Plain FOR bw  | 16          | ceil(log2(37984)) = 16 bits                 |
-| PFOR bw       | 11          | ceil(log2(2191)) = 11 for range 2450815-2453005 |
-| Exceptions    | ~10         | The null sentinel outliers                   |
+| Minimum       | 2,415,022   | The null sentinel                            |
+| Plain FOR bw  | 16          | Frame at the minimum: ceil(log2(37,984)) = 16 bits |
+| PFOR frame    | 2,450,815   | The cluster's low end, above the sentinel    |
+| Max delta     | 2,190       | 2,453,005 - 2,450,815                       |
+| PFOR bw       | 11          | ceil(log2(2191)) = 11                       |
+| Exceptions    | ~10         | The null sentinels, which sit below the frame |
 
 **Size Comparison:**
 
@@ -385,7 +412,9 @@ outlier keys at 2,415,022 (null sentinel) interspersed.
 | PFOR          | 1,408 B     | 67 B     | 1,482 bytes  | 0.36x  |
 
 PFOR achieves 28% better compression than plain FOR by narrowing the bit width
-from 16 to 11 and storing 10 exceptions.
+from 16 to 11 and storing 10 exceptions. The narrowing is the frame's doing: with the
+frame at the minimum the deltas reach 37,983 and 11 bits cannot hold them, and the
+sentinels can only be patched because a value below the frame is an exception.
 
 ## Characteristics
 
@@ -422,7 +451,7 @@ PFOR and [DELTA\_BINARY\_PACKED](Encodings.md#DELTAENC) are complementary: DELTA
 excels on sorted or sequential data where successive differences are small, while
 PFOR excels on data with a tight cluster and a few outliers. PFOR does not compute
 deltas between successive values -- it operates on absolute values relative to
-the minimum.
+the frame of reference.
 
 ## Size Calculations
 
