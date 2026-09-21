@@ -29,8 +29,8 @@
  * meaning, type, and logical domain; EncodedArray defines only their physical encoding.
  *
  * Modules preserve independent read lifecycles. A reader can fetch placement without fetching
- * row-group statistics, and can fetch per-page indexes only for projected column chunks. Schema
- * and descriptive file metadata remain ordinary Thrift data because readers consume them in full.
+ * row-group statistics. Schema and descriptive file metadata remain ordinary Thrift data because
+ * readers consume them in full.
  *
  * The outer file framing that locates ModularFooter from the end of a file is specified separately.
  */
@@ -203,56 +203,59 @@ struct RowGroupStatisticsModule {
   1: required EncodedArray column_offsets
 }
 
-/**
- * Per-page placement for one (leaf column, row group) column chunk. The arrays use that column
- * chunk's data-page ordinal as their logical position.
- */
-struct OffsetIndexChunk {
-  /** UINT64: page byte offset. */
-  1: required EncodedArray offsets,
-  /** UINT32: compressed page bytes including its page header. */
-  2: required EncodedArray compressed_page_sizes,
-  /** UINT64: first row index within the row group. */
-  3: required EncodedArray first_row_indexes
-}
-
-/**
- * Per-page statistics for one (leaf column, row group) column chunk.
- *
- * Min and max reuse the same common-prefix stripping as the row-group statistics: each page's
- * longest common prefix is stored once in minmax_prefixes, and min_suffixes / max_suffixes carry
- * only the differing tails. The three arrays share present positions.
- */
-struct ColumnIndexChunk {
-  1: required parquet.BoundaryOrder boundary_order,
-  /** BOOLEAN: true when the page contains only null values. */
-  2: required EncodedArray null_pages,
-  /** UINT64: optional null count. */
-  3: optional EncodedArray null_counts,
-  /** BYTE_ARRAY: longest common prefix of each page's min and max (empty when none). */
-  4: optional EncodedArray minmax_prefixes,
-  /** BYTE_ARRAY: each present minimum with its minmax_prefixes entry stripped (suffix only). */
-  5: optional EncodedArray min_suffixes,
-  /** BYTE_ARRAY: each present maximum with its minmax_prefixes entry stripped (suffix only). */
-  6: optional EncodedArray max_suffixes,
-  /** BOOLEAN: 1 when the minimum is exact, 0 when it is a truncated (rounded-down) lower bound. */
-  7: optional EncodedArray min_is_exact,
-  /** BOOLEAN: 1 when the maximum is exact, 0 when it is a truncated (rounded-up) upper bound. */
-  8: optional EncodedArray max_is_exact,
-  /** UINT64: optional NaN count. */
-  9: optional EncodedArray nan_counts
-}
-
-/**
- * Directory for independently serialized per-column-chunk index descriptors.
- *
- * chunk_offsets contains num_columns * num_row_groups + 1 dense UINT64 absolute file offsets in
- * column-major chunk space. Entries k and k+1 delimit one compact-Thrift OffsetIndexChunk or
- * ColumnIndexChunk. Equal offsets mean that the chunk has no corresponding index.
- */
-struct PageIndexModule {
-  1: required EncodedArray chunk_offsets
-}
+// Page-index modules are not part of the initial definition. Their layout and relationship to the
+// existing OffsetIndex and ColumnIndex metadata may change in a future revision.
+//
+// /**
+//  * Per-page placement for one (leaf column, row group) column chunk. The arrays use that column
+//  * chunk's data-page ordinal as their logical position.
+//  */
+// struct OffsetIndexChunk {
+//   /** UINT64: page byte offset. */
+//   1: required EncodedArray offsets,
+//   /** UINT32: compressed page bytes including its page header. */
+//   2: required EncodedArray compressed_page_sizes,
+//   /** UINT64: first row index within the row group. */
+//   3: required EncodedArray first_row_indexes
+// }
+//
+// /**
+//  * Per-page statistics for one (leaf column, row group) column chunk.
+//  *
+//  * Min and max reuse the same common-prefix stripping as the row-group statistics: each page's
+//  * longest common prefix is stored once in minmax_prefixes, and min_suffixes / max_suffixes carry
+//  * only the differing tails. The three arrays share present positions.
+//  */
+// struct ColumnIndexChunk {
+//   1: required parquet.BoundaryOrder boundary_order,
+//   /** BOOLEAN: true when the page contains only null values. */
+//   2: required EncodedArray null_pages,
+//   /** UINT64: optional null count. */
+//   3: optional EncodedArray null_counts,
+//   /** BYTE_ARRAY: longest common prefix of each page's min and max (empty when none). */
+//   4: optional EncodedArray minmax_prefixes,
+//   /** BYTE_ARRAY: each present minimum with its minmax_prefixes entry stripped (suffix only). */
+//   5: optional EncodedArray min_suffixes,
+//   /** BYTE_ARRAY: each present maximum with its minmax_prefixes entry stripped (suffix only). */
+//   6: optional EncodedArray max_suffixes,
+//   /** BOOLEAN: 1 when the minimum is exact, 0 when it is a truncated lower bound. */
+//   7: optional EncodedArray min_is_exact,
+//   /** BOOLEAN: 1 when the maximum is exact, 0 when it is a truncated upper bound. */
+//   8: optional EncodedArray max_is_exact,
+//   /** UINT64: optional NaN count. */
+//   9: optional EncodedArray nan_counts
+// }
+//
+// /**
+//  * Directory for independently serialized per-column-chunk index descriptors.
+//  *
+//  * chunk_offsets contains num_columns * num_row_groups + 1 dense UINT64 absolute file offsets in
+//  * column-major chunk space. Entries k and k+1 delimit one compact-Thrift OffsetIndexChunk or
+//  * ColumnIndexChunk. Equal offsets mean that the chunk has no corresponding index.
+//  */
+// struct PageIndexModule {
+//   1: required EncodedArray chunk_offsets
+// }
 
 /** Descriptive metadata is read in full, so it remains ordinary Thrift data. */
 struct FileMetadataModule {
@@ -326,8 +329,8 @@ enum ModuleKind {
   SCHEMA = 0,
   PLACEMENT = 1,
   ROW_GROUP_STATISTICS = 2,
-  OFFSET_INDEX = 3,
-  COLUMN_INDEX = 4,
+  // OFFSET_INDEX = 3,  // Reserved for a future page-index module.
+  // COLUMN_INDEX = 4,  // Reserved for a future page-index module.
   FILE_METADATA = 5,
   SCHEMA_INDEX = 6
 }
