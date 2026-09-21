@@ -1097,6 +1097,90 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+### Vectors
+
+`VECTOR` is used to annotate fixed-length ordered sequences of finite and
+non-null elements.
+
+`VectorType` annotation has one required parameter, `num_elements`, which is
+the number of elements in each non-null vector and must be greater than zero.
+
+`VECTOR` must always annotate the canonical 3-level structure:
+
+```
+<vector-repetition> group <name> (VECTOR(<num_elements>)) {
+  repeated group list {
+    required <element-type> element;
+  }
+}
+```
+
+* The outer level must be a group with `logicalType` set to `VECTOR` and
+  `converted_type` set to `LIST`. Its repetition must either be `optional` or
+  `required` and determines whether the vector may be null. It must contain a
+  single field named `list`.
+* The middle level must be a repeated group named `list` with a single field
+  named `element`.
+* The element MUST be a `required` primitive field, individual elements MUST
+  NOT be null. Group elements, including `LIST`, `MAP`, and `VECTOR`, are not
+  allowed.
+
+The element types supported are:
+
+* unannotated `BOOLEAN`, `FLOAT` or `DOUBLE`
+* `INT32` or `INT64`, either unannotated or annotated with `INTEGER` or
+  `DECIMAL`
+* `FIXED_LEN_BYTE_ARRAY` annotated with `FLOAT16` or `DECIMAL`.
+
+The 2-level structures accepted for `LIST` under its backward-compatibility
+rules are not valid for `VECTOR`.
+
+Every numeric element MUST be finite. For `FLOAT`, `DOUBLE`, and `FLOAT16`,
+this excludes NaN, positive infinity, and negative infinity. Whole vectors
+may still be null when the outer group is `optional`.
+
+For example, a nullable vector containing 768 required `FLOAT` elements is:
+
+```
+optional group embedding (VECTOR(768)) {
+  repeated group list {
+    required float element;
+  }
+}
+```
+
+Every non-null vector must contain exactly `num_elements` elements.
+Because `num_elements` is greater than zero, a non-null vector cannot be empty.
+Writers MUST enforce element count, non-null-element, and finite-element
+requirements. Readers MAY rely on these requirements without validating them. A
+reader that detects a different element count, a null element, or a non-finite
+element MUST treat the data as invalid.
+
+For example, with `num_elements = 3` and a `required float element`,
+`[1.0, 2.0, 3.0]` is valid. `[1.0, null, 3.0]`, `[null, null, null]`,
+`[1.0, NaN, 3.0]`, and `[1.0, +Infinity, 3.0]` are invalid. A null vector
+is valid only when the outer group is `optional`.
+
+Definition and repetition levels, value counts, encodings, compression,
+encryption, page boundaries, statistics, column indexes, size statistics, and
+Bloom filters are those of the primitive element column in an ordinary `LIST`.
+Encodings and metadata apply to elements rather than complete vectors.
+`VECTOR` adds no requirement that one vector be contained in a single data
+page.
+
+The sort order of `VECTOR` values is undefined. Column min/max values,
+`nan_count`, `distinct_count`, column-index bounds, and Bloom filter membership
+must be interpreted as metadata over all individual vector elements.
+
+For floating-point element columns, any `nan_count` or entry in `nan_counts`
+that is written MUST be zero. Readers that recognize `VECTOR` MAY rely on its
+finite-element contract even when these statistics are absent.
+
+`VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
+`LogicalType.VECTOR` and `ConvertedType.LIST`. Readers that do not support
+`VECTOR` may use the converted type to read it as an ordinary `LIST`, without
+relying on the fixed element count or finite-element guarantee.
+
 ## UNKNOWN (always null)
 
 Sometimes, when discovering the schema of existing data, values are always null
