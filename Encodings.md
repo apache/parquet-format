@@ -76,12 +76,13 @@ endian integer, followed by the bytes.
 ### Dictionary Encoding (PLAIN_DICTIONARY = 2 and RLE_DICTIONARY = 8)
 The dictionary encoding builds a dictionary of values encountered in a given column. The
 dictionary will be stored in a dictionary page per column chunk. The values are stored as integers
-using the [RLE/Bit-Packing Hybrid](#RLE) encoding. If the dictionary grows too big, whether in size
-or number of distinct values, the writer may stop using dictionary encoding and fall back to another
-valid encoding for subsequent data pages. The fallback encoding is chosen by the writer and recorded
-in the data page header's `encoding` field; readers must use that field to determine whether each
-data page is dictionary encoded or uses another encoding. The dictionary page is written first,
-before the data pages of the column chunk.
+using the [RLE/Bit-Packing Hybrid](#RLE) encoding. Within a column chunk, the dictionary page is
+written first, before the data pages of the column chunk. After the dictionary page, data pages can
+use dictionary encoding or another valid encoding for the column's data type; for example, a writer
+may stop using dictionary encoding if the dictionary grows too big, whether in size or number of
+distinct values. Dictionary-encoded and non-dictionary-encoded data pages may be interleaved within
+the column chunk, as long as only one dictionary is used. Readers must use each data page header's
+`encoding` field to determine how the page is encoded.
 
 Dictionary page format: the entries in the dictionary using the [plain](#PLAIN) encoding.
 
