@@ -316,7 +316,10 @@ struct Statistics {
     * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
     * If the column is the element leaf of a VECTOR, whose elements MUST by
     * convention always be finite (see LogicalTypes.md) nan_count MUST be
-    * zero when present.
+    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
+    * If the column is the element leaf of a VECTOR, whose elements MUST by
+    * convention always be finite (see LogicalTypes.md) writers SHOULD omit
+    * nan_count field and readers MAY assume nan_count == 0.
     */
    9: optional i64 nan_count;
 }
@@ -1389,8 +1392,8 @@ struct ColumnIndex {
     * If this field is not present, readers MUST assume that there might be
     * NaN values in any page, except if the column is an element leaf of a
     * VECTOR, whose elements MUST by convention always be finite (see
-    * LogicalTypes.md). For such a column, every entry in nan_counts MUST
-    * be zero when present.
+    * LogicalTypes.md), writers SHOULD omit nan_counts field and
+    * readers MAY assume nan_counts == 0.
     */
    8: optional list<i64> nan_counts
 
