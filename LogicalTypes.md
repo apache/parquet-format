@@ -1168,13 +1168,11 @@ Encodings and metadata apply to elements rather than complete vectors.
 `VECTOR` adds no requirement that one vector be contained in a single data
 page.
 
-The sort order of `VECTOR` values is undefined. Column min/max values,
-`nan_count`, `distinct_count`, column-index bounds, and Bloom filter membership
-must be interpreted as metadata over all individual vector elements.
+The sort order of `VECTOR` values is undefined and no statistics are defined
+for whole vectors. Min/max values, `distinct_count`, column-index bounds,
+and Bloom filters retain their ordinary LIST meaning. Bounds and distinct
+counts describe scalar elements. Writers may omit them.
 
-For floating-point element columns, any `nan_count` or entry in `nan_counts`
-that is written MUST be zero. Readers that recognize `VECTOR` MAY rely on its
-finite-element contract even when these statistics are absent.
 
 `VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
 `LogicalType.VECTOR` and `ConvertedType.LIST`. Readers that do not support
