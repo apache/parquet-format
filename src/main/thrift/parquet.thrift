@@ -317,7 +317,6 @@ struct Statistics {
     * If the column is the element leaf of a VECTOR, whose elements MUST by
     * convention always be finite (see LogicalTypes.md) nan_count MUST be
     * zero when present.
-    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
     * If the column is the element leaf of a VECTOR, whose elements MUST by
     * convention always be finite (see LogicalTypes.md) writers SHOULD omit
     * nan_count field and readers MAY assume nan_count == 0.
