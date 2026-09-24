@@ -420,3 +420,27 @@ enabling random access to individual values and parallel encoding/decoding.
 
 The detailed specification of the ALP encoding, including the page layout and
 the encoding and decoding procedures, is in [AlpEncoding.md](AlpEncoding.md).
+<a name="PFOR"></a>
+### Patched Frame of Reference (PFOR = 11)
+
+Supported Types: INT32, INT64
+
+PFOR (Patched Frame of Reference) compresses integer columns by subtracting a
+frame of reference, then bit-packing the residuals at an optimal bit width
+selected by a cost model. Values that do not fit in the chosen bit width are
+stored as exceptions ("patches"). The frame is any value of the column's type,
+so it may be the minimum of the vector or a value above it that leaves the
+outliers to be patched on either side. The cost model trades off narrower bit-packing
+against the overhead of storing exceptions, achieving better compression than plain
+FOR when a few outlier values would otherwise inflate the bit width.
+
+A writer MAY instead pack the differences between successive values. That choice
+is the **delta mode**, it is recorded per vector in bit 7 of `bit_width`, and a
+vector in that mode carries its own first value so that it still decodes without
+reading the vector before it. Everything else -- the frame of reference, the bit
+width, the exceptions -- is then chosen over the differences exactly as it would
+be over the values, and a reader runs one extra step, a prefix sum, to reverse
+the differencing.
+
+The detailed specification of the PFOR encoding, including the page layout and
+the encoding and decoding procedures, is in [PforEncoding.md](PforEncoding.md).
