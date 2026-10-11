@@ -314,6 +314,12 @@ struct Statistics {
     * or DOUBLE, or logical type is FLOAT16.
     * If this field is not present, readers MUST assume NaNs may be present
     * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
+    * If the column is the element leaf of a VECTOR, whose elements MUST by
+    * convention always be finite (see LogicalTypes.md) nan_count MUST be
+    * zero when present.
+    * If the column is the element leaf of a VECTOR, whose elements MUST by
+    * convention always be finite (see LogicalTypes.md) writers SHOULD omit
+    * nan_count field and readers MAY assume nan_count == 0.
     */
    9: optional i64 nan_count;
 }
@@ -480,6 +486,22 @@ struct FileType {
 }
 
 /**
+* Fixed length vector logical type annotation
+*
+* Annotates the outer group of a canonical 3-level LIST structure whose
+* element leaf is a required numeric or boolean Parquet primitive type.
+* Group elements, including LIST, MAP, and VECTOR, are not allowed.
+* Every non-null vector MUST contain exactly num_elements of this type and
+* these elements MUST be finite: NaN, positive or negative infinity are not
+* allowed. Vector nullability is determined by the outer group being optional
+* or required.
+* See LogicalTypes.md for details.
+*/
+struct VectorType {
+  1: required i32 num_elements
+}
+
+/**
  * LogicalType annotations to replace ConvertedType.
  *
  * To maintain compatibility, implementations using LogicalType for a
@@ -513,6 +535,7 @@ union LogicalType {
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
   19: FileType FILE           // no compatible ConvertedType
+  20: VectorType VECTOR       // use ConvertedType LIST
 }
 
 /**
@@ -1129,6 +1152,7 @@ union ColumnOrder {
    *   GEOMETRY - undefined
    *   GEOGRAPHY - undefined
    *   FILE - undefined
+   *   VECTOR - undefined
    *
    * In the absence of logical types, the sort order is determined by the physical type:
    *   BOOLEAN - false, true
@@ -1366,7 +1390,10 @@ struct ColumnIndex {
     * A list containing the number of NaN values for each page. Only present
     * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
     * If this field is not present, readers MUST assume that there might be
-    * NaN values in any page.
+    * NaN values in any page, except if the column is an element leaf of a
+    * VECTOR, whose elements MUST by convention always be finite (see
+    * LogicalTypes.md), writers SHOULD omit nan_counts field and
+    * readers MAY assume nan_counts == 0.
     */
    8: optional list<i64> nan_counts
 
