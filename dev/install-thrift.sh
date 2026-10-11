@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-THRIFT_VERSION="${THRIFT_VERSION:-0.24.0}"
+THRIFT_VERSION="${THRIFT_VERSION:-0.25.0}"
 
 sudo apt-get update -qq
 sudo apt-get install -qq protobuf-compiler
