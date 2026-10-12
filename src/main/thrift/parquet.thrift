@@ -656,6 +656,11 @@ enum Encoding {
       exceptions. See Encodings.md for the detailed specification.
    */
   ALP = 10;
+
+  /** Patched Frame of Reference encoding for INT32/INT64 columns.
+      See Encodings.md for specification details.
+   */
+  PFOR = 11;
 }
 
 /**
