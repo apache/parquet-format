@@ -1380,10 +1380,7 @@ struct ColumnIndex {
     * A list containing the number of NaN values for each page. Only present
     * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
     * If this field is not present, readers MUST assume that there might be
-    * NaN values in any page, except if the column is an element leaf of a
-    * VECTOR, whose elements MUST by convention always be finite (see
-    * LogicalTypes.md), writers SHOULD omit nan_counts field and
-    * readers MAY assume nan_counts == 0.
+    * NaN values in any page.
     */
    8: optional list<i64> nan_counts
 
