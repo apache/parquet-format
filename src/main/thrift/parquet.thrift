@@ -314,12 +314,6 @@ struct Statistics {
     * or DOUBLE, or logical type is FLOAT16.
     * If this field is not present, readers MUST assume NaNs may be present
     * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
-    * If the column is the element leaf of a VECTOR, whose elements MUST by
-    * convention always be finite (see LogicalTypes.md) nan_count MUST be
-    * zero when present.
-    * If the column is the element leaf of a VECTOR, whose elements MUST by
-    * convention always be finite (see LogicalTypes.md) writers SHOULD omit
-    * nan_count field and readers MAY assume nan_count == 0.
     */
    9: optional i64 nan_count;
 }
@@ -486,15 +480,11 @@ struct FileType {
 }
 
 /**
-* Fixed length vector logical type annotation
+* Fixed-length vector logical type annotation
 *
-* Annotates the outer group of a canonical 3-level LIST structure whose
-* element leaf is a required numeric or boolean Parquet primitive type.
-* Group elements, including LIST, MAP, and VECTOR, are not allowed.
-* Every non-null vector MUST contain exactly num_elements of this type and
-* these elements MUST be finite: NaN, positive or negative infinity are not
-* allowed. Vector nullability is determined by the outer group being optional
-* or required.
+* Annotates the outer group of a three-level LIST structure. Each
+* non-null list MUST contain exactly num_elements elements.
+*
 * See LogicalTypes.md for details.
 */
 struct VectorType {
