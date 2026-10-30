@@ -1169,10 +1169,7 @@ Encodings and metadata apply to elements rather than complete vectors.
 page.
 
 The sort order of `VECTOR` values is undefined and no statistics are defined
-for whole vectors. Min/max values, `distinct_count`, column-index bounds,
-and Bloom filters retain their ordinary LIST meaning. Bounds and distinct
-counts describe scalar elements. Writers may omit them.
-
+for whole vectors.
 
 `VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
 `LogicalType.VECTOR` and `ConvertedType.LIST`. Readers that do not support
