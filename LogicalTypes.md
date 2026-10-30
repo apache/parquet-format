@@ -1122,8 +1122,7 @@ the number of elements in each non-null vector and must be greater than zero.
 * The middle level must be a repeated group named `list` with a single field
   named `element`.
 * The element MUST be a `required` primitive field, individual elements MUST
-  NOT be null. Group elements, including `LIST`, `MAP`, and `VECTOR`, are not
-  allowed.
+  NOT be null.
 
 The element types supported are:
 
@@ -1136,8 +1135,7 @@ The 2-level structures accepted for `LIST` under its backward-compatibility
 rules are not valid for `VECTOR`.
 
 Every numeric element MUST be finite. For `FLOAT`, `DOUBLE`, and `FLOAT16`,
-this excludes NaN, positive infinity, and negative infinity. Whole vectors
-may still be null when the outer group is `optional`.
+this excludes NaN, positive infinity, and negative infinity.
 
 For example, a nullable vector containing 768 required `FLOAT` elements is:
 
