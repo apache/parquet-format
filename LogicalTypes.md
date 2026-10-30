@@ -1161,13 +1161,6 @@ For example, with `num_elements = 3` and a `required float element`,
 `[1.0, NaN, 3.0]`, and `[1.0, +Infinity, 3.0]` are invalid. A null vector
 is valid only when the outer group is `optional`.
 
-Definition and repetition levels, value counts, encodings, compression,
-encryption, page boundaries, statistics, column indexes, size statistics, and
-Bloom filters are those of the primitive element column in an ordinary `LIST`.
-Encodings and metadata apply to elements rather than complete vectors.
-`VECTOR` adds no requirement that one vector be contained in a single data
-page.
-
 The sort order of `VECTOR` values is undefined and no statistics are defined
 for whole vectors.
 
