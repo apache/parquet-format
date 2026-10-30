@@ -1103,9 +1103,9 @@ optional group my_map (MAP_KEY_VALUE) {
 non-null elements.
 
 `VectorType` annotation has one required parameter, `num_elements`, which is
-the number of elements in each non-null vector and must be greater than zero.
+the number of elements in each non-null vector and MUST be greater than zero.
 
-`VECTOR` must always annotate the canonical 3-level structure:
+`VECTOR` MUST always annotate the canonical 3-level structure:
 
 ```
 <vector-repetition> group <name> (VECTOR(<num_elements>)) {
