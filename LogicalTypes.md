@@ -1155,9 +1155,10 @@ reader that detects a different element count, a null element, or a non-finite
 element MUST treat the data as invalid.
 
 For example, with `num_elements = 3` and a `required float element`,
-`[1.0, 2.0, 3.0]` is valid. `[1.0, null, 3.0]`, `[null, null, null]`,
-`[1.0, NaN, 3.0]`, and `[1.0, +Infinity, 3.0]` are invalid. A null vector
-is valid only when the outer group is `optional`.
+`[1.0, 2.0, 3.0]` is valid. `[]`, `[1.0, 2.0]`, `[1.0, 2.0, 3.0, 4.0]`,
+`[1.0, null, 3.0]`, `[null, null, null]`, `[1.0, NaN, 3.0]`, and
+`[1.0, +Infinity, 3.0]` are invalid. A null vector is valid only when the
+outer group is `optional`.
 
 The sort order of `VECTOR` values is undefined and no statistics are defined
 for whole vectors.
