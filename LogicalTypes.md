@@ -1097,27 +1097,28 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
-### Vectors
+### Finite Vectors
 
-`VECTOR` is used to annotate fixed-length ordered sequences of finite and
+`FINITE_VECTOR` is used to annotate fixed-length ordered sequences of finite and
 non-null elements.
 
-`VectorType` annotation has one required parameter, `num_elements`, which is
-the number of elements in each non-null vector and MUST be greater than zero.
+`FiniteVectorType` annotation has one required parameter, `num_elements`,
+which is the number of elements in each non-null vector and MUST be greater
+than zero.
 
-`VECTOR` MUST always annotate the canonical 3-level structure:
+`FINITE_VECTOR` MUST always annotate the canonical 3-level structure:
 
 ```
-<vector-repetition> group <name> (VECTOR(<num_elements>)) {
+<vector-repetition> group <name> (FINITE_VECTOR(<num_elements>)) {
   repeated group list {
     required <element-type> element;
   }
 }
 ```
 
-* The outer level must be a group annotated with `VECTOR`. Its repetition must
-  be either `optional` or `required` and determines whether the vector may be
-  null. It must contain a single field named `list`.
+* The outer level must be a group annotated with `FINITE_VECTOR`. Its
+  repetition must be either `optional` or `required` and determines whether
+  the vector may be null. It must contain a single field named `list`.
 * The middle level must be a repeated group named `list` with a single field
   named `element`.
 * The element MUST be a `required` primitive field, individual elements MUST
@@ -1136,7 +1137,7 @@ this excludes NaN, positive infinity, and negative infinity.
 For example, a nullable vector containing 768 required `FLOAT` elements is:
 
 ```
-optional group embedding (VECTOR(768)) {
+optional group embedding (FINITE_VECTOR(768)) {
   repeated group list {
     required float element;
   }
@@ -1156,15 +1157,15 @@ For example, with `num_elements = 3` and a `required float element`,
 `[1.0, +Infinity, 3.0]` are invalid. A null vector is valid only when the
 outer group is `optional`.
 
-The sort order of `VECTOR` values is undefined and no statistics are defined
-for whole vectors.
+The sort order of `FINITE_VECTOR` values is undefined and no statistics are
+defined for whole vectors.
 
-`VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
-`LogicalType.VECTOR` and `ConvertedType.LIST`. Readers that do not support
-`VECTOR` may use the converted type to read it as an ordinary `LIST`, without
-relying on the fixed element count or finite-element guarantee. Readers that
-ignore both annotations see the column as an unannotated group with a single
-repeated child group.
+`FINITE_VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
+`LogicalType.FINITE_VECTOR` and `ConvertedType.LIST`. Readers that do not
+support `FINITE_VECTOR` may use the converted type to read it as an ordinary
+`LIST`, without relying on the fixed element count or finite-element guarantee.
+Readers that ignore both annotations see the column as an unannotated group
+with a single repeated child group.
 
 ## UNKNOWN (always null)
 
