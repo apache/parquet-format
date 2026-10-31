@@ -482,8 +482,9 @@ struct FileType {
 /**
 * Fixed-length vector logical type annotation
 *
-* Annotates the outer group of a three-level LIST structure. Each
-* non-null list MUST contain exactly num_elements elements.
+* Annotates the outer group of a three-level structure that is the same as
+* the one used for LIST-annotated groups. Each non-null vector MUST contain
+* exactly num_elements elements.
 *
 * See LogicalTypes.md for details.
 */

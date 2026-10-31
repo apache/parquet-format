@@ -1115,10 +1115,9 @@ the number of elements in each non-null vector and MUST be greater than zero.
 }
 ```
 
-* The outer level must be a group with `logicalType` set to `VECTOR` and
-  `converted_type` set to `LIST`. Its repetition must either be `optional` or
-  `required` and determines whether the vector may be null. It must contain a
-  single field named `list`.
+* The outer level must be a group annotated with `VECTOR`. Its repetition must
+  be either `optional` or `required` and determines whether the vector may be
+  null. It must contain a single field named `list`.
 * The middle level must be a repeated group named `list` with a single field
   named `element`.
 * The element MUST be a `required` primitive field, individual elements MUST
@@ -1130,9 +1129,6 @@ The element types supported are:
 * `INT32` or `INT64`, either unannotated or annotated with `INTEGER` or
   `DECIMAL`
 * `FIXED_LEN_BYTE_ARRAY` annotated with `FLOAT16` or `DECIMAL`.
-
-The 2-level structures accepted for `LIST` under its backward-compatibility
-rules are not valid for `VECTOR`.
 
 Every numeric element MUST be finite. For `FLOAT`, `DOUBLE`, and `FLOAT16`,
 this excludes NaN, positive infinity, and negative infinity.
@@ -1166,7 +1162,9 @@ for whole vectors.
 `VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
 `LogicalType.VECTOR` and `ConvertedType.LIST`. Readers that do not support
 `VECTOR` may use the converted type to read it as an ordinary `LIST`, without
-relying on the fixed element count or finite-element guarantee.
+relying on the fixed element count or finite-element guarantee. Readers that
+ignore both annotations see the column as an unannotated group with a single
+repeated child group.
 
 ## UNKNOWN (always null)
 
