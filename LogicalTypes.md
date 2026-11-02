@@ -1174,13 +1174,6 @@ column has the same physical representation as a `LIST` column with the same
 structure and element type. The annotation only declares the fixed element
 count and the non-null, finite-element guarantees described above.
 
-Readers, engines, and table formats MAY expose `LIST`-annotated or unannotated
-list data as `FINITE_VECTOR(num_elements)` after validating that every non-null
-list in the promoted scope contains exactly `num_elements` non-null elements of
-a supported type and that every numeric element is finite. This interpretation
-can be a metadata-only change in the system that performs it and need not
-rewrite the underlying Parquet files.
-
 ## UNKNOWN (always null)
 
 Sometimes, when discovering the schema of existing data, values are always null
