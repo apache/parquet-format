@@ -313,7 +313,8 @@ struct Statistics {
     * Count of NaN values in the column; only present if physical type is FLOAT
     * or DOUBLE, or logical type is FLOAT16.
     * If this field is not present, readers MUST assume NaNs may be present
-    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0).
+    * (i.e. MUST assume nan_count > 0 and MAY NOT assume nan_count == 0),
+    * unless the column's FLOATING_POINT or FLOAT16 logical type has isFinite = true.
     */
    9: optional i64 nan_count;
 }
@@ -322,10 +323,29 @@ struct Statistics {
 struct StringType {}  // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct UUIDType {}    // allowed for FIXED[16], must be encoded as raw UUID bytes
 struct MapType {}     // see LogicalTypes.md
-struct ListType {}    // see LogicalTypes.md
+/** See LogicalTypes.md for the LIST encoding and elementCount semantics. */
+struct ListType {
+  /**
+   * If set, every non-null list has exactly this many elements (including null
+   * elements). Must be non-negative; zero denotes an empty list. Repetition
+   * levels are still encoded, but readers need not inspect them to determine
+   * the length of this list.
+   */
+  1: optional i32 elementCount;
+}
 struct EnumType {}    // allowed for BYTE_ARRAY, must be encoded with UTF-8
 struct DateType {}    // allowed for INT32
-struct Float16Type {} // allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md)
+/** Allowed for FIXED[2], must be encoded as raw FLOAT16 bytes (see LogicalTypes.md). */
+struct Float16Type {
+  /** If true, every non-null value is finite (not NaN or +/-infinity). */
+  1: optional bool isFinite;
+}
+
+/** Allowed for physical types FLOAT and DOUBLE (see LogicalTypes.md). */
+struct FloatingPointType {
+  /** If true, every non-null value is finite (not NaN or +/-infinity). */
+  1: optional bool isFinite;
+}
 
 /**
  * Logical type to annotate a column that is always null.
@@ -513,6 +533,7 @@ union LogicalType {
   17: GeometryType GEOMETRY   // no compatible ConvertedType
   18: GeographyType GEOGRAPHY // no compatible ConvertedType
   19: FileType FILE           // no compatible ConvertedType
+  20: FloatingPointType FLOATING_POINT // no compatible ConvertedType
 }
 
 /**
@@ -1115,6 +1136,7 @@ union ColumnOrder {
    *   DECIMAL - signed comparison of the represented value
    *   DATE - signed comparison
    *   FLOAT16 - signed comparison of the represented value (*)
+   *   FLOATING_POINT - signed comparison of the represented value (*)
    *   TIME_MILLIS - signed comparison
    *   TIME_MICROS - signed comparison
    *   TIMESTAMP_MILLIS - signed comparison
@@ -1366,7 +1388,8 @@ struct ColumnIndex {
     * A list containing the number of NaN values for each page. Only present
     * for columns of physical type FLOAT or DOUBLE, or logical type FLOAT16.
     * If this field is not present, readers MUST assume that there might be
-    * NaN values in any page.
+    * NaN values in any page, unless the column's FLOATING_POINT or FLOAT16
+    * logical type has isFinite = true.
     */
    8: optional list<i64> nan_counts
 
