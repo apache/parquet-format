@@ -255,6 +255,33 @@ comparison.
 To support compatibility with older readers, implementations of parquet-format should
 write `DecimalType` precision and scale into the corresponding SchemaElement field in metadata.
 
+### FLOATING_POINT
+
+`FLOATING_POINT` may annotate a primitive column of physical type `FLOAT` or
+`DOUBLE`. It does not change the physical representation or sort order of the
+column. It provides the optional `isFinite` property. When `isFinite` is `true`,
+every non-null value in the column must be finite: neither NaN nor positive or
+negative infinity. Nulls, positive and negative zero, and subnormal values are
+allowed. Readers may rely on this guarantee without inspecting the values.
+
+If `isFinite` is absent or `false`, or if the annotation is absent, no
+finiteness guarantee is made; non-finite values may or may not occur. The
+property applies to the annotated leaf column only, not to its containing
+groups or other columns. It is a file-wide guarantee across all row groups,
+including values decoded using dictionary or other encodings.
+
+There is no corresponding `ConvertedType`. Older readers may ignore this
+annotation and read the physical `FLOAT` or `DOUBLE` values as usual. Per the
+rules for unsupported logical types, a reader that does not recognize
+`FLOATING_POINT` should also ignore its column order for statistics.
+
+`isFinite = true` does not change the requirements for writing `nan_count`,
+min/max statistics, page indexes, or `ColumnOrder`. Readers unaware of this
+property must continue to apply the existing statistics rules, including
+treating an absent `nan_count` as no guarantee that NaNs are absent. Readers
+that recognize `isFinite = true` may infer that `nan_count` and page-index
+`nan_counts` are zero when those statistics are absent.
+
 ### FLOAT16
 
 The `FLOAT16` annotation represents half-precision floating-point numbers in the 2-byte IEEE little-endian format.
@@ -262,6 +289,13 @@ The `FLOAT16` annotation represents half-precision floating-point numbers in the
 Used in contexts where precision is traded off for smaller footprint and potentially better performance.
 
 The primitive type is a 2-byte `FIXED_LEN_BYTE_ARRAY`.
+
+`FLOAT16` also has an optional `isFinite` property with the same meaning as
+for `FLOATING_POINT`: if `true`, every non-null value must be finite; if absent
+or `false`, no guarantee is made. This allows the constraint to coexist with
+the `FLOAT16` logical type. It applies only to the annotated leaf, across all
+row groups and encodings, and does not change statistics requirements. Readers
+that recognize `FLOAT16` but not this new property may ignore the property.
 
 Like `FLOAT` and `DOUBLE`, the sort order for `FLOAT16` is signed with special
 handling for NaNs and signed zeros. Writers should use IEEE754TotalOrder for
@@ -894,6 +928,21 @@ the annotations, no unannotated repeated types are allowed.
   field named `element`.
 * The `element` field encodes the list's element type and repetition. Element
   repetition must be `required` or `optional`.
+
+The `LIST` logical type may set the optional `elementCount` field. If set, it
+must be non-negative, and every non-null list annotated by that `LIST` must
+contain exactly `elementCount` elements, including any null elements. A value
+of 0 means every non-null list is empty. Null lists remain distinct from empty
+lists and are governed by the outer group's repetition.
+
+Writers must still encode definition and repetition levels as usual, including
+the repetition levels of list elements. Readers may use `elementCount` instead
+of inspecting repetition levels to determine the number of elements in each
+list; repetition levels needed for other nested structures must still be
+handled. When `elementCount` is absent, list lengths are determined from the
+encoded levels as usual. The deprecated `ConvertedType.LIST` annotation cannot
+carry `elementCount`, so writers using this field must also write the `LIST`
+logical type annotation.
 
 The following examples demonstrate two of the possible lists of string values.
 
