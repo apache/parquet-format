@@ -1160,12 +1160,26 @@ outer group is `optional`.
 The sort order of `FINITE_VECTOR` values is undefined and no statistics are
 defined for whole vectors.
 
+#### Compatibility
+
 `FINITE_VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
 `LogicalType.FINITE_VECTOR` and `ConvertedType.LIST`. Readers that do not
 support `FINITE_VECTOR` may use the converted type to read it as an ordinary
 `LIST`, without relying on the fixed element count or finite-element guarantee.
 Readers that ignore both annotations see the column as an unannotated group
 with a single repeated child group.
+
+`FINITE_VECTOR` does not change how values are encoded. A `FINITE_VECTOR`
+column has the same physical representation as a `LIST` column with the same
+structure and element type. The annotation only declares the fixed element
+count and the non-null, finite-element guarantees described above.
+
+Readers, engines, and table formats MAY expose `LIST`-annotated or unannotated
+list data as `FINITE_VECTOR(num_elements)` after validating that every non-null
+list in the promoted scope contains exactly `num_elements` non-null elements of
+a supported type and that every numeric element is finite. This interpretation
+can be a metadata-only change in the system that performs it and need not
+rewrite the underlying Parquet files.
 
 ## UNKNOWN (always null)
 
