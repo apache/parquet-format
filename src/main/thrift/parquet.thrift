@@ -289,7 +289,10 @@ struct Statistics {
     * If null_count is not present, readers MUST NOT assume null_count == 0.
     */
    3: optional i64 null_count;
-   /** count of distinct values occurring */
+   /** 
+    * count of distinct values occurring
+    * The value does not account for differences in equality or interpretation of values
+    */
    4: optional i64 distinct_count;
    /**
     * Lower and upper bound values for the column, determined by its ColumnOrder.
