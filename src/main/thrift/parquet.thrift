@@ -290,8 +290,8 @@ struct Statistics {
     */
    3: optional i64 null_count;
    /** 
-    * Estimated count of distinct values occurring.
-    * The estimate may be off in either direction by an underfined amount. 
+    * count of distinct values occurring
+    * The value does not account for differences in equality or interpretation of values
     */
    4: optional i64 distinct_count;
    /**
