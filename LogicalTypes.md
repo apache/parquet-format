@@ -779,8 +779,7 @@ locator valid on its own, so `offset` requires `uri` and `size`.
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
 explicit `size`. `size` may be omitted when `inline` is set, or for a whole-file external
 reference, where the range runs to the end of the referenced file. `offset` applies only
-to data referenced by `uri`; there is no form that addresses a byte range in the current
-file directly.
+to data referenced by `uri`.
 
 A `uri` is always resolved as an external reference, even when it names the file that
 contains it. Parquet applies no compression or encryption of its own to the referenced
