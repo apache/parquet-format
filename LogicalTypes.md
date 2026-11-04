@@ -1116,14 +1116,6 @@ than zero.
 }
 ```
 
-* The outer level must be a group annotated with `FINITE_VECTOR`. Its
-  repetition must be either `optional` or `required` and determines whether
-  the vector may be null. It must contain a single field named `list`.
-* The middle level must be a repeated group named `list` with a single field
-  named `element`.
-* The element MUST be a `required` primitive field, individual elements MUST
-  NOT be null.
-
 The element types supported are:
 
 * unannotated `BOOLEAN`, `FLOAT` or `DOUBLE`
@@ -1146,33 +1138,6 @@ optional group embedding (FINITE_VECTOR(768)) {
 
 Every non-null vector must contain exactly `num_elements` elements.
 Because `num_elements` is greater than zero, a non-null vector cannot be empty.
-Writers MUST enforce element count, non-null-element, and finite-element
-requirements. Readers MAY rely on these requirements without validating them. A
-reader that detects a different element count, a null element, or a non-finite
-element MUST treat the data as invalid.
-
-For example, with `num_elements = 3` and a `required float element`,
-`[1.0, 2.0, 3.0]` is valid. `[]`, `[1.0, 2.0]`, `[1.0, 2.0, 3.0, 4.0]`,
-`[1.0, null, 3.0]`, `[null, null, null]`, `[1.0, NaN, 3.0]`, and
-`[1.0, +Infinity, 3.0]` are invalid. A null vector is valid only when the
-outer group is `optional`.
-
-The sort order of `FINITE_VECTOR` values is undefined and no statistics are
-defined for whole vectors.
-
-#### Compatibility
-
-`FINITE_VECTOR` corresponds to the `LIST` ConvertedType. Writers must set both
-`LogicalType.FINITE_VECTOR` and `ConvertedType.LIST`. Readers that do not
-support `FINITE_VECTOR` may use the converted type to read it as an ordinary
-`LIST`, without relying on the fixed element count or finite-element guarantee.
-Readers that ignore both annotations see the column as an unannotated group
-with a single repeated child group.
-
-`FINITE_VECTOR` does not change how values are encoded. A `FINITE_VECTOR`
-column has the same physical representation as a `LIST` column with the same
-structure and element type. The annotation only declares the fixed element
-count and the non-null, finite-element guarantees described above.
 
 ## UNKNOWN (always null)
 
