@@ -747,13 +747,12 @@ are:
 `checksum` applies to the resolved bytes, except for `ETAG`, which is the
 object-store eTag for the whole file referenced by `uri`. If `inline` and `uri` are both
 set, `checksum` describes the source at `uri` as it was when `inline` was copied from it.
-Like the locator, it is then provenance only.
 
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
-bytes and any locator fields (`uri`, `offset`, `size`) that are set are provenance
-only.
+bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
+bytes came from. Readers resolve the value from `inline`, not from the locator.
 
 #### Resolution
 
@@ -800,8 +799,10 @@ compressed, and encrypted like any other column, `inline` included.
   does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
-* If `inline` is set, it supplies the bytes for readers; producers may treat `inline` and
-  the locator fields as mutually exclusive.
+* If `inline` and a locator are both set, `inline` is a copy of the bytes referenced by
+  the locator at the time the value is written. Readers resolve the value from `inline`
+  and are not required to check this. Producers may treat `inline` and the locator
+  fields as mutually exclusive.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
