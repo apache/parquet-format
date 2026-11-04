@@ -746,7 +746,8 @@ are:
 
 `checksum` applies to the resolved bytes, except for `ETAG`, which is the
 object-store eTag for the whole file referenced by `uri`. If `inline` and `uri` are both
-set, `checksum` describes the source at `uri` as it was when `inline` was copied from it.
+set, `checksum` describes the data referenced by the locator (for `ETAG`, the whole file
+at `uri`) as it was when `inline` was copied from it.
 
 ##### inline
 
