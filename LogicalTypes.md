@@ -1097,6 +1097,48 @@ optional group my_map (MAP_KEY_VALUE) {
 }
 ```
 
+### Finite Vectors
+
+`FINITE_VECTOR` is used to annotate fixed-length ordered sequences of finite and
+non-null elements.
+
+`FiniteVectorType` annotation has one required parameter, `num_elements`,
+which is the number of elements in each non-null vector and MUST be greater
+than zero.
+
+`FINITE_VECTOR` MUST always annotate the canonical 3-level structure:
+
+```
+<vector-repetition> group <name> (FINITE_VECTOR(<num_elements>)) {
+  repeated group list {
+    required <element-type> element;
+  }
+}
+```
+
+The element types supported are:
+
+* unannotated `BOOLEAN`, `FLOAT` or `DOUBLE`
+* `INT32` or `INT64`, either unannotated or annotated with `INTEGER` or
+  `DECIMAL`
+* `FIXED_LEN_BYTE_ARRAY` annotated with `FLOAT16` or `DECIMAL`.
+
+Every numeric element MUST be finite. For `FLOAT`, `DOUBLE`, and `FLOAT16`,
+this excludes NaN, positive infinity, and negative infinity.
+
+For example, a nullable vector containing 768 required `FLOAT` elements is:
+
+```
+optional group embedding (FINITE_VECTOR(768)) {
+  repeated group list {
+    required float element;
+  }
+}
+```
+
+Every non-null vector must contain exactly `num_elements` elements.
+Because `num_elements` is greater than zero, a non-null vector cannot be empty.
+
 ## UNKNOWN (always null)
 
 Sometimes, when discovering the schema of existing data, values are always null
