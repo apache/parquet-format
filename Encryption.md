@@ -63,8 +63,9 @@ and its nested fields (row groups / column chunks).
 File encryption is flexible - each column and the footer can be encrypted with the same key, 
 with a different key, or not encrypted at all.
 
-The results of compression of column pages are encrypted before being written to the output 
-stream. A new Thrift structure, with column crypto metadata, is added to column chunks of 
+The column pages are encrypted after compression, before being written to the output 
+stream. The entire page body (all bytes following the page header) is encrypted as a single 
+module - see section 5.1.1. A new Thrift structure, with column crypto metadata, is added to column chunks of 
 the encrypted columns. This metadata provides information about the column encryption keys.
 
 The results of serialization of Thrift structures are encrypted, before being written 
@@ -306,6 +307,48 @@ described in the Algorithms section. The length of the encryption buffer
 
 |length (4 bytes) | nonce (12 bytes) | ciphertext (length-12 bytes) |
 |-----------------|------------------|------------------------------|
+
+#### 5.1.1 Column page modules
+A column page module is the complete page body - all bytes that follow the page header and 
+are counted by `PageHeader.compressed_page_size`. The page body is encrypted as a single 
+module, after any compression. For each page type, the plaintext of the page module is:
+
+   * Dictionary pages and data pages V1: the (optionally compressed) concatenation of the 
+   repetition levels, definition levels and values.
+   * Data pages V2: the concatenation of the repetition levels, the definition levels and 
+   the (optionally compressed) values. In data pages V2, the repetition and definition levels 
+   are never compressed - but they **are** encrypted, together with the values, as a part of 
+   the same page module. Writers must not leave the levels in plaintext, because they expose 
+   the structure of the column data (such as the positions of null values and the lengths of lists).
+
+In an encrypted column chunk, `PageHeader.compressed_page_size` is the size of the page module 
+as written to the output stream (including the 4-byte length, and the encryption overhead). 
+`PageHeader.uncompressed_page_size`, and the `definition_levels_byte_length` and 
+`repetition_levels_byte_length` fields of `DataPageHeaderV2`, refer to the decrypted page body. 
+Readers decrypt the page module first, and then use these fields to locate the levels and the values 
+in the decrypted page body.
+
+The page CRC (`PageHeader.crc`), if present, is computed on the page module as written to the output 
+stream, i.e. after compression and encryption.
+
+##### Legacy data page V2 layout
+Parquet-java (parquet-mr) releases since 1.12.0 wrote encrypted data pages V2 in a different layout: 
+the repetition and definition levels in plaintext, followed by a page module that encrypts only the 
+(optionally compressed) values. `PageHeader.compressed_page_size` of these pages is the sum of the 
+level lengths and the size of the page module.
+
+|repetition levels (plaintext) | definition levels (plaintext) | length (4 bytes) | nonce (12 bytes) | ciphertext | tag (GCM only, 16 bytes) |
+|------------------------------|-------------------------------|------------------|------------------|------------|--------------------------|
+
+This layout must not be produced by writers. It differs from the standard layout only in data pages 
+V2 with non-empty repetition or definition levels. Readers may support it, for backward compatibility 
+with existing files. For such pages, a standard page module satisfies 
+`length + 4 == compressed_page_size` (where `length` is read from the first 4 bytes of the page body), 
+while a legacy page satisfies 
+`repetition_levels_byte_length + definition_levels_byte_length + length + 4 == compressed_page_size` 
+(where `length` is read right after the levels). The `FileMetaData.created_by` field can be used as 
+an additional hint. If the layout is still ambiguous, readers can try the standard layout first; in the 
+AES_GCM_V1 algorithm, a wrong guess is detected by the GCM tag verification.
 
 
 ### 5.2 Crypto structures

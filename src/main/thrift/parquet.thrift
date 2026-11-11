@@ -779,6 +779,9 @@ struct DataPageHeaderV2 {
   4: required Encoding encoding
 
   // repetition levels and definition levels are always using RLE (without size in it)
+  // In encrypted columns, the levels are not compressed but are encrypted together
+  // with the values, as part of a single page module (see Encryption.md). The byte
+  // lengths below, and the page section offsets, refer to the decrypted page body.
 
   /** Length of the definition levels */
   5: required i32 definition_levels_byte_length;
@@ -862,6 +865,9 @@ struct PageHeader {
    *   data pages, the CRC is computed on the concatenation of repetition levels,
    *   definition levels and column values (optionally compressed, optionally
    *   encrypted).
+   * - For encrypted pages (of any type, including v2 data pages), the levels and
+   *   values are encrypted together as a single page module, and the CRC is
+   *   computed on that encrypted module (see Encryption.md).
    * - The CRC computation therefore takes place after any compression
    *   and encryption steps, if any.
    *
