@@ -37,7 +37,7 @@ disambiguation mechanism to allow more flexibility to implementers.
 Putting everything together in an example, if we would extend `FileMetaData` it would look like this on the wire.
 
     N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
-    4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
+    4 bytes   | 08 FE FF 03 (long form header for 32767: binary)
     1-5 bytes | ULEB128(M) encoded size of the extension
     M bytes   | extension bytes
     1 byte    | \0 (thrift stop field)
@@ -61,7 +61,7 @@ A variant of `FileMetaData` encoded in FlatBuffers is introduced. This variant i
 In its private form the footer of a Parquet file will look like so:
 
     N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
-    4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
+    4 bytes   | 08 FE FF 03 (long form header for 32767: binary)
     1-5 bytes | ULEB128(K+28) encoded size of the extension
     K bytes   | FlatBuffers representation (v0) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
@@ -84,7 +84,7 @@ The community reviews the proposal and (potentially) proposes changes to the Fla
 Once the design is ratified the new `FileMetaData` encoding is made final with the following migration plan. For the next N years writers will write both the Thrift and the FlatBuffers `FileMetaData`. It will look much like its private form except the FlatBuffers IDL may be different:
 
     N-1 bytes | Thrift compact protocol encoded FileMetaData (minus \0 thrift stop field)
-    4 bytes   | 08 FF FF 01 (long form header for 32767: binary)
+    4 bytes   | 08 FE FF 03 (long form header for 32767: binary)
     1-5 bytes | ULEB128(K+28) encoded size of the extension
     K bytes   | FlatBuffers representation (v1) of FileMetaData
     4 bytes   | little-endian crc32(flatbuffer)
@@ -150,7 +150,7 @@ void AppendUleb(uint32_t x, std::string* out) {
 std::string AppendExtension(std::string thrift, const std::string& ext) {
   assert(thrift.back() == '\x00');   // there was a stop field in the first place
   thrift.back() = '\x08';      // replace stop field with binary type
-  AppendUleb(32767, &thrift);  // field-id
+  AppendUleb(32767 << 1, &thrift);  // field-id, zigzag-encoded
   AppendUleb(ext.size(), &thrift);
   thrift += ext;
   thrift += '\x00';  // add the stop field
