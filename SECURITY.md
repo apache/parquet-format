@@ -20,4 +20,4 @@
 # Security
 
 The Apache Parquet security policy, including how to report a suspected
-vulnerability is at https://parquet.apache.org/docs/asf/security/
+vulnerability, is at https://parquet.apache.org/docs/asf/security/
