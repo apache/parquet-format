@@ -22,7 +22,7 @@ on:
     branches:
     - master
     paths:
-      - 'src/main/thrift/parquet.thrift' # Only run when there are changes in the structure
+      - 'src/main/thrift/*.thrift' # Only run when there are changes in the structure
 
 permissions:
   contents: read
