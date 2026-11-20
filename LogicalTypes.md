@@ -749,8 +749,7 @@ object-store eTag for the whole file referenced by `uri`.
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
 bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
-bytes came from. A reader may resolve the value from `inline` or from the locator,
-whichever suits it.
+bytes came from. Readers must resolve the value from `inline`, not from the locator.
 
 #### Resolution
 
@@ -759,7 +758,7 @@ set:
 
 | `inline` | `uri` | `offset` | `size` | Resolves to                               |
 |----------|-------|----------|--------|-------------------------------------------|
-| set      | †     | †        | †      | the inline bytes, or the locator          |
+| set      | †     | †        | †      | the inline bytes                          |
 | -        | set   | -        | -      | whole external file at `uri`              |
 | -        | set   | set      | -      | invalid                                   |
 | -        | set   | -        | set    | external `uri`, `[0, size)`               |
@@ -796,10 +795,11 @@ compressed, and encrypted like any other column, `inline` included.
   does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
-* If `inline` and a locator are both set, a reader may resolve the value from either.
-  Producers are expected to write the same bytes in both, but a reader is not required
-  to check this and may return the bytes of either. Producers may treat `inline` and the
-  locator fields as mutually exclusive.
+* If `inline` and a locator are both set, readers must resolve the value from `inline`.
+  Producers may treat `inline` and the locator fields as mutually exclusive. If they set
+  both, `inline` must be a copy of the bytes referenced by the locator at the time the
+  value is written, but producers are not required to ensure that the referenced data
+  stays unchanged or available afterwards.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
