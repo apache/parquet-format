@@ -751,7 +751,6 @@ The referenced bytes stored inline in the value. If `inline` is set, it supplies
 bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
 bytes came from. Readers must resolve the value from `inline`, not from the locator.
 
-
 #### Resolution
 
 A value resolves to bytes based on which of `inline`, `uri`, `offset`, and `size` are
