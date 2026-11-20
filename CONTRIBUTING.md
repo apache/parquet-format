@@ -93,6 +93,8 @@ demonstrate that the feature is mergeable to its implementation.
    compatibility (old readers can still read files). The [compatibility and
    feature enablement](#compatibility-and-feature-enablement) section below 
    provides more details on expectations for changes that break compatibility.
+   See [Changing the Format](FormatChanges.md) for the categories of changes
+   and the criteria used to evaluate them.
 
 2. New encodings should be fully specified in this repository and not
    rely on external dependencies for implementation (i.e. `parquet-format` is
