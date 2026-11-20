@@ -685,8 +685,7 @@ just `inline`, and an external reference may define just `uri`).
 | `inline`       | BYTE_ARRAY |
 
 A value resolves to bytes determined by `inline` / `uri` / `offset` / `size`;
-`content_type` and `checksum` are metadata describing whatever is resolved (see
-`checksum` for values that set both `inline` and `uri`).
+`content_type` and `checksum` are metadata describing whatever is resolved.
 
 #### Fields
 
@@ -713,9 +712,8 @@ If set and non-zero, readers must seek to this offset to retrieve the referenced
 
 The byte length of the referenced data. Must be zero or a positive integer if set; a
 value of 0 indicates empty referenced data. `size` must be set whenever `offset` is set.
-It may be omitted for a whole-file external reference (`uri` set, `offset` not set),
-in which case the range runs to the end of the referenced file. `size` may also be set
-with `inline` and without `uri`, in which case it must equal the length of `inline`.
+It may be omitted only for a whole-file external reference (`uri` set, `offset` not set),
+in which case the range runs to the end of the referenced file.
 
 ##### content_type
 
@@ -745,15 +743,14 @@ are:
   equality comparison and not otherwise interpreted.
 
 `checksum` applies to the resolved bytes, except for `ETAG`, which is the
-object-store eTag for the whole file referenced by `uri`. If `inline` and `uri` are both
-set, `checksum` describes the data referenced by the locator (for `ETAG`, the whole file
-at `uri`) as it was when `inline` was copied from it.
+object-store eTag for the whole file referenced by `uri`.
 
 ##### inline
 
 The referenced bytes stored inline in the value. If `inline` is set, it supplies the
 bytes and any locator fields (`uri`, `offset`, `size`) that are set record where those
-bytes came from. Readers resolve the value from `inline`, not from the locator.
+bytes came from. Readers must resolve the value from `inline`, not from the locator.
+
 
 #### Resolution
 
@@ -772,14 +769,14 @@ set:
 | -        | -     | set      | set    | invalid                                   |
 | -        | -     | -        | -      | nothing - invalid                         |
 
-† The locator fields may all be unset, or `size` may be set alone, in which case it
-must equal the length of `inline`. Otherwise, fields set alongside `inline` must form a
-locator valid on its own, so `offset` requires `uri` and `size`.
+† The locator fields may all be unset. Otherwise, fields set alongside `inline` must
+form a locator valid on its own, so `offset` requires `uri` and `size`.
 
 `size` must be set whenever `offset` is set, so any offset-based read always carries an
-explicit `size`. `size` may be omitted when `inline` is set, or for a whole-file external
-reference, where the range runs to the end of the referenced file. `offset` applies only
-to data referenced by `uri`.
+explicit `size`. `size` may be omitted only for a whole-file external reference, where
+the range runs to the end of the referenced file. `offset` and `size` apply only to data
+referenced by `uri`; there is no form that addresses a byte range in the current file
+directly.
 
 A `uri` is always resolved as an external reference, even when it names the file that
 contains it. Parquet applies no compression or encryption of its own to the referenced
@@ -799,10 +796,11 @@ compressed, and encrypted like any other column, `inline` included.
   does not resolve and is invalid.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
-* If `inline` and a locator are both set, `inline` is a copy of the bytes referenced by
-  the locator at the time the value is written. Readers resolve the value from `inline`
-  and are not required to check this. Producers may treat `inline` and the locator
-  fields as mutually exclusive.
+* If `inline` and a locator are both set, readers must resolve the value from `inline`.
+  Producers may treat `inline` and the locator fields as mutually exclusive. If they set
+  both, `inline` must be a copy of the bytes referenced by the locator at the time the
+  value is written, but producers are not required to ensure that the referenced data
+  stays unchanged or available afterwards.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
