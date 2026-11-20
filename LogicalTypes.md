@@ -797,9 +797,13 @@ compressed, and encrypted like any other column, `inline` included.
 * `size` must be set whenever `offset` is set. A value that sets `offset` without `size`
   is invalid.
 * If `inline` and a locator are both set, a reader may resolve the value from either.
-  Producers are expected to write the same bytes in both, but a reader is not required
-  to check this and may return the bytes of either. Producers may treat `inline` and the
-  locator fields as mutually exclusive.
+  Producers may treat `inline` and the locator fields as mutually exclusive. If they set
+  both, `inline` must be a copy of the bytes referenced by the locator at the time the
+  value is written, but producers are not required to ensure that the referenced data
+  stays unchanged or available afterwards. If the referenced data is changed or deleted
+  after the value is written, what a reader returns for the value is undefined and may
+  differ between readers. Readers that resolve the locator may use `checksum`, if set,
+  to detect such a mismatch, but are not required to.
 * Field names within a `FILE`-annotated group must not be renamed.
 * Additional metadata about the file (e.g., modification timestamp) must
   be stored adjacent to this group by engines or table formats, not inside it.
