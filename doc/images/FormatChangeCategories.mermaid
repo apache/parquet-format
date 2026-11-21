@@ -1,0 +1,60 @@
+%% Licensed to the Apache Software Foundation (ASF) under one
+%% or more contributor license agreements.  See the NOTICE file
+%% distributed with this work for additional information
+%% regarding copyright ownership.  The ASF licenses this file
+%% to you under the Apache License, Version 2.0 (the
+%% "License"); you may not use this file except in compliance
+%% with the License.  You may obtain a copy of the License at
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%{init: {"look": "classic", "flowchart": {"useMaxWidth": false, "diagramPadding": 4}}}%%
+flowchart LR
+    subgraph nested["Set of all Changes"]
+        direction TB
+        nC["Compatible"]
+        subgraph nI["Incompatible"]
+            direction TB
+            nIR["Incorrect Read"]
+            subgraph nCF["Correct Failed Read"]
+                direction TB
+                nPC["Partial Compatibility"]
+                nFI["Fully Incompatible"]
+                nPC ~~~ nFI
+            end
+            nIR ~~~ nCF
+        end
+        nC ~~~ nI
+    end
+
+    subgraph tree[" "]
+        direction TB
+        all(["Set of all Changes"]) --- C(["Compatible"])
+        all --- I(["Incompatible"])
+        I --- CF(["Correct failed Read"])
+        I --- IR(["Incorrect Read"])
+        CF --- PC(["Partial Compatibility"])
+        CF --- FI(["Fully Incompatible"])
+    end
+
+    nested ~~~ tree
+
+    classDef root fill:#cfe2f3,stroke:#555,color:#000
+    classDef compat fill:#d9ead3,stroke:#555,color:#000
+    classDef incompat fill:#fff2cc,stroke:#555,color:#000
+    classDef incorrect fill:#f4cccc,stroke:#555,color:#000
+    classDef failed fill:#fce5cd,stroke:#555,color:#000
+    classDef partial fill:#f1c232,stroke:#555,color:#000
+    classDef full fill:#bf9000,stroke:#555,color:#000
+    class all,nested root
+    class C,nC compat
+    class I,nI incompat
+    class IR,nIR incorrect
+    class CF,nCF failed
+    class PC,nPC partial
+    class FI,nFI full
+    style tree fill:none,stroke:none

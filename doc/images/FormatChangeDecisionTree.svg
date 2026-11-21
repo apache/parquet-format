@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="560" viewBox="0 0 708 560" role="img" aria-labelledby="title">
+  <title id="title">Decision flow for making a change to the Parquet format</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; fill: #000; }
+      .label { font-size: 13px; fill: #333; }
+      .step { fill: #cfe2f3; stroke: #555; stroke-width: 1.2; }
+      .note { fill: #fff2cc; stroke: #bbb; stroke-width: 1; }
+      .edge { stroke: #333; stroke-width: 1.4; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="708" height="560" fill="#fff"/>
+
+  <!-- Start -->
+  <text x="8" y="44">I want to make</text>
+  <text x="8" y="62">a change</text>
+  <line class="edge" x1="4" y1="75" x2="108" y2="75"/>
+
+  <!-- Q1 -->
+  <polygon class="step" points="230,15 350,75 230,135 110,75"/>
+  <text text-anchor="middle" x="230" y="62">Can it be made</text>
+  <text text-anchor="middle" x="230" y="80">forward</text>
+  <text text-anchor="middle" x="230" y="98">compatible?</text>
+  <line class="edge" x1="350" y1="75" x2="418" y2="75"/>
+  <text class="label" text-anchor="middle" x="384" y="68">Yes</text>
+  <rect class="step" x="420" y="52" width="140" height="46"/>
+  <text text-anchor="middle" x="490" y="80">Correct Read</text>
+  <line class="edge" x1="230" y1="135" x2="230" y2="163"/>
+  <text class="label" x="238" y="154">No</text>
+
+  <!-- Q2 -->
+  <polygon class="step" points="230,165 360,235 230,305 100,235"/>
+  <text text-anchor="middle" x="230" y="210">Can the metadata</text>
+  <text text-anchor="middle" x="230" y="228">tell old readers</text>
+  <text text-anchor="middle" x="230" y="246">what and why they</text>
+  <text text-anchor="middle" x="230" y="264">can not read?</text>
+  <line class="edge" x1="360" y1="235" x2="418" y2="235"/>
+  <text class="label" text-anchor="middle" x="389" y="228">Yes</text>
+  <rect class="step" x="420" y="200" width="140" height="70"/>
+  <text text-anchor="middle" x="490" y="222">Correct Partial</text>
+  <text text-anchor="middle" x="490" y="240">Read or</text>
+  <text text-anchor="middle" x="490" y="258">Best Effort Read</text>
+  <rect class="note" x="572" y="188" width="130" height="94"/>
+  <text text-anchor="middle" x="637" y="208">The reader knows</text>
+  <text text-anchor="middle" x="637" y="225">what subset of</text>
+  <text text-anchor="middle" x="637" y="242">the file it can</text>
+  <text text-anchor="middle" x="637" y="259">read and decides</text>
+  <text text-anchor="middle" x="637" y="276">what to do</text>
+  <line class="edge" x1="230" y1="305" x2="230" y2="333"/>
+  <text class="label" x="238" y="324">No</text>
+
+  <!-- Q3 -->
+  <polygon class="step" points="230,335 350,395 230,455 110,395"/>
+  <text text-anchor="middle" x="230" y="382">Then you must</text>
+  <text text-anchor="middle" x="230" y="400">increment the</text>
+  <text text-anchor="middle" x="230" y="418">magic number</text>
+  <line class="edge" x1="350" y1="395" x2="418" y2="395"/>
+  <text class="label" text-anchor="middle" x="384" y="388">Yes</text>
+  <rect class="step" x="420" y="368" width="140" height="54"/>
+  <text text-anchor="middle" x="490" y="391">Correct Failure</text>
+  <text text-anchor="middle" x="490" y="409">to Read</text>
+  <line class="edge" x1="230" y1="455" x2="230" y2="483"/>
+  <text class="label" x="238" y="474">No</text>
+
+  <!-- Incorrect read -->
+  <rect class="step" x="160" y="485" width="140" height="44"/>
+  <text text-anchor="middle" x="230" y="512">Incorrect Read</text>
+  <rect class="note" x="320" y="466" width="260" height="84"/>
+  <text text-anchor="middle" x="450" y="487">Except for a footer format change,</text>
+  <text text-anchor="middle" x="450" y="504">we will prefer finding a way to</text>
+  <text text-anchor="middle" x="450" y="521">either make it forward compatible</text>
+  <text text-anchor="middle" x="450" y="538">or described by the metadata</text>
+</svg>

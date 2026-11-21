@@ -137,6 +137,9 @@ For the purposes of this discussion we classify features into the following buck
    unambiguously determine that they cannot properly read the file (e.g. via
    adding a new value to an existing enum).
 
+See [Changing the Format](FormatChanges.md) for more details on the categories
+of changes and the criteria used to evaluate them.
+
 New features are intended to be widely beneficial to users of Parquet, and
 therefore it is hoped third-party implementations will adopt them quickly after
 they are introduced. It is assumed that writing new parts of the format, and
