@@ -63,7 +63,7 @@ and its nested fields (row groups / column chunks).
 File encryption is flexible - each column and the footer can be encrypted with the same key, 
 with a different key, or not encrypted at all.
 
-The results of compression of column pages are encrypted before being written to the output 
+Full contents of each column page is encrypted before being written to the output
 stream. A new Thrift structure, with column crypto metadata, is added to column chunks of 
 the encrypted columns. This metadata provides information about the column encryption keys.
 
